@@ -9,12 +9,12 @@ from utils.transfer_decoder import (
     NotRecognizedSolidityFuncError,
 )
 from utils.web3 import async_web3_factory, filter_blocks
-from utils.db.models import Transfer, TransferStatus
-from utils.db.transfer import (
+from db.models import Transfer, TransferStatus
+from db.transfer import (
     get_latest_block_observed,
     insert_many_transfers,
 )
-from utils.db.address import insert_new_adderss_to_db, get_active_address
+from db.address import insert_new_adderss_to_db, get_active_address
 from .config import (
     BATCH_BLOCK_NUMBER_SIZE,
     MAX_DELAY_PER_BLOCK_BATCH,

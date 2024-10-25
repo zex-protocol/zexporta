@@ -9,7 +9,7 @@ from .config import (
     BATCH_BLOCK_NUMBER_SIZE,
     CHAINS_CONFIG,
 )
-from utils.db.transfer import get_pending_transfers_block_number, to_finalized, to_reorg
+from db.transfer import get_pending_transfers_block_number, to_finalized, to_reorg
 from utils.web3 import async_web3_factory, filter_blocks, get_block_tx_hash
 
 

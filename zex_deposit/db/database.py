@@ -2,7 +2,7 @@ import asyncio
 
 from pymongo import AsyncMongoClient
 
-from deposit.config import MONGO_URI
+from .config import MONGO_URI
 
 client = AsyncMongoClient(MONGO_URI)
 db = client["transaction_database"]
