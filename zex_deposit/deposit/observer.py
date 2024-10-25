@@ -8,10 +8,10 @@ from utils.transfer_decoder import (
     decode_transfer_tx,
     NotRecognizedSolidityFuncError,
 )
-from utils.web3 import async_web3_factory, filter_blocks
+from utils.web3 import async_web3_factory, Observer, extract_transfer_from_block
 from db.models import Transfer, TransferStatus
 from db.transfer import (
-    get_latest_block_observed,
+    get_last_observed_block,
     insert_many_transfers,
 )
 from db.address import insert_new_adderss_to_db, get_active_address
@@ -62,39 +62,38 @@ async def extract_transfer_from_block(
     return result
 
 
-async def filter_transfers(
+async def filter_valid_transfer(
     transfers: list[Transfer], valid_addresses: set[ChecksumAddress]
 ) -> tuple[Transfer, ...]:
     return tuple(filter(lambda transfer: transfer.to in valid_addresses, transfers))
 
 
 async def observe_deposit(chain: ChainConfig):
-    last_block_observed = await get_latest_block_observed(chain.chain_id)
+    last_observed_block = await get_last_observed_block(chain.chain_id)
+    observer = Observer(chain=chain)
     while True:
         await insert_new_adderss_to_db()
         w3 = await async_web3_factory(chain)
+        valid_addresses = await get_active_address()
         latest_block = await w3.eth.get_block_number()
-        if last_block_observed is not None and last_block_observed == latest_block:
+        if last_observed_block is not None and last_observed_block == latest_block:
             print("block already observed continue")
             await asyncio.sleep(MAX_DELAY_PER_BLOCK_BATCH)
             continue
-        elif last_block_observed is None:
-            last_block_observed = latest_block
-        block_batches = await get_block_batches(last_block_observed, latest_block)
-        for blocks_number in block_batches:
-            transfers = await filter_blocks(
-                w3,
-                blocks_number,
-                extract_transfer_from_block,
-                chain_id=chain.chain_id,
-                max_delay_per_block_batch=MAX_DELAY_PER_BLOCK_BATCH,
-            )
-            valid_addresses = await get_active_address()
-            valid_transfers = await filter_transfers(transfers, valid_addresses)
-            print(list(valid_transfers))
-            if len(valid_transfers) != 0:
-                await insert_many_transfers(valid_transfers)
-        last_block_observed = latest_block + 1
+        elif last_observed_block is None:
+            last_observed_block = latest_block
+        valid_transfers = await observer.observe(
+            w3,
+            last_observed_block,
+            latest_block,
+            valid_addresses,
+            extract_transfer_from_block,
+            batch_size=BATCH_BLOCK_NUMBER_SIZE,
+            max_delay_per_block_batch=MAX_DELAY_PER_BLOCK_BATCH,
+        )
+        if len(valid_transfers) > 0:
+            await insert_many_transfers(valid_transfers)
+        last_observed_block = latest_block + 1
 
 
 if __name__ == "__main__":

@@ -89,7 +89,7 @@ async def get_pending_transfers_block_number(
     return list(block_numbers)
 
 
-async def get_latest_block_observed(chain_id: ChainId) -> BlockNumber | None:
+async def get_last_observed_block(chain_id: ChainId) -> BlockNumber | None:
     query = {"chain_id": chain_id.value}
     result = await transfer_collection.find_one(
         query,
