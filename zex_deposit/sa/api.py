@@ -24,6 +24,6 @@ async def get_finalized_tx(request: Request, chain_id: int) -> JSONResponse:
 async def get_pending_tx(request: Request, chain_id: int) -> JSONResponse:
     from_block = int(request.args.get("from_block", 0))
     transfers = await find_transactions_by_status(
-        TransferStatus.FINALIZED, chain_id=ChainId(chain_id), from_block=from_block
+        TransferStatus.PENDING, chain_id=ChainId(chain_id), from_block=from_block
     )
     return json(body=[transfer.model_dump() for transfer in transfers])
