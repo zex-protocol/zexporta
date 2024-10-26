@@ -28,10 +28,10 @@ async def find_transactions_by_status(
         "chain_id": chain_id.value,
         "block_number": {"$gte": from_block or 0},
     }
-    async for transaction in transfer_collection.find(
+    async for record in transfer_collection.find(
         query, sort={"block_number": ASCENDING}
     ):
-        res.append(ValidTransfer(**transaction))
+        res.append(ValidTransfer(**record))
     return res
 
 
