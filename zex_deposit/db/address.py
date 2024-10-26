@@ -4,6 +4,7 @@ from eth_typing import ChecksumAddress
 from web3 import Web3
 from pymongo import DESCENDING
 
+from custom_types import UserAddress, UserId
 from .config import (
     USER_DEPOSIT_BYTECODE_HASH,
     USER_DEPOSIT_FACTORY_ADDRESS,
@@ -11,17 +12,16 @@ from .config import (
     ZexPath,
 )
 from .database import address_collection
-from .models import UserAddress, UserId
 
 
 class UserNotExists(Exception):
     pass
 
 
-async def get_active_address() -> set[ChecksumAddress]:
-    res = set()
+async def get_active_address() -> dict[ChecksumAddress, UserId]:
+    res = dict()
     async for address in address_collection.find({"is_active": True}):
-        res.add(Web3.to_checksum_address(address["address"]))
+        res[Web3.to_checksum_address(address["address"])] = address["user_id"]
     return res
 
 
