@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from eth_typing import BlockNumber, ChecksumAddress
 
@@ -16,6 +17,8 @@ from .config import (
     CHAINS_CONFIG,
     ChainConfig,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def get_block_batches(
@@ -46,7 +49,7 @@ async def observe_deposit(chain: ChainConfig):
         valid_addresses = await get_active_address()
         latest_block = await w3.eth.get_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
-            print(f"block {last_observed_block} already observed continue")
+            logger.info(f"block {last_observed_block} already observed continue")
             await asyncio.sleep(MAX_DELAY_PER_BLOCK_BATCH)
             continue
         elif last_observed_block is None:
