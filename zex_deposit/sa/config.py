@@ -4,7 +4,7 @@ from enum import Enum
 from dotenv import load_dotenv
 from eth_typing import ChainId
 
-from zex_deposit.custom_types import ChainConfig
+from custom_types import ChainConfig
 
 load_dotenv()
 

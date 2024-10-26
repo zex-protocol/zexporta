@@ -1,15 +1,10 @@
 import asyncio
 
-from web3 import AsyncWeb3
-from eth_typing import BlockNumber, ChecksumAddress, ChainId
+from eth_typing import BlockNumber, ChecksumAddress
 
 
-from utils.transfer_decoder import (
-    decode_transfer_tx,
-    NotRecognizedSolidityFuncError,
-)
 from utils.web3 import async_web3_factory, Observer, extract_transfer_from_block
-from db.models import Transfer, TransferStatus
+from custom_types import RawTransfer
 from db.transfer import (
     get_last_observed_block,
     insert_many_transfers,
@@ -36,35 +31,9 @@ async def get_block_batches(
     return block_batches
 
 
-async def extract_transfer_from_block(
-    w3: AsyncWeb3, block_number: BlockNumber, chain_id: ChainId, **kwargs
-) -> list[Transfer]:
-    print(f"Observing block number {block_number} start")
-    block = await w3.eth.get_block(block_number, full_transactions=True)
-    result = []
-    for tx in block.transactions:  # type: ignore
-        try:
-            decoded_input = decode_transfer_tx(tx.input.hex())
-            result.append(
-                Transfer(
-                    tx_hash=tx.hash.hex(),
-                    block_number=block_number,
-                    chain_id=chain_id,
-                    to=decoded_input._to,
-                    value=decoded_input._value,
-                    status=TransferStatus.PENDING,
-                    token=tx.to,
-                )
-            )
-        except NotRecognizedSolidityFuncError as _:
-            ...
-    print(f"Observing block number {block_number} end")
-    return result
-
-
 async def filter_valid_transfer(
-    transfers: list[Transfer], valid_addresses: set[ChecksumAddress]
-) -> tuple[Transfer, ...]:
+    transfers: list[RawTransfer], valid_addresses: set[ChecksumAddress]
+) -> tuple[RawTransfer, ...]:
     return tuple(filter(lambda transfer: transfer.to in valid_addresses, transfers))
 
 
@@ -77,7 +46,7 @@ async def observe_deposit(chain: ChainConfig):
         valid_addresses = await get_active_address()
         latest_block = await w3.eth.get_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
-            print("block already observed continue")
+            print(f"block {last_observed_block} already observed continue")
             await asyncio.sleep(MAX_DELAY_PER_BLOCK_BATCH)
             continue
         elif last_observed_block is None:
