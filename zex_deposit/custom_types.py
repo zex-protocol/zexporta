@@ -44,6 +44,12 @@ class ValidTransfer(RawTransfer):
     class Config:
         use_enum_values = True
 
+    def __eq__(self, value: "ValidTransfer") -> bool:
+        return self.tx_hash == value.tx_hash
+
+    def __gt__(self, value: "ValidTransfer") -> bool:
+        return self.tx_hash > value.tx_hash
+
 
 class UserAddress(BaseModel):
     user_id: UserId

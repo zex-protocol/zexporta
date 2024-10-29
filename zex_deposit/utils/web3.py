@@ -36,9 +36,7 @@ class Observer(BaseModel):
         batch_size: int = 5,
     ) -> list[tuple[BlockNumber, ...]]:
         block_batches = [
-            tuple(
-                BlockNumber(j) for j in range(i, min(to_block + 1, i + batch_size + 1))
-            )
+            tuple(BlockNumber(j) for j in range(i, min(to_block + 1, i + batch_size)))
             for i in range(from_block, to_block + 1, batch_size)
         ]
         return block_batches
@@ -64,6 +62,7 @@ class Observer(BaseModel):
         *,
         batch_size=5,
         max_delay_per_block_batch=10,
+        **kwargs,
     ) -> list[ValidTransfer]:
         result = []
         block_batches = await self.get_block_batches(
@@ -76,6 +75,7 @@ class Observer(BaseModel):
                 extract_block_logic,
                 chain_id=self.chain.chain_id,
                 max_delay_per_block_batch=max_delay_per_block_batch,
+                **kwargs,
             )
             valid_transfers = await self.get_valid_transfers(transfers, valid_addresses)
             result.extend(valid_transfers)
@@ -83,8 +83,7 @@ class Observer(BaseModel):
 
 
 async def async_web3_factory(chain: ChainConfig) -> AsyncWeb3:
-    w3 = AsyncWeb3(AsyncHTTPProvider(chain.private_rpc))
-    return w3
+    return AsyncWeb3(AsyncHTTPProvider(chain.private_rpc))
 
 
 async def _filter_blocks(
@@ -115,7 +114,11 @@ async def filter_blocks(
 
 
 async def extract_transfer_from_block(
-    w3: AsyncWeb3, block_number: BlockNumber, chain_id: ChainId, **kwargs
+    w3: AsyncWeb3,
+    block_number: BlockNumber,
+    chain_id: ChainId,
+    transfer_status: TransferStatus = TransferStatus.PENDING,
+    **kwargs,
 ) -> list[RawTransfer]:
     logger.info(f"Observing block number {block_number} start")
     block = await w3.eth.get_block(block_number, full_transactions=True)
@@ -130,7 +133,7 @@ async def extract_transfer_from_block(
                     chain_id=chain_id,
                     to=decoded_input._to,
                     value=decoded_input._value,
-                    status=TransferStatus.PENDING,
+                    status=transfer_status,
                     token=tx.to,
                 )
             )
