@@ -1,5 +1,5 @@
 /data/
-/dkgs.json
+*/dkgs.json
 /setting.py
 venv/
 e-venv/
@@ -12,3 +12,4 @@ temp/
 .ruff_cache/
 dkg_keys.json
 nonces.json
+data/
