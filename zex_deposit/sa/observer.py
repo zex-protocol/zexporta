@@ -34,10 +34,10 @@ async def get_block_batches(
     return block_batches
 
 
-async def filter_valid_transfer(
-    transfers: list[RawTransfer], valid_addresses: set[ChecksumAddress]
+async def filter_transfer(
+    transfers: list[RawTransfer], accepted_addresses: set[ChecksumAddress]
 ) -> tuple[RawTransfer, ...]:
-    return tuple(filter(lambda transfer: transfer.to in valid_addresses, transfers))
+    return tuple(filter(lambda transfer: transfer.to in accepted_addresses, transfers))
 
 
 async def observe_deposit(chain: ChainConfig):
@@ -46,7 +46,7 @@ async def observe_deposit(chain: ChainConfig):
     while True:
         await insert_new_adderss_to_db()
         w3 = await async_web3_factory(chain)
-        valid_addresses = await get_active_address()
+        accepted_addresses = await get_active_address()
         latest_block = await w3.eth.get_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
             logger.info(f"block {last_observed_block} already observed continue")
@@ -54,17 +54,17 @@ async def observe_deposit(chain: ChainConfig):
             continue
         elif last_observed_block is None:
             last_observed_block = latest_block
-        valid_transfers = await observer.observe(
+        accepted_transfers = await observer.observe(
             w3,
             last_observed_block,
             latest_block,
-            valid_addresses,
+            accepted_addresses,
             extract_transfer_from_block,
             batch_size=BATCH_BLOCK_NUMBER_SIZE,
             max_delay_per_block_batch=MAX_DELAY_PER_BLOCK_BATCH,
         )
-        if len(valid_transfers) > 0:
-            await insert_many_transfers(valid_transfers)
+        if len(accepted_transfers) > 0:
+            await insert_many_transfers(accepted_transfers)
         last_observed_block = latest_block + 1
 
 

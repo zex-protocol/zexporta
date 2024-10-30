@@ -3,15 +3,15 @@ from typing import Iterable
 from pymongo import ASCENDING, DESCENDING
 from eth_typing import ChainId
 
-from custom_types import BlockNumber, TransferStatus, ValidTransfer
+from custom_types import BlockNumber, TransferStatus, UserTransfer
 from .database import transfer_collection
 
 
-async def insert_transfer(transfer: ValidTransfer):
+async def insert_transfer(transfer: UserTransfer):
     await transfer_collection.insert_one(transfer.model_dump())
 
 
-async def insert_many_transfers(transfers: Iterable[ValidTransfer]):
+async def insert_many_transfers(transfers: Iterable[UserTransfer]):
     await transfer_collection.insert_many(
         transfer.model_dump() for transfer in transfers
     )
@@ -21,7 +21,7 @@ async def find_transactions_by_status(
     status: TransferStatus,
     chain_id: ChainId,
     from_block: BlockNumber | int | None = None,
-) -> list[ValidTransfer]:
+) -> list[UserTransfer]:
     res = []
     query = {
         "status": status.value,
@@ -31,7 +31,7 @@ async def find_transactions_by_status(
     async for record in transfer_collection.find(
         query, sort={"block_number": ASCENDING}
     ):
-        res.append(ValidTransfer(**record))
+        res.append(UserTransfer(**record))
     return res
 
 

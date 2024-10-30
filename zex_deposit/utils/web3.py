@@ -17,7 +17,7 @@ from custom_types import (
     TransferStatus,
     TxHash,
     UserId,
-    ValidTransfer,
+    UserTransfer,
 )
 
 
@@ -41,15 +41,15 @@ class Observer(BaseModel):
         ]
         return block_batches
 
-    async def get_valid_transfers(
+    async def get_accepted_transfers(
         self,
         transfers: list[RawTransfer],
-        valid_addresses: dict[ChecksumAddress, UserId],
-    ) -> list[ValidTransfer]:
+        accepted_addresses: dict[ChecksumAddress, UserId],
+    ) -> list[UserTransfer]:
         result = []
         for transfer in transfers:
-            if (user_id := valid_addresses.get(transfer.to)) is not None:
-                result.append(ValidTransfer(user_id=user_id, **transfer.model_dump()))
+            if (user_id := accepted_addresses.get(transfer.to)) is not None:
+                result.append(UserTransfer(user_id=user_id, **transfer.model_dump()))
         return result
 
     async def observe(
@@ -57,13 +57,13 @@ class Observer(BaseModel):
         w3: AsyncWeb3,
         from_block: BlockNumber | int,
         to_block: BlockNumber | int,
-        valid_addresses: dict[ChecksumAddress, UserId],
+        accepted_addresses: dict[ChecksumAddress, UserId],
         extract_block_logic: Callable[..., Coroutine[Any, Any, list[RawTransfer]]],
         *,
         batch_size=5,
         max_delay_per_block_batch=10,
         **kwargs,
-    ) -> list[ValidTransfer]:
+    ) -> list[UserTransfer]:
         result = []
         block_batches = await self.get_block_batches(
             from_block, to_block, batch_size=batch_size
@@ -77,8 +77,10 @@ class Observer(BaseModel):
                 max_delay_per_block_batch=max_delay_per_block_batch,
                 **kwargs,
             )
-            valid_transfers = await self.get_valid_transfers(transfers, valid_addresses)
-            result.extend(valid_transfers)
+            accepted_transfers = await self.get_accepted_transfers(
+                transfers, accepted_addresses
+            )
+            result.extend(accepted_transfers)
         return result
 
 
@@ -148,3 +150,8 @@ async def get_block_tx_hash(
 ) -> list[TxHash]:
     block = await w3.eth.get_block(block_number)
     return [tx_hash.hex() for tx_hash in block.transactions]  # type: ignore
+
+
+async def get_finalized_block_number(w3: AsyncWeb3) -> BlockNumber:
+    finalized_block = await w3.eth.get_block("finalized")
+    return finalized_block.number  # type: ignore

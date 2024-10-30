@@ -38,16 +38,16 @@ class RawTransfer(BaseModel):
         use_enum_values = True
 
 
-class ValidTransfer(RawTransfer):
+class UserTransfer(RawTransfer):
     user_id: UserId
 
     class Config:
         use_enum_values = True
 
-    def __eq__(self, value: "ValidTransfer") -> bool:
+    def __eq__(self, value: "UserTransfer") -> bool:
         return self.tx_hash == value.tx_hash
 
-    def __gt__(self, value: "ValidTransfer") -> bool:
+    def __gt__(self, value: "UserTransfer") -> bool:
         return self.tx_hash > value.tx_hash
 
 
