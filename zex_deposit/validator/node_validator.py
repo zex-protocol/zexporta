@@ -1,7 +1,13 @@
+import asyncio
+from hashlib import sha256
 
+from eth_typing import ChainId
 from pyfrost.network.abstract import Validators
 
-from .config import VALIDATED_IPS
+from .transfer import encode_zex_transfers, get_users_transfers
+from .config import VALIDATED_IPS, CHAINS_CONFIG, ZEX_ENDODE_VERSION
+
+DEPOSIT_OPERATION = "d"
 
 
 class NodeValidators(Validators):
@@ -16,4 +22,20 @@ class NodeValidators(Validators):
 
     @staticmethod
     def data_validator(input_data: dict):
-       pass
+        chain_config = CHAINS_CONFIG[(input_data["chain_id"])]
+        from_block = input_data["from_block"]
+        to_block = input_data["to_block"]
+        users_transfers = asyncio.run(
+            get_users_transfers(
+                chain=chain_config, from_block=from_block, to_block=to_block
+            )
+        )
+        encoded_data = encode_zex_transfers(
+            version=ZEX_ENDODE_VERSION,
+            operation_type=DEPOSIT_OPERATION,
+            chain=chain_config,
+            from_block=from_block,
+            to_block=to_block,
+            users_transfers=users_transfers,
+        )
+        return {"hash": sha256(encoded_data).hexdigest(), "encoded_data": encoded_data}
