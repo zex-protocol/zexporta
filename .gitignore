@@ -1,6 +1,5 @@
 /data/
-*/dkgs.json
-/setting.py
+dkgs.json
 venv/
 e-venv/
 __pycache__/

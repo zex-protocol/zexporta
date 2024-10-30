@@ -10,12 +10,7 @@ from .config import (
     CHAINS_CONFIG,
 )
 from db.transfer import get_pending_transfers_block_number, to_finalized, to_reorg
-from utils.web3 import async_web3_factory, filter_blocks, get_block_tx_hash
-
-
-async def get_finalized_block_number(w3: AsyncWeb3) -> BlockNumber:
-    finalized_block = await w3.eth.get_block("finalized")
-    return finalized_block.number  # type: ignore
+from utils.web3 import async_web3_factory, filter_blocks, get_block_tx_hash, get_finalized_block_number
 
 
 async def update_finalized_transfers(chain: ChainConfig):
