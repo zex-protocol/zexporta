@@ -4,10 +4,9 @@ from hashlib import sha256
 from eth_typing import ChainId
 from pyfrost.network.abstract import Validators
 
-from .transfer import encode_zex_transfers, get_users_transfers
+from utils.zex_deposit import encode_zex_deposit, DEPOSIT_OPERATION
+from .transfer import get_users_transfers
 from .config import VALIDATED_IPS, CHAINS_CONFIG, ZEX_ENDODE_VERSION
-
-DEPOSIT_OPERATION = "d"
 
 
 class NodeValidators(Validators):
@@ -30,12 +29,15 @@ class NodeValidators(Validators):
                 chain=chain_config, from_block=from_block, to_block=to_block
             )
         )
-        encoded_data = encode_zex_transfers(
+        encoded_data = encode_zex_deposit(
             version=ZEX_ENDODE_VERSION,
             operation_type=DEPOSIT_OPERATION,
-            chain=chain_config,
+            chain_id=chain_config.chain_id,
             from_block=from_block,
             to_block=to_block,
             users_transfers=users_transfers,
         )
-        return {"hash": sha256(encoded_data).hexdigest(), "encoded_data": encoded_data}
+        return {
+            "hash": sha256(encoded_data).hexdigest(),
+            "users_transfers": users_transfers,
+        }

@@ -137,6 +137,7 @@ async def extract_transfer_from_block(
                     value=decoded_input._value,
                     status=transfer_status,
                     token=tx.to,
+                    block_timestamp=block.timestamp,  # type: ignore
                 )
             )
         except NotRecognizedSolidityFuncError as _:

@@ -31,7 +31,7 @@ class RawTransfer(BaseModel):
     value: Value
     token: ChecksumAddress
     to: ChecksumAddress
-    observed_at: Timestamp = Field(default_factory=lambda: datetime.now().timestamp())
+    block_timestamp: Timestamp
     block_number: BlockNumber
 
     class Config:

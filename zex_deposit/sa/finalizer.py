@@ -10,7 +10,12 @@ from .config import (
     CHAINS_CONFIG,
 )
 from db.transfer import get_pending_transfers_block_number, to_finalized, to_reorg
-from utils.web3 import async_web3_factory, filter_blocks, get_block_tx_hash, get_finalized_block_number
+from utils.web3 import (
+    async_web3_factory,
+    filter_blocks,
+    get_block_tx_hash,
+    get_finalized_block_number,
+)
 
 
 async def update_finalized_transfers(chain: ChainConfig):
@@ -38,8 +43,8 @@ async def update_finalized_transfers(chain: ChainConfig):
                 get_block_tx_hash,
                 max_delay_per_block_batch=MAX_DELAY_PER_BLOCK_BATCH,
             )
-            await to_finalized(finalized_block_number, results)
-            await to_reorg(min(blocks_to_check), max(blocks_to_check), results)
+            await to_finalized(chain.chain_id, finalized_block_number, results)
+            await to_reorg(chain.chain_id, min(blocks_to_check), max(blocks_to_check))
 
 
 if __name__ == "__main__":

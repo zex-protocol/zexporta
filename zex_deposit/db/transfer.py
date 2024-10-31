@@ -1,3 +1,4 @@
+import asyncio
 from typing import Iterable
 
 from pymongo import ASCENDING, DESCENDING
@@ -46,6 +47,7 @@ async def delete_transaction(tx_hash):
 
 
 async def to_finalized(
+    chain_id: ChainId,
     finalized_block_number: BlockNumber,
     tx_hashes: list[str],
 ):
@@ -53,6 +55,7 @@ async def to_finalized(
         "block_number": {"$lte": finalized_block_number},
         "status": TransferStatus.PENDING.value,
         "tx_hash": {"$in": tx_hashes},
+        "chain_id": chain_id.value,
     }
 
     update = {"$set": {"status": TransferStatus.FINALIZED.value}}
@@ -61,12 +64,15 @@ async def to_finalized(
 
 
 async def to_reorg(
-    from_block: BlockNumber, to_block: BlockNumber, finalized_tx_hashes: list[str]
+    chain_id: ChainId,
+    from_block: BlockNumber,
+    to_block: BlockNumber,
+    status: TransferStatus = TransferStatus.PENDING,
 ):
     query = {
         "block_number": {"$lte": to_block, "$gte": from_block},
-        "status": TransferStatus.PENDING.value,
-        "tx_hash": {"$nin": finalized_tx_hashes},
+        "status": status,
+        "chain_id": chain_id.value,
     }
     update = {"$set": {"status": TransferStatus.REORG.value}}
     _ = await transfer_collection.update_many(query, update)
@@ -98,3 +104,24 @@ async def get_last_observed_block(chain_id: ChainId) -> BlockNumber | None:
     if result:
         return BlockNumber(result["block_number"])
     return None
+
+
+async def upsert_verified_transfers(verified_transfers: list[UserTransfer]):
+    tasks = []
+    for verified_transfer in verified_transfers:
+        update = {
+            "$set": {**verified_transfer.model_dump()},
+        }
+        filter = {
+            "tx_hash": verified_transfer.tx_hash,
+            "chain_id": verified_transfer.chain_id.value,
+        }
+
+        tasks.append(
+            asyncio.create_task(
+                transfer_collection.update_one(
+                    filter=filter, update=update, upsert=True
+                )
+            )
+        )
+    [await task for task in tasks]
