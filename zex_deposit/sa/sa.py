@@ -11,7 +11,7 @@ from pyfrost.network.sa import SA
 from utils.node_info import NodesInfo
 from custom_types import TransferStatus
 from db.transfer import find_transactions_by_status
-from .config import DKG_JSON_PATH
+from .config import DKG_JSON_PATH, DKG_NAME
 
 
 nodes_info = NodesInfo()
@@ -22,7 +22,7 @@ def _parse_dkg_json() -> dict:
     with open(DKG_JSON_PATH, "r") as f:
         dkg_info = json.load(f)
 
-    return dkg_info
+    return dkg_info[DKG_NAME]
 
 
 dkg_key = _parse_dkg_json()
@@ -42,6 +42,9 @@ async def deposit():
     await finalized_transfers_task
     finalized_transfers = finalized_transfers_task.result()
     nonces_response = nonces_response_task.result()
+    nonces_for_sig = {}
+    for id, nonce in nonces_response.items():
+        nonces_for_sig[id] = nonce['data'][0]
 
     if not finalized_transfers:
         return
@@ -57,3 +60,5 @@ async def deposit():
             "chain_id": 11155111,
         },
     }
+
+    sig = await sa.request_signature(dkg_key, nonces_for_sig, data, dkg_party)

@@ -21,9 +21,11 @@ class NodeValidators(Validators):
 
     @staticmethod
     def data_validator(input_data: dict):
-        chain_config = CHAINS_CONFIG[(input_data["chain_id"])]
-        from_block = input_data["from_block"]
-        to_block = input_data["to_block"]
+        method = input_data['method']
+        data = input_data['data']
+        chain_config = CHAINS_CONFIG[(data["chain_id"])]
+        from_block = data["from_block"]
+        to_block = data["to_block"]
         users_transfers = asyncio.run(
             get_users_transfers(
                 chain=chain_config, from_block=from_block, to_block=to_block
@@ -39,5 +41,7 @@ class NodeValidators(Validators):
         )
         return {
             "hash": sha256(encoded_data).hexdigest(),
-            "users_transfers": users_transfers,
+            "data": {
+                "users_transfers": users_transfers,
+            }
         }

@@ -22,6 +22,7 @@ BATCH_BLOCK_NUMBER_SIZE = int(os.getenv("BATCH_BLOCK_NUMBER_SIZE", 3))
 MAX_DELAY_PER_BLOCK_BATCH = int(os.getenv("MAX_DELAY_PER_BLOCK_BATCH", 10))
 
 DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./dkg.json")
+DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 
 CHAINS_CONFIG = {
     "11155111": ChainConfig(

@@ -94,7 +94,6 @@ class NodesInfo(BaseNodeInfo):
         self._sync_thread.join()
 
     def lookup_node(self, node_id: str | None = None):
-        print(self.nodes, node_id)
         return self.nodes.get(node_id, {})
 
     def get_all_nodes(self, n: int | None = None):
