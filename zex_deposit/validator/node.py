@@ -1,5 +1,3 @@
-import os
-import logging
 import sys
 
 from pyfrost.network.node import Node
@@ -29,3 +27,6 @@ def run_node(node_id: int) -> None:
     app = Flask(__name__)
     app.register_blueprint(node.blueprint, url_prefix="/pyfrost")
     app.run(host=node_info["host"], port=int(node_info["port"]), debug=True)
+
+if __name__  == "__main__":
+    run_node(int(sys.argv[1], 16))

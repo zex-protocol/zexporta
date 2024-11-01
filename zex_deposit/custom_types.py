@@ -14,6 +14,7 @@ TxHash: TypeAlias = str
 class ChainConfig(BaseModel):
     private_rpc: URI | str
     chain_id: ChainId
+    from_block: BlockNumber | int
 
 
 class TransferStatus(Enum):

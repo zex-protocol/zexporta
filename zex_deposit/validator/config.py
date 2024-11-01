@@ -24,6 +24,7 @@ CHAINS_CONFIG = {
     11155111: ChainConfig(
         private_rpc=("https://ethereum-sepolia-rpc.publicnode.com"),
         chain_id=ChainId(11155111),
+        from_block=6991487,
     )
 }
 

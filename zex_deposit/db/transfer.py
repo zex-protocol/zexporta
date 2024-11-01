@@ -65,8 +65,8 @@ async def to_finalized(
 
 async def to_reorg(
     chain_id: ChainId,
-    from_block: BlockNumber,
-    to_block: BlockNumber,
+    from_block: BlockNumber | int,
+    to_block: BlockNumber | int,
     status: TransferStatus = TransferStatus.PENDING,
 ):
     query = {
@@ -95,32 +95,23 @@ async def get_pending_transfers_block_number(
     return list(block_numbers)
 
 
-async def get_last_observed_block(chain_id: ChainId) -> BlockNumber | None:
-    query = {"chain_id": chain_id.value}
-    result = await transfer_collection.find_one(
-        query,
-        sort=[("block_number", DESCENDING)],
-    )
-    if result:
-        return BlockNumber(result["block_number"])
-    return None
-
-
 async def upsert_verified_transfers(verified_transfers: list[UserTransfer]):
     tasks = []
     for verified_transfer in verified_transfers:
+        verified_transfer.status = TransferStatus.VERIFIED
+        print(verified_transfer.model_dump())
         update = {
-            "$set": {**verified_transfer.model_dump()},
+            "$set": verified_transfer.model_dump(),
         }
-        filter = {
+        filter_ = {
             "tx_hash": verified_transfer.tx_hash,
-            "chain_id": verified_transfer.chain_id.value,
+            "chain_id": verified_transfer.chain_id,
         }
 
         tasks.append(
             asyncio.create_task(
                 transfer_collection.update_one(
-                    filter=filter, update=update, upsert=True
+                    filter=filter_, update=update, upsert=True
                 )
             )
         )

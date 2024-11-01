@@ -69,6 +69,7 @@ class Observer(BaseModel):
             from_block, to_block, batch_size=batch_size
         )
         for blocks_number in block_batches:
+            print(blocks_number)
             transfers = await filter_blocks(
                 w3,
                 blocks_number,

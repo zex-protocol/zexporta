@@ -1,20 +1,17 @@
 import asyncio
 
-from web3 import AsyncWeb3
-from eth_typing import BlockNumber
-
-from .config import (
-    ChainConfig,
-    MAX_DELAY_PER_BLOCK_BATCH,
-    BATCH_BLOCK_NUMBER_SIZE,
-    CHAINS_CONFIG,
-)
 from db.transfer import get_pending_transfers_block_number, to_finalized, to_reorg
 from utils.web3 import (
     async_web3_factory,
     filter_blocks,
     get_block_tx_hash,
     get_finalized_block_number,
+)
+from .config import (
+    BATCH_BLOCK_NUMBER_SIZE,
+    CHAINS_CONFIG,
+    MAX_DELAY_PER_BLOCK_BATCH,
+    ChainConfig,
 )
 
 

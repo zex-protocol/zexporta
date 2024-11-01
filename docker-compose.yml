@@ -3,12 +3,13 @@ services:
   mongodb:
     image: mongo:8
     healthcheck:
-      test: [ echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet ]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
       retries: 5
       start_period: 10s
     ports:
       - "27017:27017"
+    network_mode: host
 
   sa-observer:
     build:
@@ -16,12 +17,13 @@ services:
       dockerfile: Dockerfile
     image: zex-deposit
     container_name: sa-observer
-    entrypoint: python -m sa.observer
+    entrypoint: poetry run python -m sa.observer
+    network_mode: host
     depends_on:
       mongodb:
         condition: service_healthy
     volumes:
-      - ./zex_deposit/data:/app/
+      - ./zex_deposit/data:/app/data
     env_file:
       - .env
 
@@ -30,10 +32,63 @@ services:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: sa-observer
-    entrypoint: python -m sa.finalizer
+    container_name: sa-finalizer
+    entrypoint: poetry run python -m sa.finalizer
+    network_mode: host
     depends_on:
       mongodb:
         condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/data
+    env_file:
+      - .env
+
+  sa-sa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: sa-sa
+    entrypoint: poetry run python -m sa.sa
+    network_mode: host
+    depends_on:
+      validator-1:
+        condition: service_started
+      validator-2:
+        condition: service_started
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/data
+    env_file:
+      - .env
+
+  validator-1:
+    build:
+      context: .
+    image: zex-deposit
+    container_name: validator-1
+    entrypoint: poetry run python -m validator.node 0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
+    network_mode: host
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/data
+    env_file:
+      - .env
+
+  validator-2:
+    build:
+      context: .
+    image: zex-deposit
+    container_name: validator-2
+    entrypoint: poetry run python -m validator.node 0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
+    network_mode: host
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/data
     env_file:
       - .env
