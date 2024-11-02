@@ -42,7 +42,7 @@ async def initiate_dkg(
     dkg_key["threshold"] = threshold
     dkg_key["number_of_nodes"] = n
 
-    dkg_file_path = "."
+    dkg_file_path = "./dkgs/"
     dkg_file_name = "dkgs.json"
     if not os.path.exists(f"{dkg_file_path}/{dkg_file_name}"):
         os.mkdir(dkg_file_path) if not os.path.exists(dkg_file_path) else None
