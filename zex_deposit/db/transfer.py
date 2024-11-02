@@ -71,7 +71,7 @@ async def to_reorg(
 ):
     query = {
         "block_number": {"$lte": to_block, "$gte": from_block},
-        "status": status,
+        "status": status.value,
         "chain_id": chain_id.value,
     }
     update = {"$set": {"status": TransferStatus.REORG.value}}
@@ -98,8 +98,6 @@ async def get_pending_transfers_block_number(
 async def upsert_verified_transfers(verified_transfers: list[UserTransfer]):
     tasks = []
     for verified_transfer in verified_transfers:
-        verified_transfer.status = TransferStatus.VERIFIED
-        print(verified_transfer.model_dump())
         update = {
             "$set": verified_transfer.model_dump(),
         }
@@ -107,7 +105,6 @@ async def upsert_verified_transfers(verified_transfers: list[UserTransfer]):
             "tx_hash": verified_transfer.tx_hash,
             "chain_id": verified_transfer.chain_id,
         }
-
         tasks.append(
             asyncio.create_task(
                 transfer_collection.update_one(
