@@ -32,6 +32,6 @@ async def get_users_transfers(
         to_block=to_block,
         accepted_addresses=accepted_addresses,
         extract_block_logic=extract_transfer_from_block,
-        transfer_status=TransferStatus.FINALIZED,
+        transfer_status=TransferStatus.VERIFIED,
     )
     return sorted(users_transfers)
