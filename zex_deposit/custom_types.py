@@ -1,5 +1,4 @@
-from datetime import datetime
-from enum import Enum, auto
+from enum import Enum
 from typing import TypeAlias
 
 from pydantic import BaseModel, Field
@@ -18,11 +17,11 @@ class ChainConfig(BaseModel):
 
 
 class TransferStatus(Enum):
-    PENDING = auto()
-    FINALIZED = auto()
-    VERIFIED = auto()
-    REORG = auto()
-    REJECTED = auto()
+    PENDING = 1
+    FINALIZED = 2
+    VERIFIED = 3
+    REORG = 4
+    REJECTED = 5
 
 
 class RawTransfer(BaseModel):
@@ -37,6 +36,7 @@ class RawTransfer(BaseModel):
 
     class Config:
         use_enum_values = True
+        validate_default = True
 
 
 class UserTransfer(RawTransfer):
@@ -44,6 +44,7 @@ class UserTransfer(RawTransfer):
 
     class Config:
         use_enum_values = True
+        validate_default = True
 
     def __eq__(self, value: "UserTransfer") -> bool:
         return self.tx_hash == value.tx_hash
