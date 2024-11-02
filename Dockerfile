@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 RUN apt update -y && apt install gcc libgmp-dev -y
 
@@ -17,5 +17,5 @@ COPY pyproject.toml poetry.lock ./
 
 RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
 
-COPY ./zex_deposit/ .
 
+COPY ./zex_deposit/ .
