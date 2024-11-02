@@ -67,6 +67,7 @@ async def observe_deposit(chain: ChainConfig):
             chain.chain_id, block_number=latest_block
         )
 
-
 if __name__ == "__main__":
-    asyncio.run(observe_deposit(CHAINS_CONFIG["11155111"]))
+    loop = asyncio.new_event_loop()
+    _ = [loop.create_task(observe_deposit(chain)) for chain in CHAINS_CONFIG.values()]
+    loop.run_forever()
