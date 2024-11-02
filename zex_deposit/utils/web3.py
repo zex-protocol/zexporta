@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class Observer(BaseModel):
     chain: ChainConfig
 
-    async def get_block_batches(
+    def get_block_batches(
         self,
         from_block: BlockNumber | int,
         to_block: BlockNumber | int,
@@ -65,7 +65,7 @@ class Observer(BaseModel):
         **kwargs,
     ) -> list[UserTransfer]:
         result = []
-        block_batches = await self.get_block_batches(
+        block_batches = self.get_block_batches(
             from_block, to_block, batch_size=batch_size
         )
         for blocks_number in block_batches:
@@ -112,7 +112,7 @@ async def filter_blocks(
     start = time.time()
     result = await _filter_blocks(w3, blocks_number, fn, **kwargs)
     end = time.time()
-    await asyncio.sleep(max(max_delay_per_block_batch - end - start, 0))
+    await asyncio.sleep(max(max_delay_per_block_batch - (end - start), 0))
     return result
 
 
