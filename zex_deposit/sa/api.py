@@ -1,8 +1,8 @@
 from sanic import Sanic, Blueprint, Request, json
 from sanic.response.types import JSONResponse
 
-from custom_types import TransferStatus, ChainId
-from db.transfer import find_transactions_by_status
+from zex_deposit.custom_types import TransferStatus, ChainId
+from zex_deposit.db.transfer import find_transactions_by_status
 
 app = Sanic(name="ZexDeposit")
 

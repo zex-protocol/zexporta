@@ -2,10 +2,9 @@ from dataclasses import dataclass
 from typing import TypeAlias
 
 from web3 import Web3
-from eth_typing import ChecksumAddress
 
-from utils.abi import ERC20_ABI
-
+from zex_deposit.custom_types import ChecksumAddress
+from zex_deposit.utils.abi import ERC20_ABI
 
 FunctionHash: TypeAlias = str
 

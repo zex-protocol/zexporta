@@ -3,23 +3,24 @@ import logging
 import time
 from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
-from eth_typing import BlockNumber, ChainId, ChecksumAddress
 from pydantic import BaseModel
-from utils.transfer_decoder import (
-    NotRecognizedSolidityFuncError,
-    decode_transfer_tx,
-)
 from web3 import AsyncHTTPProvider, AsyncWeb3
 
-from custom_types import (
+from zex_deposit.custom_types import (
+    BlockNumber,
     ChainConfig,
+    ChainId,
+    ChecksumAddress,
     RawTransfer,
     TransferStatus,
     TxHash,
     UserId,
     UserTransfer,
 )
-
+from zex_deposit.utils.transfer_decoder import (
+    NotRecognizedSolidityFuncError,
+    decode_transfer_tx,
+)
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)

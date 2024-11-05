@@ -3,16 +3,23 @@ import logging
 
 from eth_typing import BlockNumber, ChecksumAddress
 
+from zex_deposit.custom_types import RawTransfer
+from zex_deposit.db.address import get_active_address, insert_new_adderss_to_db
+from zex_deposit.db.chain import (
+    get_last_observed_block,
+    upsert_chain_last_observed_block,
+)
+from zex_deposit.db.transfer import insert_many_transfers
+from zex_deposit.utils.web3 import (
+    Observer,
+    async_web3_factory,
+    extract_transfer_from_block,
+)
 
-from utils.web3 import async_web3_factory, Observer, extract_transfer_from_block
-from custom_types import RawTransfer
-from db.transfer import insert_many_transfers
-from db.chain import get_last_observed_block, upsert_chain_last_observed_block
-from db.address import insert_new_adderss_to_db, get_active_address
 from .config import (
     BATCH_BLOCK_NUMBER_SIZE,
-    MAX_DELAY_PER_BLOCK_BATCH,
     CHAINS_CONFIG,
+    MAX_DELAY_PER_BLOCK_BATCH,
     ChainConfig,
 )
 
@@ -66,6 +73,7 @@ async def observe_deposit(chain: ChainConfig):
         await upsert_chain_last_observed_block(
             chain.chain_id, block_number=latest_block
         )
+
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()

@@ -1,5 +1,3 @@
-
-
 __all__ = ["ERC20_ABI"]
 
 ERC20_ABI = [

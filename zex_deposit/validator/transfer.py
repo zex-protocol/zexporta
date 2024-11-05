@@ -1,8 +1,6 @@
-import struct
-
-from custom_types import BlockNumber, ChainConfig, TransferStatus, UserTransfer
-from db.address import get_active_address, insert_new_adderss_to_db
-from utils.web3 import (
+from zex_deposit.custom_types import BlockNumber, ChainConfig, TransferStatus
+from zex_deposit.db.address import get_active_address, insert_new_adderss_to_db
+from zex_deposit.utils.web3 import (
     Observer,
     async_web3_factory,
     extract_transfer_from_block,

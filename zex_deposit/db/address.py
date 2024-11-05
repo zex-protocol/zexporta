@@ -1,21 +1,27 @@
-import requests
+import logging
 
-from eth_typing import ChecksumAddress
-from web3 import Web3
 from pymongo import DESCENDING
+from web3 import Web3
 
-from custom_types import UserAddress, UserId
+from zex_deposit.custom_types import ChecksumAddress, UserAddress, UserId
+from zex_deposit.utils.zex_api import (
+    ZexAPIError,
+    get_async_client,
+    get_last_zex_user_id,
+)
+
 from .config import (
     USER_DEPOSIT_BYTECODE_HASH,
     USER_DEPOSIT_FACTORY_ADDRESS,
-    ZEX_BASE_URL,
-    ZexPath,
 )
 from .database import address_collection
 
 
 class UserNotExists(Exception):
     pass
+
+
+logger = logging.getLogger(__name__)
 
 
 async def get_active_address() -> dict[ChecksumAddress, UserId]:
@@ -95,15 +101,6 @@ def compute_create2_address(
     return Web3.to_checksum_address(address_bytes)
 
 
-def get_last_zex_user_id() -> UserId | None:
-    try:
-        res = requests.get(f"{ZEX_BASE_URL}/{ZexPath.LATEST_USER_URL.value}")
-    except requests.RequestException:
-        return
-    else:
-        return res.json().get("id")
-
-
 def get_users_address_to_insert(
     first_to_compute: UserId, last_to_compute: UserId
 ) -> list[UserAddress]:
@@ -116,7 +113,13 @@ def get_users_address_to_insert(
 
 
 async def insert_new_adderss_to_db():
-    last_zex_user_id = get_last_zex_user_id()
+    async with get_async_client() as client:
+        try:
+            last_zex_user_id = await get_last_zex_user_id(client)
+        except ZexAPIError as e:
+            logger.error(f"Error in Zex API: {e}")
+            return
+
     if last_zex_user_id is None:
         return
     try:

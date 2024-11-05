@@ -1,8 +1,6 @@
 import struct
 
-from eth_typing import ChainId
-
-from custom_types import UserTransfer, BlockNumber
+from zex_deposit.custom_types import BlockNumber, ChainId, UserTransfer
 
 DEPOSIT_OPERATION = "d"
 
@@ -31,7 +29,7 @@ def encode_zex_deposit(
     deposit_data = b""
     for deposit in users_transfers:
         deposit_data += struct.pack(
-            ">20s d I I",  # I for uint32, d for double, I for uint32, s for bytes
+            ">42s d I Q",  # I for uint32, d for double, I for uint32, s for bytes
             deposit.token.encode(),  # must be token address
             deposit.value,
             deposit.block_timestamp,

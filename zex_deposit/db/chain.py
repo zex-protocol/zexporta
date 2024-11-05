@@ -1,4 +1,5 @@
-from eth_typing import BlockNumber, ChainId
+from zex_deposit.custom_types import BlockNumber, ChainId
+
 from .database import chain_collection
 
 

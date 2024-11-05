@@ -1,12 +1,17 @@
 import asyncio
 
-from db.transfer import get_pending_transfers_block_number, to_finalized, to_reorg
-from utils.web3 import (
+from zex_deposit.db.transfer import (
+    get_pending_transfers_block_number,
+    to_finalized,
+    to_reorg,
+)
+from zex_deposit.utils.web3 import (
     async_web3_factory,
     filter_blocks,
     get_block_tx_hash,
     get_finalized_block_number,
 )
+
 from .config import (
     BATCH_BLOCK_NUMBER_SIZE,
     CHAINS_CONFIG,

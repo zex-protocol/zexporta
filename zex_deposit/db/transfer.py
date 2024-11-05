@@ -1,10 +1,10 @@
 import asyncio
 from typing import Iterable
 
-from pymongo import ASCENDING, DESCENDING
+from pymongo import ASCENDING
 from eth_typing import ChainId
 
-from custom_types import BlockNumber, TransferStatus, UserTransfer
+from zex_deposit.custom_types import BlockNumber, TransferStatus, UserTransfer
 from .database import transfer_collection
 
 
@@ -60,7 +60,7 @@ async def to_finalized(
 
     update = {"$set": {"status": TransferStatus.FINALIZED.value}}
 
-    _ = await transfer_collection.update_many(query, update)
+    await transfer_collection.update_many(query, update)
 
 
 async def to_reorg(
@@ -75,7 +75,7 @@ async def to_reorg(
         "chain_id": chain_id.value,
     }
     update = {"$set": {"status": TransferStatus.REORG.value}}
-    _ = await transfer_collection.update_many(query, update)
+    await transfer_collection.update_many(query, update)
 
 
 async def get_pending_transfers_block_number(

@@ -1,12 +1,13 @@
 import sys
 
-from pyfrost.network.node import Node
 from flask import Flask
+from pyfrost.network.node import Node
 
-from utils.node_info import NodesInfo
+from zex_deposit.utils.node_info import NodesInfo
+
+from .config import PRIVATE_KEY
 from .node_data_manager import NodeDataManager
 from .node_validator import NodeValidators
-from .config import PRIVATE_KEY
 
 
 def run_node(node_id: int) -> None:
@@ -28,5 +29,6 @@ def run_node(node_id: int) -> None:
     app.register_blueprint(node.blueprint, url_prefix="/pyfrost")
     app.run(host=node_info["host"], port=int(node_info["port"]), debug=True)
 
-if __name__  == "__main__":
+
+if __name__ == "__main__":
     run_node(int(sys.argv[1], 16))

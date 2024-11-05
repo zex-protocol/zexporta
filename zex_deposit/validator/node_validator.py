@@ -1,12 +1,12 @@
 import asyncio
 from hashlib import sha256
 
-from eth_typing import ChainId
 from pyfrost.network.abstract import Validators
 
-from utils.encode_deposit import encode_zex_deposit, DEPOSIT_OPERATION
+from zex_deposit.utils.encode_deposit import DEPOSIT_OPERATION, encode_zex_deposit
+
+from .config import CHAINS_CONFIG, VALIDATED_IPS, ZEX_ENDODE_VERSION
 from .transfer import get_users_transfers
-from .config import VALIDATED_IPS, CHAINS_CONFIG, ZEX_ENDODE_VERSION
 
 
 class NodeValidators(Validators):
