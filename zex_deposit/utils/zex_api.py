@@ -52,7 +52,7 @@ async def get_zex_latest_block(
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LATEST_BLOCK.value}",
-            params={"chain": chain_id.name},
+            params={"chain": chain_id.name[:3]},
         )
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
         raise ZexAPIError(e)

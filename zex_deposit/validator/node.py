@@ -1,13 +1,17 @@
+import logging.config
 import sys
 
 from flask import Flask
 from pyfrost.network.node import Node
 
 from zex_deposit.utils.node_info import NodesInfo
+from zex_deposit.utils.logger import get_logger_config
 
-from .config import PRIVATE_KEY
+from .config import PRIVATE_KEY, LOGGER_PATH
 from .node_data_manager import NodeDataManager
 from .node_validator import NodeValidators
+
+logging.config.dictConfig(get_logger_config(LOGGER_PATH))
 
 
 def run_node(node_id: int) -> None:

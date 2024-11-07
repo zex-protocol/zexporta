@@ -8,6 +8,8 @@ from zex_deposit.custom_types import ChainConfig
 
 load_dotenv()
 
+LOGGER_PATH = "/var/log/sa/"
+
 
 class ZexPath(Enum):
     LATEST_USER_URL = "users/latest-id"
@@ -30,7 +32,12 @@ CHAINS_CONFIG = {
         private_rpc="https://ethereum-sepolia-rpc.publicnode.com",
         chain_id=ChainId(11155111),
         from_block=6995672,
-    )
+    ),
+    "": ChainConfig(
+        private_rpc="https://holesky.drpc.org",
+        chain_id=ChainId(17000),
+        from_block=2691362,
+    ),
 }
 
 SA_DELAY_SECOND = 10

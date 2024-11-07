@@ -1,0 +1,72 @@
+{
+    "nonce": "0x0a645e0daC62dFAA0a7991169297ef510B4D99F3",
+    "public_nonce": {
+        "x": "0x500e45dcfd4ab61cced2281a65513a3a572e1b48623ea527929ca82826a8693a",
+        "y_parity": 1
+    },
+    "public_key": {
+        "x": "0xbd4b89d8aa89856abc396302e4b3d88633ba0d707afd70fc68dfd1d7c7d7da2e",
+        "y_parity": 1
+    },
+    "signature": 44806524357862049371771060197817102256804625345550057129273317680379053050142,
+    "message": "3b0c137ea91400fa22e40754705716d27d69092306d5620efc77267c5d4e3f4c",
+    "key_type": "ETH",
+    "message_hash": "3b0c137ea91400fa22e40754705716d27d69092306d5620efc77267c5d4e3f4c",
+    "result": "SUCCESSFUL",
+    "request_id": "35b51603-fe64-4e8d-9921-c2ed43638164",
+    "sa_data": {
+        "method": "deposit",
+        "data": {
+            "from_block": 7018111,
+            "to_block": 7018111,
+            "chain_id": <ChainId.SEP: 11155111>
+        }
+    },
+    "signature_data_from_node": {
+        "115083169295448643476427003919017440799165493709556055424762901958089350912379": {
+            "users_transfers": [
+                {
+                    "block_number": 7018111,
+                    "block_timestamp": 1730826060,
+                    "chain_id": 11155111,
+                    "status": 3,
+                    "to": "0xC7Bb728408aCeD6F350e90D33775262F82DBd931",
+                    "token": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+                    "tx_hash": "0xa561967dc7d379447b647408d7647b851b6c3118df9d2d072c940d048fdfc004",
+                    "user_id": 19,
+                    "value": 1000000000000000000
+                }
+            ]
+        },
+        "6063467589647587801951498974415790167229427724006350345333813831004996387565": {
+            "users_transfers": [
+                {
+                    "block_number": 7018111,
+                    "block_timestamp": 1730826060,
+                    "chain_id": 11155111,
+                    "status": 3,
+                    "to": "0xC7Bb728408aCeD6F350e90D33775262F82DBd931",
+                    "token": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+                    "tx_hash": "0xa561967dc7d379447b647408d7647b851b6c3118df9d2d072c940d048fdfc004",
+                    "user_id": 19,
+                    "value": 1000000000000000000
+                }
+            ]
+        },
+        "114477358442045093744636381002371390988857145221868491458679649858755904903165": {
+            "users_transfers": [
+                {
+                    "block_number": 7018111,
+                    "block_timestamp": 1730826060,
+                    "chain_id": 11155111,
+                    "status": 3,
+                    "to": "0xC7Bb728408aCeD6F350e90D33775262F82DBd931",
+                    "token": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+                    "tx_hash": "0xa561967dc7d379447b647408d7647b851b6c3118df9d2d072c940d048fdfc004",
+                    "user_id": 19,
+                    "value": 1000000000000000000
+                }
+            ]
+        }
+    }
+}

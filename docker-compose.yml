@@ -25,6 +25,7 @@ services:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/sa:/var/log/sa
     env_file:
       - .env
 
@@ -42,6 +43,7 @@ services:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/sa:/var/log/sa
     env_file:
       - .env
 
@@ -59,6 +61,7 @@ services:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/sa:/var/log/sa
     env_file:
       - .env
 
@@ -71,6 +74,7 @@ services:
     network_mode: host
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
+      - /var/log/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
@@ -86,6 +90,7 @@ services:
     network_mode: host
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
+      - /var/log/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
@@ -101,6 +106,7 @@ services:
     network_mode: host
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
+      - /var/log/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy

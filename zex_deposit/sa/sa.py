@@ -1,11 +1,12 @@
 import asyncio
 import json
 import logging
-from hashlib import sha256
+import logging.config
 import math
+from hashlib import sha256
 
-from eth_typing import BlockNumber
 import httpx
+from eth_typing import BlockNumber
 from pyfrost.network.sa import SA
 
 from zex_deposit.custom_types import ChainConfig, TransferStatus, UserTransfer
@@ -14,6 +15,7 @@ from zex_deposit.db.transfer import (
     upsert_verified_transfers,
 )
 from zex_deposit.utils.encode_deposit import DEPOSIT_OPERATION, encode_zex_deposit
+from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
 from zex_deposit.utils.node_info import NodesInfo
 from zex_deposit.utils.web3 import async_web3_factory, get_finalized_block_number
 from zex_deposit.utils.zex_api import (
@@ -23,18 +25,22 @@ from zex_deposit.utils.zex_api import (
 )
 
 from .config import (
-    SA_BATCH_BLOCK_NUMBER_SIZE,
     CHAINS_CONFIG,
     DKG_JSON_PATH,
     DKG_NAME,
+    LOGGER_PATH,
+    SA_BATCH_BLOCK_NUMBER_SIZE,
     SA_DELAY_SECOND,
-    ZEX_ENCODE_VERSION,
     SA_TIMEOUT,
+    ZEX_ENCODE_VERSION,
 )
+
+logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/sa.log"))
+logger = logging.getLogger(__name__)
+
 
 nodes_info = NodesInfo()
 sa = SA(nodes_info, default_timeout=SA_TIMEOUT)
-logger = logging.getLogger(__name__)
 
 
 def _parse_dkg_json() -> dict:
@@ -50,8 +56,9 @@ async def process_sa(
     from_block: BlockNumber | int,
     to_block: BlockNumber | int,
     dkg_party,
+    logger: ChainLoggerAdapter,
 ):
-    print(f"Processing blocks: {from_block}, {to_block}")
+    logger.info(f"Processing blocks: {from_block}, {to_block}")
     nonces_response = await sa.request_nonces(dkg_party, number_of_nonces=1)
     nonces_for_sig = {}
     for id, nonce in nonces_response.items():
@@ -67,9 +74,9 @@ async def process_sa(
 
     try:
         result = await sa.request_signature(dkg_key, nonces_for_sig, data, dkg_party)
-        print(result)
-    except AssertionError:
-        logger.error(f"Block is not finalized {to_block}: e")
+        logger.debug(f"Validator results is: {result}")
+    except AssertionError as e:
+        logger.error(f"Validator error, to_block: {to_block} | error: {e}")
         return
     if result.get("result") == "SUCCESSFUL":
         data = list(result["signature_data_from_node"].values())[0]["users_transfers"]
@@ -88,7 +95,11 @@ async def process_sa(
             return
         try:
             await send_result_to_zex(
-                client, encoded_data, result["nonce"], result["signature"]
+                client,
+                encoded_data,
+                result["nonce"],
+                result["signature"],
+                logger=logger,
             )
         except ZexAPIError as e:
             logger.error(f"Error at sending deposit to Zex: {e}")
@@ -102,12 +113,13 @@ async def send_result_to_zex(
     msg: bytes,
     nonce: str,
     signature: int,
+    logger: ChainLoggerAdapter | logging.Logger = logger,
 ) -> None:
-    logger.info("Start sending deposit to Zex.")
+    logger.debug("Start sending deposit to Zex.")
     data = msg + nonce.encode() + signature.to_bytes(32, "big")
     logger.debug(f"encoded data to send: {data}")
     result = await send_deposits(client, [data.decode("latin-1")])
-    logger.info("Finish sending deposit to Zex.")
+    logger.debug("Finish sending deposit to Zex.")
     return result
 
 
@@ -115,6 +127,7 @@ dkg_key = _parse_dkg_json()
 
 
 async def deposit(chain: ChainConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
     while True:
         try:
             client = httpx.AsyncClient()
@@ -128,7 +141,7 @@ async def deposit(chain: ChainConfig):
                 get_finalized_block_number(w3),
             )
             if zex_latest_block is None:
-                logger.info(
+                _logger.info(
                     f"Zex did not return latest block for chain: {chain.chain_id.value}"
                 )
                 continue
@@ -137,7 +150,7 @@ async def deposit(chain: ChainConfig):
             to_block = (
                 finalized_block - 20
             )  # TODO: to ensure that validator RPCs finalized block number synchronized.
-            print(from_block, to_block)
+            _logger.info(f"from_block: {from_block} , to_block: {to_block}")
             if from_block > to_block:
                 continue
             for i in range(
@@ -152,6 +165,7 @@ async def deposit(chain: ChainConfig):
                         to_block,
                     ),
                     dkg_party,
+                    logger=_logger,
                 )
         finally:
             await client.aclose()

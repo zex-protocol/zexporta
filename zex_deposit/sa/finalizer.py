@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import logging.config
 import math
 
 from zex_deposit.db.transfer import (
@@ -12,16 +14,22 @@ from zex_deposit.utils.web3 import (
     get_block_tx_hash,
     get_finalized_block_number,
 )
+from zex_deposit.utils.logger import get_logger_config, ChainLoggerAdapter
 
 from .config import (
+    LOGGER_PATH,
     BATCH_BLOCK_NUMBER_SIZE,
     CHAINS_CONFIG,
     MAX_DELAY_PER_BLOCK_BATCH,
     ChainConfig,
 )
 
+logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalizer.log"))  # type: ignore
+logger = logging.getLogger(__name__)
+
 
 async def update_finalized_transfers(chain: ChainConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
     while True:
         w3 = await async_web3_factory(chain)
         finalized_block_number = await get_finalized_block_number(w3)
@@ -30,7 +38,7 @@ async def update_finalized_transfers(chain: ChainConfig):
         )
 
         if len(pending_blocks_number) == 0:
-            print(
+            _logger.info(
                 f"No pending tx has been found. finalized_block_number: {finalized_block_number}"
             )
             await asyncio.sleep(MAX_DELAY_PER_BLOCK_BATCH)

@@ -63,6 +63,7 @@ class Observer(BaseModel):
         *,
         batch_size=5,
         max_delay_per_block_batch=10,
+        logger=logger,
         **kwargs,
     ) -> list[UserTransfer]:
         result = []
@@ -70,13 +71,14 @@ class Observer(BaseModel):
             from_block, to_block, batch_size=batch_size
         )
         for blocks_number in block_batches:
-            print(blocks_number)
+            logger.info(f"batch_blocks: {blocks_number}")
             transfers = await filter_blocks(
                 w3,
                 blocks_number,
                 extract_block_logic,
                 chain_id=self.chain.chain_id,
                 max_delay_per_block_batch=max_delay_per_block_batch,
+                logger=logger,
                 **kwargs,
             )
             accepted_transfers = await self.get_accepted_transfers(
@@ -122,9 +124,10 @@ async def extract_transfer_from_block(
     block_number: BlockNumber,
     chain_id: ChainId,
     transfer_status: TransferStatus = TransferStatus.PENDING,
+    logger=logger,
     **kwargs,
 ) -> list[RawTransfer]:
-    logger.info(f"Observing block number {block_number} start")
+    logger.debug(f"Observing block number {block_number} start")
     block = await w3.eth.get_block(block_number, full_transactions=True)
     result = []
     for tx in block.transactions:  # type: ignore
@@ -144,7 +147,7 @@ async def extract_transfer_from_block(
             )
         except NotRecognizedSolidityFuncError as _:
             ...
-    logger.info(f"Observing block number {block_number} end")
+    logger.debug(f"Observing block number {block_number} end")
     return result
 
 
