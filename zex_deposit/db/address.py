@@ -112,7 +112,7 @@ def get_users_address_to_insert(
     return users_address_to_insert
 
 
-async def insert_new_adderss_to_db():
+async def insert_new_address_to_db():
     async with get_async_client() as client:
         try:
             last_zex_user_id = await get_last_zex_user_id(client)

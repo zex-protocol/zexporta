@@ -4,7 +4,7 @@ import logging
 from eth_typing import BlockNumber, ChecksumAddress
 
 from zex_deposit.custom_types import RawTransfer
-from zex_deposit.db.address import get_active_address, insert_new_adderss_to_db
+from zex_deposit.db.address import get_active_address, insert_new_address_to_db
 from zex_deposit.db.chain import (
     get_last_observed_block,
     upsert_chain_last_observed_block,
@@ -48,7 +48,7 @@ async def filter_transfer(
 async def observe_deposit(chain: ChainConfig):
     observer = Observer(chain=chain)
     while True:
-        await insert_new_adderss_to_db()
+        await insert_new_address_to_db()
         w3 = await async_web3_factory(chain)
         accepted_addresses = await get_active_address()
         latest_block = await w3.eth.get_block_number()
@@ -74,8 +74,12 @@ async def observe_deposit(chain: ChainConfig):
             chain.chain_id, block_number=latest_block
         )
 
+async def main():
+    loop = asyncio.get_running_loop()
+    tasks = [loop.create_task(observe_deposit(chain)) for chain in CHAINS_CONFIG.values()]
+    await asyncio.gather(*tasks)
+
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
-    _ = [loop.create_task(observe_deposit(chain)) for chain in CHAINS_CONFIG.values()]
-    loop.run_forever()
+    loop.run_until_complete(main())

@@ -1,4 +1,5 @@
 import asyncio
+import math
 
 from zex_deposit.db.transfer import (
     get_pending_transfers_block_number,
@@ -35,9 +36,9 @@ async def update_finalized_transfers(chain: ChainConfig):
             await asyncio.sleep(MAX_DELAY_PER_BLOCK_BATCH)
             continue
 
-        for i in range(len(pending_blocks_number)):
+        for i in range(math.ceil(len(pending_blocks_number) / BATCH_BLOCK_NUMBER_SIZE)):
             blocks_to_check = pending_blocks_number[
-                (i * BATCH_BLOCK_NUMBER_SIZE) : (i * (BATCH_BLOCK_NUMBER_SIZE + 1) + 1)
+                (i * BATCH_BLOCK_NUMBER_SIZE) : ((i + 1) * BATCH_BLOCK_NUMBER_SIZE)
             ]
             results = await filter_blocks(
                 w3,
@@ -49,10 +50,15 @@ async def update_finalized_transfers(chain: ChainConfig):
             await to_reorg(chain.chain_id, min(blocks_to_check), max(blocks_to_check))
 
 
-if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    _ = [
+async def main():
+    loop = asyncio.get_running_loop()
+    tasks = [
         loop.create_task(update_finalized_transfers(chain))
         for chain in CHAINS_CONFIG.values()
     ]
-    loop.run_forever()
+    await asyncio.gather(*tasks)
+
+
+if __name__ == "__main__":
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(main())
