@@ -6,8 +6,8 @@ from pyfrost.network.abstract import DataManager
 class NodeDataManager(DataManager):
     def __init__(
         self,
-        dkg_keys_file=f"./zex_deposit/dkg_keys.json",
-        nonces_file=f"./zex_deposit/nonces.json",
+        dkg_keys_file="./zex_deposit/dkg_keys.json",
+        nonces_file="./zex_deposit/nonces.json",
     ) -> None:
         super().__init__()
         self.dkg_keys_file = dkg_keys_file
