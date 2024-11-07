@@ -12,8 +12,8 @@ from .node_validator import NodeValidators
 
 def run_node(node_id: int) -> None:
     data_manager = NodeDataManager(
-        f"./data/dkg_keys-{node_id}.json",
-        f"./data/nonces-{node_id}.json",
+        f"./zex_deposit/data/dkg_keys-{node_id}.json",
+        f"./zex_deposit/data/nonces-{node_id}.json",
     )
     nodes_info = NodesInfo()
     node = Node(

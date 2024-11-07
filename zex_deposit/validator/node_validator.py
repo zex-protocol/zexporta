@@ -5,7 +5,7 @@ from pyfrost.network.abstract import Validators
 
 from zex_deposit.utils.encode_deposit import DEPOSIT_OPERATION, encode_zex_deposit
 
-from .config import CHAINS_CONFIG, VALIDATED_IPS, ZEX_ENDODE_VERSION
+from .config import CHAINS_CONFIG, VALIDATED_IPS, ZEX_ENCODE_VERSION
 from .transfer import get_users_transfers
 
 
@@ -31,7 +31,7 @@ class NodeValidators(Validators):
             )
         )
         encoded_data = encode_zex_deposit(
-            version=ZEX_ENDODE_VERSION,
+            version=ZEX_ENCODE_VERSION,
             operation_type=DEPOSIT_OPERATION,
             chain_id=chain_config.chain_id,
             from_block=from_block,
