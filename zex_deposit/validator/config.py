@@ -2,11 +2,13 @@ import os
 
 from eth_typing import ChainId
 
-from custom_types import ChainConfig
+from zex_deposit.custom_types import ChainConfig
 
-BATCH_BLOCK_NUMBER_SIZE = int(os.getenv("BATCH_BLOCK_NUMBER_SIZE", 5))
+BATCH_BLOCK_NUMBER_SIZE = int(os.getenv("BATCH_BLOCK_NUMBER_SIZE", 10))
+MAX_DELAY_PER_BLOCK_BATCH = 2
+
 VALIDATED_IPS = {
-    "127.0.0.1": [
+    "104.194.145.26": [
         "/pyfrost/v1/dkg/round1",
         "/pyfrost/v1/dkg/round2",
         "/pyfrost/v1/dkg/round3",
@@ -28,4 +30,4 @@ CHAINS_CONFIG = {
     )
 }
 
-ZEX_ENDODE_VERSION = 1
+ZEX_ENCODE_VERSION = 1

@@ -22,7 +22,7 @@ MONGO_URI = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017/")
 BATCH_BLOCK_NUMBER_SIZE = int(os.getenv("BATCH_BLOCK_NUMBER_SIZE", 5))
 MAX_DELAY_PER_BLOCK_BATCH = int(os.getenv("MAX_DELAY_PER_BLOCK_BATCH", 3))
 
-DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./dkgs/dkgs.json")
+DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./zex_deposit/dkgs/dkgs.json")
 DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 
 CHAINS_CONFIG = {
@@ -33,5 +33,7 @@ CHAINS_CONFIG = {
     )
 }
 
-SA_DELAY_SECOND = 1
-ZEX_ENDODE_VERSION = 1
+SA_DELAY_SECOND = 10
+ZEX_ENCODE_VERSION = 1
+SA_TIMEOUT = 200
+SA_BATCH_BLOCK_NUMBER_SIZE = int(os.getenv("SA_BATCH_BLOCK_NUMBER_SIZE", 100))
