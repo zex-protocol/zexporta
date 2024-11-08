@@ -18,7 +18,7 @@ async def get_users_transfers(
     chain: ChainConfig, from_block: BlockNumber | int, to_block: BlockNumber | int
 ):
     w3 = await async_web3_factory(chain=chain)
-    finalized_block_number = await get_finalized_block_number(w3)
+    finalized_block_number = await get_finalized_block_number(w3, chain)
     if to_block > finalized_block_number:
         raise NotFinalizedBlockError(
             f"to_block: {to_block} is not finalized, finalized_block: {finalized_block_number}"

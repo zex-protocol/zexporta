@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TypeAlias
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from eth_typing import URI, BlockNumber, ChainId, ChecksumAddress
 
 Value: TypeAlias = int
@@ -15,6 +15,7 @@ class ChainConfig(BaseModel):
     chain_id: ChainId
     from_block: BlockNumber | int
     symbol: str
+    finalize_block_count: int | None = Field(default=None)
 
 
 class TransferStatus(Enum):

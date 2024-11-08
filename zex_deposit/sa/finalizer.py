@@ -32,7 +32,7 @@ async def update_finalized_transfers(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
     while True:
         w3 = await async_web3_factory(chain)
-        finalized_block_number = await get_finalized_block_number(w3)
+        finalized_block_number = await get_finalized_block_number(w3, chain)
         pending_blocks_number = await get_pending_transfers_block_number(
             chain_id=chain.chain_id, finalized_block_number=finalized_block_number
         )

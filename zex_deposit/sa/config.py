@@ -33,18 +33,21 @@ CHAINS_CONFIG = {
         chain_id=ChainId(11155111),
         from_block=6995672,
         symbol="SEP",
+        finalize_block_count=5,
     ),
     17000: ChainConfig(
         private_rpc="https://holesky.drpc.org",
         chain_id=ChainId(17000),
         from_block=2691362,
         symbol="HOL",
+        finalize_block_count=5,
     ),
     97: ChainConfig(
         private_rpc="https://bsc-testnet-rpc.publicnode.com",
         chain_id=ChainId(97),
         from_block=2691362,
         symbol="BST",
+        finalize_block_count=5,
     ),
 }
 

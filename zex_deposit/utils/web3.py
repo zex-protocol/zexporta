@@ -1,11 +1,9 @@
 import asyncio
-from functools import lru_cache
 import logging
 import time
 from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
 from eth_typing import HexStr
-from pydantic import BaseModel
 from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 
 from zex_deposit.custom_types import (
@@ -16,8 +14,6 @@ from zex_deposit.custom_types import (
     RawTransfer,
     TransferStatus,
     TxHash,
-    UserId,
-    UserTransfer,
 )
 from zex_deposit.utils.transfer_decoder import (
     NotRecognizedSolidityFuncError,
@@ -98,9 +94,15 @@ async def get_block_tx_hash(
     return [tx_hash.hex() for tx_hash in block.transactions]  # type: ignore
 
 
-async def get_finalized_block_number(w3: AsyncWeb3) -> BlockNumber:
-    finalized_block = await w3.eth.get_block("finalized")
-    return finalized_block.number  # type: ignore
+async def get_finalized_block_number(w3: AsyncWeb3, chain: ChainConfig) -> BlockNumber:
+    if chain.finalize_block_count is None:
+        finalized_block = await w3.eth.get_block("finalized")
+        return finalized_block.number  # type: ignore
+
+    finalized_block_number = chain.finalize_block_count + (
+        await w3.eth.get_block_number()
+    )
+    return BlockNumber(finalized_block_number)
 
 
 def compute_create2_address(deployer_address: str, salt: int, bytecode_hash: HexStr):

@@ -138,7 +138,7 @@ async def deposit(chain: ChainConfig):
                 finalized_block,
             ) = await asyncio.gather(
                 get_zex_latest_block(client, chain),
-                get_finalized_block_number(w3),
+                get_finalized_block_number(w3, chain),
             )
             if zex_latest_block is None:
                 _logger.info(
