@@ -28,14 +28,19 @@ DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./zex_deposit/dkgs/dkgs.json")
 DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 
 CHAINS_CONFIG = {
-    "11155111": ChainConfig(
+    11155111: ChainConfig(
         private_rpc="https://ethereum-sepolia-rpc.publicnode.com",
         chain_id=ChainId(11155111),
         from_block=6995672,
     ),
-    "": ChainConfig(
+    17000: ChainConfig(
         private_rpc="https://holesky.drpc.org",
         chain_id=ChainId(17000),
+        from_block=2691362,
+    ),
+    97: ChainConfig(
+        private_rpc="https://bsc-testnet-rpc.publicnode.com",
+        chain_id=ChainId(97),
         from_block=2691362,
     ),
 }

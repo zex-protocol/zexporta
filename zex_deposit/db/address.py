@@ -1,9 +1,11 @@
 import logging
 
+from eth_typing import HexStr
 from pymongo import DESCENDING
 from web3 import Web3
 
 from zex_deposit.custom_types import ChecksumAddress, UserAddress, UserId
+from zex_deposit.utils.web3 import compute_create2_address
 from zex_deposit.utils.zex_api import (
     ZexAPIError,
     get_async_client,
@@ -32,7 +34,9 @@ async def get_active_address() -> dict[ChecksumAddress, UserId]:
 
 
 async def get_last_user_id() -> UserId:
-    result = await address_collection.find_one({}, sort=[("user_id", DESCENDING)])
+    result = await address_collection.find_one(
+        {"is_active": True}, sort=[("user_id", DESCENDING)]
+    )
     if result:
         return UserId(result["user_id"])
     raise UserNotExists()
@@ -48,66 +52,20 @@ async def insert_many_user_address(users_address: list[UserAddress]):
     )
 
 
-def compute_create2_address(
-    salt,
-    deployer_address=USER_DEPOSIT_FACTORY_ADDRESS,
-    bytecode_hash=USER_DEPOSIT_BYTECODE_HASH,
-):
-    """
-    Computes the CREATE2 address for a contract deployment.
-
-    :param deployer_address: The address of the deploying contract (factory).
-    :param salt: A bytes32 value used as the salt in the CREATE2 computation.
-    :param bytecode_hash: The bytecode hash of the contract to deploy.
-    :return: The computed deployment address as a checksum address.
-    """
-    # Ensure deployer_address is in bytes format
-    if isinstance(deployer_address, str):
-        deployer_address = Web3.to_bytes(hexstr=deployer_address)  # type: ignore
-    elif isinstance(deployer_address, bytes):
-        deployer_address = deployer_address
-    else:
-        raise TypeError("deployer_address must be a string or bytes.")
-
-    if len(deployer_address) != 20:
-        raise ValueError("Invalid deployer address length; must be 20 bytes.")
-
-    # Ensure salt is a 32-byte value
-    if isinstance(salt, int):
-        salt = salt.to_bytes(32, "big")
-    elif isinstance(salt, str):
-        salt = Web3.to_bytes(hexstr=salt)  # type: ignore
-    elif isinstance(salt, bytes):
-        salt = salt
-    else:
-        raise TypeError("salt must be an int, string, or bytes.")
-
-    if len(salt) != 32:
-        raise ValueError("Invalid salt length; must be 32 bytes.")
-
-    # Ensure bytecode is in bytes format
-    if isinstance(bytecode_hash, str):
-        bytecode_hash = Web3.to_bytes(hexstr=bytecode_hash)  # type: ignore
-    else:
-        raise TypeError("bytecode must be a string or bytes.")
-
-    # Prepare the data as per the CREATE2 formula
-    data = b"\xff" + deployer_address + salt + bytecode_hash
-
-    # Compute the keccak256 hash of the data
-    address_bytes = Web3.keccak(data)[12:]  # Take the last 20 bytes
-
-    # Return the address in checksummed format
-    return Web3.to_checksum_address(address_bytes)
-
-
 def get_users_address_to_insert(
     first_to_compute: UserId, last_to_compute: UserId
 ) -> list[UserAddress]:
     users_address_to_insert = []
     for user_id in range(first_to_compute, last_to_compute + 1):
         users_address_to_insert.append(
-            UserAddress(user_id=user_id, address=compute_create2_address(salt=user_id))
+            UserAddress(
+                user_id=user_id,
+                address=compute_create2_address(
+                    deployer_address=USER_DEPOSIT_FACTORY_ADDRESS,
+                    salt=user_id,
+                    bytecode_hash=HexStr(USER_DEPOSIT_BYTECODE_HASH),
+                ),
+            )
         )
     return users_address_to_insert
 

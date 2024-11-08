@@ -3,8 +3,9 @@ import logging
 import time
 from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
+from eth_typing import HexStr
 from pydantic import BaseModel
-from web3 import AsyncHTTPProvider, AsyncWeb3
+from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 
 from zex_deposit.custom_types import (
     BlockNumber,
@@ -161,3 +162,14 @@ async def get_block_tx_hash(
 async def get_finalized_block_number(w3: AsyncWeb3) -> BlockNumber:
     finalized_block = await w3.eth.get_block("finalized")
     return finalized_block.number  # type: ignore
+
+
+def compute_create2_address(deployer_address: str, salt: int, bytecode_hash: HexStr):
+    deployer_address = Web3.to_checksum_address(deployer_address)
+    contract_address = Web3.keccak(
+        b"\xff"
+        + Web3.to_bytes(hexstr=deployer_address)
+        + salt.to_bytes(32, "big")
+        + Web3.to_bytes(hexstr=bytecode_hash)
+    ).hex()[-40:]
+    return Web3.to_checksum_address(contract_address)
