@@ -10,6 +10,8 @@ services:
     ports:
       - "27017:27017"
     network_mode: host
+    volumes:
+      - mongodbvol:/data/db
 
   sa-observer:
     build:
@@ -112,3 +114,6 @@ services:
         condition: service_healthy
     env_file:
       - .env
+
+volumes:
+  mongodbvol:
