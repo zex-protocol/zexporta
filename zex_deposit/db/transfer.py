@@ -95,21 +95,16 @@ async def get_pending_transfers_block_number(
     return list(block_numbers)
 
 
-async def upsert_verified_transfers(verified_transfers: list[UserTransfer]):
-    tasks = []
-    for verified_transfer in verified_transfers:
-        update = {
-            "$set": verified_transfer.model_dump(),
-        }
-        filter_ = {
-            "tx_hash": verified_transfer.tx_hash,
-            "chain_id": verified_transfer.chain_id,
-        }
-        tasks.append(
-            asyncio.create_task(
-                transfer_collection.update_one(
-                    filter=filter_, update=update, upsert=True
-                )
-            )
-        )
-    [await task for task in tasks]
+async def upsert_transfer(transfer: UserTransfer):
+    update = {
+        "$set": transfer.model_dump(),
+    }
+    filter_ = {
+        "tx_hash": transfer.tx_hash,
+        "chain_id": transfer.chain_id,
+    }
+    await transfer_collection.update_one(filter=filter_, update=update, upsert=True)
+
+
+async def upsert_transfers(transfers: list[UserTransfer]):
+    await asyncio.gather(*[upsert_transfer(transfer) for transfer in transfers])

@@ -23,8 +23,9 @@ class TransferStatus(Enum):
     PENDING = 1
     FINALIZED = 2
     VERIFIED = 3
-    REORG = 4
-    REJECTED = 5
+    WITHDRAW = 4
+    REORG = 5
+    REJECTED = 6
 
 
 class Token(BaseModel):

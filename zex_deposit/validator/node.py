@@ -22,11 +22,11 @@ def run_node(node_id: int) -> None:
     nodes_info = NodesInfo()
     node = Node(
         data_manager,
-        str(node_id),
+        str(node_id),  # type: ignore
         PRIVATE_KEY,
         nodes_info,
-        NodeValidators.caller_validator,
-        NodeValidators.data_validator,
+        NodeValidators.caller_validator,  # type: ignore
+        NodeValidators.data_validator,  # type: ignore
     )
     node_info = nodes_info.lookup_node(str(node_id))
     app = Flask(__name__)

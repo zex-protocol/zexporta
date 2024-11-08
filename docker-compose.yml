@@ -48,6 +48,24 @@ services:
       - /var/log/sa:/var/log/sa
     env_file:
       - .env
+  
+  sa-withdrawer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: sa-withdrawer
+    entrypoint: poetry run python -m zex_deposit.sa.withdrawer
+    network_mode: host
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/sa:/var/log/sa
+    env_file:
+      - .env
 
   sa-sa:
     build:

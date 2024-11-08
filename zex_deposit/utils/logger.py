@@ -35,9 +35,9 @@ def get_logger_config(logger_path: str):
 
 
 class ChainLoggerAdapter(logging.LoggerAdapter):
-    def __init__(self, logger, chain):
-        super().__init__(logger, {"chain": chain})
+    def __init__(self, logger, chain_id):
+        super().__init__(logger, {"chain": chain_id})
 
     def process(self, msg, kwargs):
-        msg = f"{self.extra['chain']} | {msg}"
+        msg = f"{self.extra['chain']:<10} | {msg}"  # type:  ignore
         return msg, kwargs

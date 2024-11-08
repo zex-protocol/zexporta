@@ -12,7 +12,7 @@ from pyfrost.network.sa import SA
 from zex_deposit.custom_types import ChainConfig, TransferStatus, UserTransfer
 from zex_deposit.db.transfer import (
     to_reorg,
-    upsert_verified_transfers,
+    upsert_transfers,
 )
 from zex_deposit.utils.encode_deposit import DEPOSIT_OPERATION, encode_zex_deposit
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
@@ -101,7 +101,7 @@ async def process_sa(
         except ZexAPIError as e:
             logger.error(f"Error at sending deposit to Zex: {e}")
             return
-        await upsert_verified_transfers(users_transfers)
+        await upsert_transfers(users_transfers)
         await to_reorg(chain.chain_id, from_block, to_block, TransferStatus.FINALIZED)
 
 

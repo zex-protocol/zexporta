@@ -66,7 +66,7 @@ class Observer(BaseModel):
         *,
         batch_size=5,
         max_delay_per_block_batch=10,
-        logger=logger,
+        logger: logging.Logger | ChainLoggerAdapter = logger,
         **kwargs,
     ) -> list[UserTransfer]:
         result = []

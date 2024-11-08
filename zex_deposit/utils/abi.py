@@ -24,3 +24,37 @@ ERC20_ABI = [
     },
     # Add other ERC20 functions if necessary
 ]
+
+FACTORY_ABI = [
+    {
+        "inputs": [{"internalType": "uint256", "name": "salt", "type": "uint256"}],
+        "name": "deploy",
+        "outputs": [
+            {"internalType": "address", "name": "userDepositAddress", "type": "address"}
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    {
+        "anonymous": False,
+        "inputs": [
+            {"indexed": True, "name": "addr", "type": "address"},
+            {"indexed": False, "name": "salt", "type": "uint256"},
+        ],
+        "name": "Deployed",
+        "type": "event",
+    },
+]
+
+USER_DEPOSIT_ABI = [
+    {
+        "inputs": [
+            {"internalType": "address", "name": "_token", "type": "address"},
+            {"internalType": "uint256", "name": "_amount", "type": "uint256"},
+        ],
+        "name": "transferERC20",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    }
+]
