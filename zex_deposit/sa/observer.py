@@ -13,10 +13,10 @@ from zex_deposit.db.chain import (
 from zex_deposit.db.transfer import insert_many_transfers
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
 from zex_deposit.utils.web3 import (
-    Observer,
     async_web3_factory,
     extract_transfer_from_block,
 )
+from zex_deposit.utils.observer import Observer
 
 from .config import (
     BATCH_BLOCK_NUMBER_SIZE,
@@ -50,11 +50,11 @@ async def filter_transfer(
 
 
 async def observe_deposit(chain: ChainConfig):
-    observer = Observer(chain=chain)
     _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
     while True:
         await insert_new_address_to_db()
         w3 = await async_web3_factory(chain)
+        observer = Observer(chain=chain, w3=w3)
         accepted_addresses = await get_active_address()
         latest_block = await w3.eth.get_block_number()
         last_observed_block = (
@@ -65,7 +65,6 @@ async def observe_deposit(chain: ChainConfig):
             await asyncio.sleep(MAX_DELAY_PER_BLOCK_BATCH)
             continue
         accepted_transfers = await observer.observe(
-            w3,
             last_observed_block + 1,
             latest_block,
             accepted_addresses,

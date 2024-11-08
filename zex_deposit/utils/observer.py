@@ -14,6 +14,7 @@ from zex_deposit.custom_types import (
     UserTransfer,
 )
 from zex_deposit.db.token import get_decimals, insert_token
+from zex_deposit.utils.logger import ChainLoggerAdapter
 
 from .web3 import filter_blocks
 from .web3 import get_token_decimals as w3_get_token_decimals
@@ -88,6 +89,9 @@ class Observer(BaseModel):
             )
             result.extend(accepted_transfers)
         return result
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 async def get_token_decimals(

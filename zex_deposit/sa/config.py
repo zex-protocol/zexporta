@@ -11,12 +11,6 @@ load_dotenv()
 LOGGER_PATH = "/var/log/sa/"
 
 
-class ZexPath(Enum):
-    LATEST_USER_URL = "users/latest-id"
-
-
-ZEX_BASE_URL = "https://zex.idealmoney.io/api/v1"
-
 INFURA_KEY = os.environ["INFURA_KEY"]
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]
@@ -31,23 +25,24 @@ CHAINS_CONFIG = {
     11155111: ChainConfig(
         private_rpc="https://ethereum-sepolia-rpc.publicnode.com",
         chain_id=ChainId(11155111),
-        from_block=6995672,
+        from_block=7037059,
         symbol="SEP",
         finalize_block_count=5,
     ),
     17000: ChainConfig(
         private_rpc="https://holesky.drpc.org",
         chain_id=ChainId(17000),
-        from_block=2691362,
+        from_block=2698817,
         symbol="HOL",
         finalize_block_count=5,
     ),
     97: ChainConfig(
         private_rpc="https://bsc-testnet-rpc.publicnode.com",
         chain_id=ChainId(97),
-        from_block=2691362,
+        from_block=45452674,
         symbol="BST",
         finalize_block_count=5,
+        poa=True,
     ),
 }
 

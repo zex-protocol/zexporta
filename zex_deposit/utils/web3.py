@@ -5,6 +5,7 @@ from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
 from eth_typing import HexStr
 from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
+from web3.middleware import async_geth_poa_middleware
 
 from zex_deposit.custom_types import (
     BlockNumber,
@@ -25,7 +26,10 @@ logger = logging.getLogger(__name__)
 
 
 async def async_web3_factory(chain: ChainConfig) -> AsyncWeb3:
-    return AsyncWeb3(AsyncHTTPProvider(chain.private_rpc))
+    w3 = AsyncWeb3(AsyncHTTPProvider(chain.private_rpc))
+    if chain.poa:
+        w3.middleware_onion.inject(async_geth_poa_middleware, layer=0)
+    return w3
 
 
 async def _filter_blocks(

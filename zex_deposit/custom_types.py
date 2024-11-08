@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import TypeAlias
 
-from pydantic import BaseModel, Field, computed_field
 from eth_typing import URI, BlockNumber, ChainId, ChecksumAddress
+from pydantic import BaseModel, Field
 
 Value: TypeAlias = int
 Timestamp: TypeAlias = int | float
@@ -15,6 +15,7 @@ class ChainConfig(BaseModel):
     chain_id: ChainId
     from_block: BlockNumber | int
     symbol: str
+    poa: bool = Field(default=False)
     finalize_block_count: int | None = Field(default=None)
 
 

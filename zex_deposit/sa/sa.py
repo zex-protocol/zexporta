@@ -72,12 +72,9 @@ async def process_sa(
         },
     }
 
-    try:
-        result = await sa.request_signature(dkg_key, nonces_for_sig, data, dkg_party)
-        logger.debug(f"Validator results is: {result}")
-    except AssertionError as e:
-        logger.error(f"Validator error, to_block: {to_block} | error: {e}")
-        return
+    result = await sa.request_signature(dkg_key, nonces_for_sig, data, dkg_party)
+    logger.debug(f"Validator results is: {result}")
+
     if result.get("result") == "SUCCESSFUL":
         data = list(result["signature_data_from_node"].values())[0]["users_transfers"]
         users_transfers = [UserTransfer(**user_transfer) for user_transfer in data]
@@ -147,26 +144,28 @@ async def deposit(chain: ChainConfig):
                 continue
 
             from_block = zex_latest_block + 1
-            to_block = (
-                finalized_block - 20
-            )  # TODO: to ensure that validator RPCs finalized block number synchronized.
+            to_block = finalized_block - 5
             _logger.info(f"from_block: {from_block} , to_block: {to_block}")
             if from_block > to_block:
                 continue
             for i in range(
                 math.ceil((to_block - from_block) / SA_BATCH_BLOCK_NUMBER_SIZE)
             ):
-                await process_sa(
-                    client,
-                    chain,
-                    (i * SA_BATCH_BLOCK_NUMBER_SIZE) + from_block,
-                    min(
-                        ((i + 1) * SA_BATCH_BLOCK_NUMBER_SIZE) + from_block - 1,
-                        to_block,
-                    ),
-                    dkg_party,
-                    logger=_logger,
-                )
+                try:
+                    await process_sa(
+                        client,
+                        chain,
+                        (i * SA_BATCH_BLOCK_NUMBER_SIZE) + from_block,
+                        min(
+                            ((i + 1) * SA_BATCH_BLOCK_NUMBER_SIZE) + from_block - 1,
+                            to_block,
+                        ),
+                        dkg_party,
+                        logger=_logger,
+                    )
+                except AssertionError as e:
+                    logger.error(f"Validator error, to_block: {to_block} | error: {e}")
+                    break
         finally:
             await client.aclose()
             await asyncio.sleep(SA_DELAY_SECOND)

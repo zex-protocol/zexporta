@@ -1,12 +1,16 @@
 import asyncio
 from hashlib import sha256
+import logging
 
 from pyfrost.network.abstract import Validators
 
 from zex_deposit.utils.encode_deposit import DEPOSIT_OPERATION, encode_zex_deposit
+from zex_deposit.utils.logger import ChainLoggerAdapter
 
 from .config import CHAINS_CONFIG, VALIDATED_IPS, ZEX_ENCODE_VERSION
 from .transfer import get_users_transfers
+
+logger = logging.getLogger(__name__)
 
 
 class NodeValidators(Validators):
@@ -23,6 +27,7 @@ class NodeValidators(Validators):
     def data_validator(input_data: dict):
         data = input_data["data"]
         chain_config = CHAINS_CONFIG[(data["chain_id"])]
+        _logger = ChainLoggerAdapter(logger, chain_config)
         from_block = data["from_block"]
         to_block = data["to_block"]
         users_transfers = asyncio.run(
@@ -38,6 +43,7 @@ class NodeValidators(Validators):
             to_block=to_block,
             users_transfers=users_transfers,
         )
+        _logger.info(f"encoded_data is: {encoded_data}")
         return {
             "hash": sha256(encoded_data).hexdigest(),
             "data": {

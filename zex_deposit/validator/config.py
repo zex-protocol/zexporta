@@ -43,6 +43,7 @@ CHAINS_CONFIG = {
         from_block=2691362,
         symbol="BST",
         finalize_block_count=5,
+        poa=True,
     ),
 }
 
