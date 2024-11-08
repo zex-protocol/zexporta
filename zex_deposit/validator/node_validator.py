@@ -33,7 +33,7 @@ class NodeValidators(Validators):
         encoded_data = encode_zex_deposit(
             version=ZEX_ENCODE_VERSION,
             operation_type=DEPOSIT_OPERATION,
-            chain_id=chain_config.chain_id,
+            chain=chain_config,
             from_block=from_block,
             to_block=to_block,
             users_transfers=users_transfers,

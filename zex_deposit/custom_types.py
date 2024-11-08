@@ -14,6 +14,7 @@ class ChainConfig(BaseModel):
     private_rpc: URI | str
     chain_id: ChainId
     from_block: BlockNumber | int
+    symbol: str
 
 
 class TransferStatus(Enum):
@@ -22,6 +23,14 @@ class TransferStatus(Enum):
     VERIFIED = 3
     REORG = 4
     REJECTED = 5
+
+
+class Token(BaseModel):
+    token_address: ChecksumAddress
+    decimals: int
+
+    class Config:
+        use_enum_values = True
 
 
 class RawTransfer(BaseModel):
@@ -41,6 +50,7 @@ class RawTransfer(BaseModel):
 
 class UserTransfer(RawTransfer):
     user_id: UserId
+    decimals: int
 
     class Config:
         use_enum_values = True

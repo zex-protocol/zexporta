@@ -1,11 +1,11 @@
 from zex_deposit.custom_types import BlockNumber, ChainConfig, TransferStatus
 from zex_deposit.db.address import get_active_address, insert_new_address_to_db
 from zex_deposit.utils.web3 import (
-    Observer,
     async_web3_factory,
     extract_transfer_from_block,
     get_finalized_block_number,
 )
+from zex_deposit.utils.observer import Observer
 
 from .config import MAX_DELAY_PER_BLOCK_BATCH, BATCH_BLOCK_NUMBER_SIZE
 
@@ -23,11 +23,10 @@ async def get_users_transfers(
         raise NotFinalizedBlockError(
             f"to_block: {to_block} is not finalized, finalized_block: {finalized_block_number}"
         )
-    observer = Observer(chain=chain)
+    observer = Observer(chain=chain, w3=w3)
     await insert_new_address_to_db()
     accepted_addresses = await get_active_address()
     users_transfers = await observer.observe(
-        w3,
         from_block=from_block,
         to_block=to_block,
         accepted_addresses=accepted_addresses,

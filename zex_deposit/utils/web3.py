@@ -1,4 +1,5 @@
 import asyncio
+from functools import lru_cache
 import logging
 import time
 from typing import Any, Callable, Coroutine, Iterable, TypeVar
@@ -25,68 +26,6 @@ from zex_deposit.utils.transfer_decoder import (
 
 T = TypeVar("T")
 logger = logging.getLogger(__name__)
-
-
-class Observer(BaseModel):
-    chain: ChainConfig
-
-    def get_block_batches(
-        self,
-        from_block: BlockNumber | int,
-        to_block: BlockNumber | int,
-        *,
-        batch_size: int = 5,
-    ) -> list[tuple[BlockNumber, ...]]:
-        block_batches = [
-            tuple(BlockNumber(j) for j in range(i, min(to_block + 1, i + batch_size)))
-            for i in range(from_block, to_block + 1, batch_size)
-        ]
-        return block_batches
-
-    async def get_accepted_transfers(
-        self,
-        transfers: list[RawTransfer],
-        accepted_addresses: dict[ChecksumAddress, UserId],
-    ) -> list[UserTransfer]:
-        result = []
-        for transfer in transfers:
-            if (user_id := accepted_addresses.get(transfer.to)) is not None:
-                result.append(UserTransfer(user_id=user_id, **transfer.model_dump()))
-        return result
-
-    async def observe(
-        self,
-        w3: AsyncWeb3,
-        from_block: BlockNumber | int,
-        to_block: BlockNumber | int,
-        accepted_addresses: dict[ChecksumAddress, UserId],
-        extract_block_logic: Callable[..., Coroutine[Any, Any, list[RawTransfer]]],
-        *,
-        batch_size=5,
-        max_delay_per_block_batch=10,
-        logger=logger,
-        **kwargs,
-    ) -> list[UserTransfer]:
-        result = []
-        block_batches = self.get_block_batches(
-            from_block, to_block, batch_size=batch_size
-        )
-        for blocks_number in block_batches:
-            logger.info(f"batch_blocks: {blocks_number}")
-            transfers = await filter_blocks(
-                w3,
-                blocks_number,
-                extract_block_logic,
-                chain_id=self.chain.chain_id,
-                max_delay_per_block_batch=max_delay_per_block_batch,
-                logger=logger,
-                **kwargs,
-            )
-            accepted_transfers = await self.get_accepted_transfers(
-                transfers, accepted_addresses
-            )
-            result.extend(accepted_transfers)
-        return result
 
 
 async def async_web3_factory(chain: ChainConfig) -> AsyncWeb3:
@@ -173,3 +112,21 @@ def compute_create2_address(deployer_address: str, salt: int, bytecode_hash: Hex
         + Web3.to_bytes(hexstr=bytecode_hash)
     ).hex()[-40:]
     return Web3.to_checksum_address(contract_address)
+
+
+async def get_token_decimals(w3: AsyncWeb3, token_address: ChecksumAddress) -> int:
+    min_abi = [
+        {
+            "constant": True,
+            "inputs": [],
+            "name": "decimals",
+            "outputs": [{"name": "", "type": "uint8"}],
+            "payable": False,
+            "stateMutability": "view",
+            "type": "function",
+        }
+    ]
+
+    contract = w3.eth.contract(address=token_address, abi=min_abi)
+    decimals = await contract.functions.decimals().call()
+    return decimals

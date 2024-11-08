@@ -3,7 +3,7 @@ from enum import Enum
 
 import httpx
 
-from zex_deposit.custom_types import UserId, ChainId, BlockNumber
+from zex_deposit.custom_types import BlockNumber, ChainConfig, UserId
 
 ZEX_BASE_URL = "https://api.zex.zellular.xyz/v1"
 
@@ -47,12 +47,12 @@ async def send_deposits(async_client: httpx.AsyncClient, data: list):
 
 
 async def get_zex_latest_block(
-    async_client: httpx.AsyncClient, chain_id: ChainId
+    async_client: httpx.AsyncClient, chain: ChainConfig
 ) -> BlockNumber | None:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LATEST_BLOCK.value}",
-            params={"chain": chain_id.name[:3]},
+            params={"chain": chain.symbol},
         )
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
         raise ZexAPIError(e)

@@ -84,7 +84,7 @@ async def process_sa(
         encoded_data = encode_zex_deposit(
             version=ZEX_ENCODE_VERSION,
             operation_type=DEPOSIT_OPERATION,
-            chain_id=chain.chain_id,
+            chain=chain,
             from_block=from_block,
             to_block=to_block,
             users_transfers=users_transfers,
@@ -137,7 +137,7 @@ async def deposit(chain: ChainConfig):
                 zex_latest_block,
                 finalized_block,
             ) = await asyncio.gather(
-                get_zex_latest_block(client, chain.chain_id),
+                get_zex_latest_block(client, chain),
                 get_finalized_block_number(w3),
             )
             if zex_latest_block is None:
