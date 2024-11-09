@@ -21,6 +21,7 @@ services:
     container_name: sa-observer
     entrypoint: poetry run python -m zex_deposit.sa.observer
     network_mode: host
+    restart: on-failure:5
     depends_on:
       mongodb:
         condition: service_healthy
@@ -39,6 +40,7 @@ services:
     container_name: sa-finalizer
     entrypoint: poetry run python -m zex_deposit.sa.finalizer
     network_mode: host
+    restart: on-failure:5
     depends_on:
       mongodb:
         condition: service_healthy
@@ -48,7 +50,7 @@ services:
       - /var/log/sa:/var/log/sa
     env_file:
       - .env
-  
+
   sa-withdrawer:
     build:
       context: .
@@ -57,6 +59,7 @@ services:
     container_name: sa-withdrawer
     entrypoint: poetry run python -m zex_deposit.sa.withdrawer
     network_mode: host
+    restart: on-failure:5
     depends_on:
       mongodb:
         condition: service_healthy
@@ -75,6 +78,7 @@ services:
     container_name: sa-sa
     entrypoint: poetry run python -m zex_deposit.sa.sa
     network_mode: host
+    restart: on-failure:5
     depends_on:
       mongodb:
         condition: service_healthy
@@ -92,6 +96,7 @@ services:
     container_name: validator-1
     entrypoint: poetry run python -m zex_deposit.validator.node 0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
     network_mode: host
+    restart: on-failure:5
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/validator:/var/log/validator
@@ -108,6 +113,7 @@ services:
     container_name: validator-2
     entrypoint: poetry run python -m zex_deposit.validator.node 0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
     network_mode: host
+    restart: on-failure:5
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/validator:/var/log/validator
@@ -124,6 +130,7 @@ services:
     container_name: validator-3
     entrypoint: poetry run python -m zex_deposit.validator.node 0xfe6ec3f9e9ad332de8fcdf8d630ccdc209d54e71fcd9cc866785cebe2db5197b
     network_mode: host
+    restart: on-failure:5
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/validator:/var/log/validator
