@@ -1,17 +1,30 @@
 services:
 
   mongodb:
-    image: mongo:8
+    image: mongo:7.0.15
     healthcheck:
       test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
       retries: 5
       start_period: 10s
-    ports:
-      - "27017:27017"
-    network_mode: host
+    networks:
+      zex_deposit_custom_network:
+
     volumes:
-      - mongodbvol:/data/db
+      - /opt/mongo/db:/data/db
+
+  redis:
+    image: redis:latest
+    restart: always
+    volumes:
+      - /opt/redis/dаta:/root/redis
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      zex_deposit_custom_network:
 
   sa-observer:
     build:
@@ -20,8 +33,7 @@ services:
     image: zex-deposit
     container_name: sa-observer
     entrypoint: poetry run python -m zex_deposit.sa.observer
-    network_mode: host
-    restart: on-failure:5
+    restart: always
     depends_on:
       mongodb:
         condition: service_healthy
@@ -31,6 +43,8 @@ services:
       - /var/log/sa:/var/log/sa
     env_file:
       - .env
+    networks:
+      zex_deposit_custom_network:
 
   sa-finalizer:
     build:
@@ -39,7 +53,6 @@ services:
     image: zex-deposit
     container_name: sa-finalizer
     entrypoint: poetry run python -m zex_deposit.sa.finalizer
-    network_mode: host
     restart: on-failure:5
     depends_on:
       mongodb:
@@ -51,6 +64,9 @@ services:
     env_file:
       - .env
 
+    networks:
+      zex_deposit_custom_network:
+
   sa-withdrawer:
     build:
       context: .
@@ -58,8 +74,10 @@ services:
     image: zex-deposit
     container_name: sa-withdrawer
     entrypoint: poetry run python -m zex_deposit.sa.withdrawer
-    network_mode: host
     restart: on-failure:5
+    networks:
+      zex_deposit_custom_network:
+
     depends_on:
       mongodb:
         condition: service_healthy
@@ -77,8 +95,10 @@ services:
     image: zex-deposit
     container_name: sa-sa
     entrypoint: poetry run python -m zex_deposit.sa.sa
-    network_mode: host
     restart: on-failure:5
+    networks:
+      zex_deposit_custom_network:
+
     depends_on:
       mongodb:
         condition: service_healthy
@@ -95,13 +115,19 @@ services:
     image: zex-deposit
     container_name: validator-1
     entrypoint: poetry run python -m zex_deposit.validator.node 0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
-    network_mode: host
+    ports:
+      - "6002:6002"
     restart: on-failure:5
+    networks:
+      zex_deposit_custom_network:
+
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/validator:/var/log/validator
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     env_file:
       - .env
@@ -112,13 +138,19 @@ services:
     image: zex-deposit
     container_name: validator-2
     entrypoint: poetry run python -m zex_deposit.validator.node 0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
-    network_mode: host
     restart: on-failure:5
+    networks:
+      zex_deposit_custom_network:
+
+    ports:
+      - "6002:6002"
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/validator:/var/log/validator
     depends_on:
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     env_file:
       - .env
@@ -129,16 +161,27 @@ services:
     image: zex-deposit
     container_name: validator-3
     entrypoint: poetry run python -m zex_deposit.validator.node 0xfe6ec3f9e9ad332de8fcdf8d630ccdc209d54e71fcd9cc866785cebe2db5197b
-    network_mode: host
+    ports:
+      - "6002:6002" 
     restart: on-failure:5
+    networks:
+      zex_deposit_custom_network:
+
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env
 
-volumes:
-  mongodbvol:
+networks:
+  zex_deposit_custom_network:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 172.20.0.0/24
+         gateway: 172.20.0.1

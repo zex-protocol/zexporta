@@ -15,6 +15,7 @@ pydantic = "~=2.9.2"
 sanic = "^24.6.0"
 httpx = "^0.27.2"
 pyfrost = {git = "https://github.com/zellular-xyz/pyfrost.git"}
+redis = "^5.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "~=8.3.3"
