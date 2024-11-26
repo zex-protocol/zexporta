@@ -58,3 +58,45 @@ USER_DEPOSIT_ABI = [
         "type": "function",
     }
 ]
+
+VAULT_ABI = [
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "tokenAddress_",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount_",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "recipient_",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "nonce_",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "signature_",
+                "type": "uint256"
+            },
+            {
+                "internalType": "address",
+                "name": "nonceTimesGeneratorAddress_",
+                "type": "address"
+            }
+        ],
+        "name": "withdraw",
+        "outputs": [
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]

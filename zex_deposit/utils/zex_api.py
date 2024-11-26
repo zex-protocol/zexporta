@@ -12,6 +12,7 @@ class ZexPath(Enum):
     LAST_USER_ID = "/users/latest-id"
     DEPOSIT = "/deposit"
     LATEST_BLOCK = "/block/latest"
+    WITHDRAWS = "/withdraws"
 
 
 class ZexAPIError(Exception):
@@ -47,7 +48,7 @@ async def send_deposits(async_client: httpx.AsyncClient, data: list):
 
 
 async def get_zex_latest_block(
-    async_client: httpx.AsyncClient, chain: ChainConfig
+        async_client: httpx.AsyncClient, chain: ChainConfig
 ) -> BlockNumber | None:
     try:
         res = await async_client.get(
@@ -57,3 +58,21 @@ async def get_zex_latest_block(
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
         raise ZexAPIError(e)
     return res.json().get("block")
+
+
+async def get_zex_withdraw(async_client: httpx.AsyncClient, chain: ChainConfig, offset: int):
+    try:
+        res = await async_client.get(
+            url=f"{ZEX_BASE_URL}{ZexPath.WITHDRAWS.value}",
+            params={
+                "chain": chain.symbol,
+                "offset": offset,
+                "limit": 1
+            },
+            headers={
+                "accept": "application/json"
+            },
+        )
+    except (httpx.RequestError, httpx.HTTPStatusError) as e:
+        raise ZexAPIError(e)
+    return res.json()

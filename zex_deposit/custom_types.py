@@ -70,3 +70,12 @@ class UserAddress(BaseModel):
     user_id: UserId
     address: ChecksumAddress
     is_active: bool = Field(default=True)
+
+class WithdrawRequest(BaseModel):
+    tokenAddress: ChecksumAddress
+    amount: int
+    recipient: ChecksumAddress
+    nonce: int
+    signature: str
+    nonceTimesGeneratorAddress: ChecksumAddress
+
