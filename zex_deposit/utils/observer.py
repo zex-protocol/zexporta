@@ -65,7 +65,7 @@ class Observer(BaseModel):
         extract_block_logic: Callable[..., Coroutine[Any, Any, list[RawTransfer]]],
         *,
         batch_size=5,
-        max_delay_per_block_batch=10,
+        max_delay_per_block_batch: int | float = 10,
         logger: logging.Logger | ChainLoggerAdapter = logger,
         **kwargs,
     ) -> list[UserTransfer]:

@@ -29,7 +29,7 @@ def encode_zex_deposit(
     deposit_data = b""
     for deposit in users_transfers:
         deposit_data += struct.pack(
-            ">42s d B I Q",  # I for uint32, d for double, I for uint32, s for bytes
+            ">42s Q B I Q",  # I for uint32, d for double, I for uint32, s for bytes
             deposit.token.encode(),  # must be token address
             deposit.value,
             deposit.decimals,
