@@ -2,20 +2,19 @@ import json
 import os
 from pyfrost.network.abstract import DataManager
 
+from zex_deposit.utils.redis_interface import redis_interface
+
 
 class NodeDataManager(DataManager):
     def __init__(
         self,
         dkg_keys_file="./zex_deposit/dkg_keys.json",
-        nonces_file="./zex_deposit/nonces.json",
     ) -> None:
         super().__init__()
         self.dkg_keys_file = dkg_keys_file
-        self.nonces_file = nonces_file
 
         # Load data from files if they exist
         self.__dkg_keys = self._load_data(self.dkg_keys_file)
-        self.__nonces = self._load_data(self.nonces_file)
 
     def _load_data(self, file_path):
         if os.path.exists(file_path):
@@ -27,19 +26,14 @@ class NodeDataManager(DataManager):
         with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
 
-    def set_nonce(self, nonce_public: str, nonce_private: str) -> None:
-        self.__nonces[nonce_public] = nonce_private
-        self._save_data(self.nonces_file, self.__nonces)
+    def set_nonce(self, nonce_public: str, nonce_private: int) -> None:
+        redis_interface.set_value(nonce_public, str(nonce_private))
 
     def get_nonce(self, nonce_public: str):
-        data = self._load_data(self.nonces_file)
-        return data.get(nonce_public)
+        return int(redis_interface.get_value(nonce_public))
 
     def remove_nonce(self, nonce_public: str) -> None:
-        self.__nonces = self._load_data(self.nonces_file)
-        if nonce_public in self.__nonces:
-            del self.__nonces[nonce_public]
-            self._save_data(self.nonces_file, self.__nonces)
+        redis_interface.delete_key(nonce_public)
 
     def set_key(self, key, value) -> None:
         for dkg_id, dkg_data in list(self.__dkg_keys.items()):
