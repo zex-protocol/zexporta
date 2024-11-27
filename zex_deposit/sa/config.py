@@ -1,5 +1,4 @@
 import os
-from enum import Enum
 
 from dotenv import load_dotenv
 from eth_typing import ChainId
@@ -11,10 +10,9 @@ load_dotenv()
 LOGGER_PATH = "/var/log/sa/"
 
 
-INFURA_KEY = os.environ["INFURA_KEY"]
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017/")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")
 BATCH_BLOCK_NUMBER_SIZE = int(os.getenv("BATCH_BLOCK_NUMBER_SIZE", 5))
 MAX_DELAY_PER_BLOCK_BATCH = int(os.getenv("MAX_DELAY_PER_BLOCK_BATCH", 3))
 
@@ -22,27 +20,34 @@ DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./zex_deposit/dkgs/dkgs.json")
 DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 
 CHAINS_CONFIG = {
-    11155111: ChainConfig(
-        private_rpc="https://ethereum-sepolia-rpc.publicnode.com",
-        chain_id=ChainId(11155111),
-        from_block=7037059,
-        symbol="SEP",
-        finalize_block_count=5,
+    42161: ChainConfig(
+        private_rpc=os.environ["ARB_RPC"],
+        chain_id=ChainId(42161),
+        from_block=273078242,
+        symbol="ARB",
+        finalize_block_count=30,
+        delay=0.1,
+        batch_block_size=30,
     ),
-    17000: ChainConfig(
-        private_rpc="https://holesky.drpc.org",
-        chain_id=ChainId(17000),
-        from_block=2698817,
-        symbol="HOL",
-        finalize_block_count=5,
-    ),
-    97: ChainConfig(
-        private_rpc="https://bsc-testnet-rpc.publicnode.com",
-        chain_id=ChainId(97),
-        from_block=45452674,
-        symbol="BST",
-        finalize_block_count=5,
+    137: ChainConfig(
+        private_rpc=os.environ["POL_RPC"],
+        chain_id=ChainId(137),
+        from_block=64122219,
+        symbol="POL",
+        finalize_block_count=20,
         poa=True,
+        delay=1,
+        batch_block_size=30,
+    ),
+    56: ChainConfig(
+        private_rpc=os.environ["BSC_RPC"],
+        chain_id=ChainId(56),
+        from_block=43892677,
+        symbol="BSC",
+        finalize_block_count=10,
+        poa=True,
+        delay=1,
+        batch_block_size=30,
     ),
 }
 

@@ -4,8 +4,6 @@ from eth_typing import ChainId
 
 from zex_deposit.custom_types import ChainConfig
 
-BATCH_BLOCK_NUMBER_SIZE = int(os.getenv("BATCH_BLOCK_NUMBER_SIZE", 10))
-MAX_DELAY_PER_BLOCK_BATCH = 2
 LOGGER_PATH = "/var/log/validator/validator.log"
 
 VALIDATED_IPS = {
@@ -15,37 +13,50 @@ VALIDATED_IPS = {
         "/pyfrost/v1/dkg/round3",
         "/pyfrost/v1/sign",
         "/pyfrost/v1/generate-nonces",
-    ]
+    ],
+    "172.20.0.1": [
+        "/pyfrost/v1/dkg/round1",
+        "/pyfrost/v1/dkg/round2",
+        "/pyfrost/v1/dkg/round3",
+        "/pyfrost/v1/sign",
+        "/pyfrost/v1/generate-nonces",
+    ],
 }
 
 PRIVATE_KEY = (
-    94337664340063690438010829915800780946232589158282044690319564900000952004167
+    os.environ["NODE_PRIVATE_KEY"]
 )
 
 CHAINS_CONFIG = {
-    11155111: ChainConfig(
-        private_rpc="https://ethereum-sepolia-rpc.publicnode.com",
-        chain_id=ChainId(11155111),
-        from_block=6995672,
-        symbol="SEP",
-        finalize_block_count=5,
+    42161: ChainConfig(
+        private_rpc=os.environ["ARB_RPC"],
+        chain_id=ChainId(42161),
+        from_block=273078242,
+        symbol="ARB",
+        finalize_block_count=30,
+        delay=0.1,
+        batch_block_size=30,
     ),
-    17000: ChainConfig(
-        private_rpc="https://holesky.drpc.org",
-        chain_id=ChainId(17000),
-        from_block=2691362,
-        symbol="HOL",
-        finalize_block_count=5,
-    ),
-    97: ChainConfig(
-        private_rpc="https://bsc-testnet-rpc.publicnode.com",
-        chain_id=ChainId(97),
-        from_block=2691362,
-        symbol="BST",
-        finalize_block_count=5,
+    137: ChainConfig(
+        private_rpc=os.environ["POL_RPC"],
+        chain_id=ChainId(137),
+        from_block=64122219,
+        symbol="POL",
+        finalize_block_count=20,
         poa=True,
+        delay=1,
+        batch_block_size=30,
+    ),
+    56: ChainConfig(
+        private_rpc=os.environ["BSC_RPC"],
+        chain_id=ChainId(56),
+        from_block=43892677,
+        symbol="BSC",
+        finalize_block_count=10,
+        poa=True,
+        delay=1,
+        batch_block_size=30,
     ),
 }
-
 
 ZEX_ENCODE_VERSION = 1
