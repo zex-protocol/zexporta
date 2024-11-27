@@ -16,7 +16,9 @@ class ChainConfig(BaseModel):
     from_block: BlockNumber | int
     symbol: str
     poa: bool = Field(default=False)
-    finalize_block_count: int | None = Field(default=None)
+    finalize_block_count: int = Field(default=15)
+    delay: int | float = Field(default=3)
+    batch_block_size: int = Field(default=5)
 
 
 class TransferStatus(Enum):
