@@ -7,8 +7,6 @@ from zex_deposit.utils.web3 import (
 )
 from zex_deposit.utils.observer import Observer
 
-from .config import MAX_DELAY_PER_BLOCK_BATCH, BATCH_BLOCK_NUMBER_SIZE
-
 
 class NotFinalizedBlockError(Exception):
     "Raise when a block number is bigger then current finalized block"
@@ -32,7 +30,7 @@ async def get_users_transfers(
         accepted_addresses=accepted_addresses,
         extract_block_logic=extract_transfer_from_block,
         transfer_status=TransferStatus.VERIFIED,
-        max_delay_per_block_batch=MAX_DELAY_PER_BLOCK_BATCH,
-        batch_size=BATCH_BLOCK_NUMBER_SIZE,
+        max_delay_per_block_batch=chain.delay,
+        batch_size=chain.batch_block_size,
     )
     return sorted(users_transfers)
