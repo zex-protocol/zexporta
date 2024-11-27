@@ -17,7 +17,7 @@ services:
     image: redis:latest
     restart: always
     volumes:
-      - /opt/redis/dаta:/root/redis
+      - /opt/redis/data:/root/redis
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
       interval: 5s
