@@ -5,7 +5,7 @@ from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
 from eth_typing import HexStr
 from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
-from web3.middleware import async_geth_poa_middleware
+from web3.middleware.geth_poa import async_geth_poa_middleware
 
 from zex_deposit.custom_types import (
     BlockNumber,
@@ -17,6 +17,7 @@ from zex_deposit.custom_types import (
     TxHash,
 )
 from zex_deposit.utils.transfer_decoder import (
+    InvalidTxError,
     NotRecognizedSolidityFuncError,
     decode_transfer_tx,
 )
@@ -49,7 +50,7 @@ async def filter_blocks(
     w3,
     blocks_number: Iterable[BlockNumber],
     fn: Callable[..., Coroutine[Any, Any, list[T]]],
-    max_delay_per_block_batch=5,
+    max_delay_per_block_batch: int | float = 5,
     **kwargs,
 ) -> list[T]:
     start = time.time()
@@ -87,6 +88,8 @@ async def extract_transfer_from_block(
             )
         except NotRecognizedSolidityFuncError as _:
             ...
+        except InvalidTxError as e:
+            logger.error(f"invalid tx {tx}, error: {e}")
     logger.debug(f"Observing block number {block_number} end")
     return result
 
