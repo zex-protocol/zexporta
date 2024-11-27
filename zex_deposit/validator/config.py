@@ -23,9 +23,7 @@ VALIDATED_IPS = {
     ],
 }
 
-PRIVATE_KEY = (
-    os.environ["NODE_PRIVATE_KEY"]
-)
+PRIVATE_KEY = int(os.environ["NODE_PRIVATE_KEY"])
 
 CHAINS_CONFIG = {
     42161: ChainConfig(
