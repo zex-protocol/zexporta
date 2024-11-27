@@ -41,18 +41,18 @@ async def update_finalized_transfers(chain: ChainConfig):
             _logger.info(
                 f"No pending tx has been found. finalized_block_number: {finalized_block_number}"
             )
-            await asyncio.sleep(MAX_DELAY_PER_BLOCK_BATCH)
+            await asyncio.sleep(chain.delay)
             continue
 
-        for i in range(math.ceil(len(pending_blocks_number) / BATCH_BLOCK_NUMBER_SIZE)):
+        for i in range(math.ceil(len(pending_blocks_number) / chain.batch_block_size)):
             blocks_to_check = pending_blocks_number[
-                (i * BATCH_BLOCK_NUMBER_SIZE) : ((i + 1) * BATCH_BLOCK_NUMBER_SIZE)
+                (i * chain.batch_block_size) : ((i + 1) * chain.batch_block_size)
             ]
             results = await filter_blocks(
                 w3,
                 blocks_to_check,
                 get_block_tx_hash,
-                max_delay_per_block_batch=MAX_DELAY_PER_BLOCK_BATCH,
+                max_delay_per_block_batch=chain.delay,
             )
             await to_finalized(chain.chain_id, finalized_block_number, results)
             await to_reorg(chain.chain_id, min(blocks_to_check), max(blocks_to_check))
