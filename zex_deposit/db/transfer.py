@@ -8,13 +8,20 @@ from zex_deposit.custom_types import BlockNumber, TransferStatus, UserTransfer
 from .database import transfer_collection
 
 
-async def insert_transfer(transfer: UserTransfer):
-    await transfer_collection.insert_one(transfer.model_dump())
+async def insert_transfer_if_not_exists(transfer: UserTransfer):
+    query = {
+        "chain_id": transfer.chain_id,
+        "tx_hash": transfer.tx_hash,
+    }
+    record = await transfer_collection.find_one(query)
+    if not record:
+        await transfer_collection.insert_one(transfer.model_dump())
 
 
-async def insert_many_transfers(transfers: Iterable[UserTransfer]):
-    await transfer_collection.insert_many(
-        transfer.model_dump() for transfer in transfers
+
+async def insert_transfers_if_not_exists(transfers: Iterable[UserTransfer]):
+    await asyncio.gather(
+        *[insert_transfer_if_not_exists(transfer) for transfer in transfers]
     )
 
 
