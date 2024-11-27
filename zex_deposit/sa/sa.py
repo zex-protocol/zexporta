@@ -18,6 +18,7 @@ from zex_deposit.utils.encode_deposit import DEPOSIT_OPERATION, encode_zex_depos
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
 from zex_deposit.utils.node_info import NodesInfo
 from zex_deposit.utils.web3 import async_web3_factory, get_finalized_block_number
+from zex_deposit.utils.dkg import parse_dkg_json
 from zex_deposit.utils.zex_api import (
     ZexAPIError,
     get_zex_latest_block,
@@ -40,13 +41,7 @@ logger = logging.getLogger(__name__)
 
 nodes_info = NodesInfo()
 sa = SA(nodes_info, default_timeout=SA_TIMEOUT)
-
-
-def _parse_dkg_json() -> dict:
-    with open(DKG_JSON_PATH, "r") as f:
-        dkg_info = json.load(f)
-
-    return dkg_info[DKG_NAME]
+dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
 
 
 async def process_sa(
@@ -114,9 +109,6 @@ async def send_result_to_zex(
     result = await send_deposits(client, [data.decode("latin-1")])
     logger.debug("Finish sending deposit to Zex.")
     return result
-
-
-dkg_key = _parse_dkg_json()
 
 
 async def deposit(chain: ChainConfig):

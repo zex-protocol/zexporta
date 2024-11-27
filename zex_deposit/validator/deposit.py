@@ -1,15 +1,47 @@
+import asyncio
+from hashlib import sha256
+
 from zex_deposit.custom_types import BlockNumber, ChainConfig, TransferStatus
 from zex_deposit.db.address import get_active_address, insert_new_address_to_db
+from zex_deposit.utils.encode_deposit import DEPOSIT_OPERATION, encode_zex_deposit
+from zex_deposit.utils.observer import Observer
 from zex_deposit.utils.web3 import (
     async_web3_factory,
     extract_transfer_from_block,
     get_finalized_block_number,
 )
-from zex_deposit.utils.observer import Observer
+from .config import ZEX_ENCODE_VERSION
 
 
 class NotFinalizedBlockError(Exception):
     "Raise when a block number is bigger then current finalized block"
+
+
+def deposit(chain_config: ChainConfig, data: dict, logger) -> dict:
+    from_block = data["from_block"]
+    to_block = data["to_block"]
+    users_transfers = asyncio.run(
+        get_users_transfers(
+            chain=chain_config, from_block=from_block, to_block=to_block
+        )
+    )
+    encoded_data = encode_zex_deposit(
+        version=ZEX_ENCODE_VERSION,
+        operation_type=DEPOSIT_OPERATION,
+        chain=chain_config,
+        from_block=from_block,
+        to_block=to_block,
+        users_transfers=users_transfers,
+    )
+    logger.info(f"encoded_data is: {encoded_data}")
+    return {
+        "hash": sha256(encoded_data).hexdigest(),
+        "data": {
+            "users_transfers": [
+                user_transfer.model_dump() for user_transfer in users_transfers
+            ],
+        },
+    }
 
 
 async def get_users_transfers(

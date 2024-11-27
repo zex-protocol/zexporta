@@ -4,7 +4,12 @@ from json import JSONDecodeError
 
 import httpx
 
-from zex_deposit.custom_types import BlockNumber, ChainConfig, UserId, WithdrawRequest
+from zex_deposit.custom_types import (
+    BlockNumber,
+    ChainConfig,
+    UserId,
+    WithdrawRequest,
+)
 
 ZEX_BASE_URL = "https://api.zex.zellular.xyz/v1"
 
@@ -68,13 +73,17 @@ async def get_zex_latest_block(
 
 async def get_zex_withdraw(
     async_client: httpx.AsyncClient, chain: ChainConfig, offset: int, limit: int = 100
-) -> list[WithdrawRequest]:
+) -> WithdrawRequest:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.WITHDRAWS.value}",
             params={"chain": chain.symbol, "offset": offset, "limit": limit},
             headers={"accept": "application/json"},
         )
-        return res.json()
+        data = res.json()
+        if not len(data):
+            raise ZexAPIError("Active withdraw not been found.")
+        data = data[0]
+        return WithdrawRequest(**data)
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
         raise ZexAPIError(e)

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from operator import add
 import time
 from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
@@ -7,6 +8,7 @@ from eth_typing import HexStr
 from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 from web3.middleware.geth_poa import async_geth_poa_middleware
 
+from zex_deposit.utils.abi import VAULT_ABI
 from zex_deposit.custom_types import (
     BlockNumber,
     ChainConfig,
@@ -139,3 +141,8 @@ async def get_token_decimals(w3: AsyncWeb3, token_address: ChecksumAddress) -> i
     contract = w3.eth.contract(address=token_address, abi=min_abi)
     decimals = await contract.functions.decimals().call()
     return decimals
+
+
+async def get_vault_nonce(w3: AsyncWeb3, vault_address: ChecksumAddress) -> int:
+    contract = w3.eth.contract(address=vault_address, abi=VAULT_ABI)
+    return await contract.functions.nonce().call()

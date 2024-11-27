@@ -36,6 +36,7 @@ class Token(BaseModel):
 
     class Config:
         use_enum_values = True
+        extra = "ignore"
 
 
 class RawTransfer(BaseModel):
@@ -73,11 +74,12 @@ class UserAddress(BaseModel):
     address: ChecksumAddress
     is_active: bool = Field(default=True)
 
+
 class WithdrawRequest(BaseModel):
-    tokenAddress: ChecksumAddress
+    token_address: ChecksumAddress
     amount: int
     recipient: ChecksumAddress
     nonce: int
-    signature: str
-    nonceTimesGeneratorAddress: ChecksumAddress
 
+    class Config:
+        extra = "ignore"

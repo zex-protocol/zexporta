@@ -1,6 +1,7 @@
 import os
 
 from eth_typing import ChainId
+from web3 import Web3
 
 from zex_deposit.custom_types import ChainConfig
 

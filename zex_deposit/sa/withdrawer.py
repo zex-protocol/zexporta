@@ -18,9 +18,13 @@ from zex_deposit.db.transfer import find_transactions_by_status, upsert_transfer
 from zex_deposit.utils.web3 import async_web3_factory
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
 
-from .config import CHAINS_CONFIG, LOGGER_PATH, USER_DEPOSIT_FACTORY_ADDRESS
+from .config import (
+    CHAINS_CONFIG,
+    LOGGER_PATH,
+    USER_DEPOSIT_FACTORY_ADDRESS,
+    WITHDRAWER_PRIVATE_KEY,
+)
 
-WITHDRAWER_PRIVATE_KEY = os.environ["WITHDRAWER_PRIVATE_KEY"]
 
 logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/withdraw.log"))
 logger = logging.getLogger(__name__)

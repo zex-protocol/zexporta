@@ -13,6 +13,13 @@ from pyfrost.network.dkg import Dkg
 from .node_info import NodesInfo
 
 
+def parse_dkg_json(dkg_path, dkg_name) -> dict:
+    with open(dkg_path, "r") as f:
+        dkg_info = json.load(f)
+
+    return dkg_info[dkg_name]
+
+
 async def initiate_dkg(
     total_node_number: int, threshold: int, n: int, dkg_type: str, dkg_name: str
 ) -> None:
