@@ -13,8 +13,12 @@ class NotRecognizedSolidityFuncError(Exception):
     pass
 
 
+class InvalidTxError(Exception):
+    pass
+
+
 @dataclass
-class SolidityFucntion:
+class SolidityFunction:
     name: str
     inputs: list[dict[str, str]]
 
@@ -27,7 +31,7 @@ class TransferTX:
     _from: ChecksumAddress | None = None
 
 
-def _parse_abi(abi: list[dict]) -> dict[FunctionHash, SolidityFucntion]:
+def _parse_abi(abi: list[dict]) -> dict[FunctionHash, SolidityFunction]:
     function_selectors = {}
 
     for func in abi:
@@ -36,7 +40,7 @@ def _parse_abi(abi: list[dict]) -> dict[FunctionHash, SolidityFucntion]:
             input_types = [inp["type"] for inp in func["inputs"]]
             func_signature = f"{func_name}({','.join(input_types)})"
             func_selector = Web3.keccak(text=func_signature)[:4].hex()
-            function_selectors[func_selector] = SolidityFucntion(
+            function_selectors[func_selector] = SolidityFunction(
                 name=func_name, inputs=func["inputs"]
             )
     return function_selectors
@@ -54,20 +58,24 @@ def decode_transfer_tx(tx_input: str) -> TransferTX:
 
         params_data = tx_input[10:]
         decoded_input_data = dict()
-        for i, param in enumerate(func_inputs):
-            param_type = param["type"]
-            param_name = param["name"]
-            param_data = params_data[i * 64 : (i + 1) * 64]
-            if param_type == "address":
-                param_value = "0x" + param_data[-40:]
-                param_value = Web3.to_checksum_address(param_value)
+        try:
+            for i, param in enumerate(func_inputs):
+                param_type = param["type"]
+                param_name = param["name"]
+                param_data = params_data[i * 64 : (i + 1) * 64]
+                if param_type == "address":
+                    param_value = "0x" + param_data[-40:]
+                    param_value = Web3.to_checksum_address(param_value)
 
-            elif param_type.startswith("uint"):
-                param_value = int(param_data, 16)
-            else:
-                param_value = param_data
+                elif param_type.startswith("uint"):
+                    param_value = int(param_data, 16)
 
-            decoded_input_data[param_name] = param_value
+                else:
+                    param_value = param_data
+
+                decoded_input_data[param_name] = param_value
+        except ValueError as e:
+            raise InvalidTxError(e)
         decoded_tx_input = TransferTX(**decoded_input_data)
         return decoded_tx_input
     else:
