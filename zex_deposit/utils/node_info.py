@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from pyfrost.network.abstract import NodesInfo as BaseNodeInfo
 
-from ._dumy_node_info import dummy_node_info
+from ._dummy_node_info import dummy_node_info
 
 
 class NodesInfo(BaseNodeInfo):
