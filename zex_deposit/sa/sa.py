@@ -134,7 +134,7 @@ async def deposit(chain: ChainConfig):
                     get_zex_latest_block(client, chain),
                     get_finalized_block_number(w3, chain),
                 )
-            except json.JSONDecodeError as e:
+            except ZexAPIError as e:
                 logger.error(f"Can not get from_block or to_block, error: {e}")
                 continue
 

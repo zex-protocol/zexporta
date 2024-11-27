@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 from enum import Enum
+from json import JSONDecodeError
 
 import httpx
 
-from zex_deposit.custom_types import BlockNumber, ChainConfig, UserId
+from zex_deposit.custom_types import BlockNumber, ChainConfig, UserId, WithdrawRequest
 
 ZEX_BASE_URL = "https://api.zex.zellular.xyz/v1"
 
@@ -48,31 +49,32 @@ async def send_deposits(async_client: httpx.AsyncClient, data: list):
 
 
 async def get_zex_latest_block(
-        async_client: httpx.AsyncClient, chain: ChainConfig
+    async_client: httpx.AsyncClient, chain: ChainConfig
 ) -> BlockNumber | None:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LATEST_BLOCK.value}",
             params={"chain": chain.symbol},
         )
-    except (httpx.RequestError, httpx.HTTPStatusError) as e:
+        return res.json().get("block")
+    except (
+        httpx.RequestError,
+        httpx.HTTPStatusError,
+        JSONDecodeError,
+        AttributeError,
+    ) as e:
         raise ZexAPIError(e)
-    return res.json().get("block")
 
 
-async def get_zex_withdraw(async_client: httpx.AsyncClient, chain: ChainConfig, offset: int):
+async def get_zex_withdraw(
+    async_client: httpx.AsyncClient, chain: ChainConfig, offset: int, limit: int = 100
+) -> list[WithdrawRequest]:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.WITHDRAWS.value}",
-            params={
-                "chain": chain.symbol,
-                "offset": offset,
-                "limit": 1
-            },
-            headers={
-                "accept": "application/json"
-            },
+            params={"chain": chain.symbol, "offset": offset, "limit": limit},
+            headers={"accept": "application/json"},
         )
-    except (httpx.RequestError, httpx.HTTPStatusError) as e:
+        return res.json()
+    except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
         raise ZexAPIError(e)
-    return res.json()
