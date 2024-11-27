@@ -30,7 +30,6 @@ from .config import (
     DKG_NAME,
     LOGGER_PATH,
     SA_BATCH_BLOCK_NUMBER_SIZE,
-    SA_DELAY_SECOND,
     SA_TIMEOUT,
     ZEX_ENCODE_VERSION,
 )
@@ -90,17 +89,14 @@ async def process_sa(
         if hash_ != result["message_hash"]:
             logger.error("Hash message is not valid.")
             return
-        try:
-            await send_result_to_zex(
-                client,
-                encoded_data,
-                result["nonce"],
-                result["signature"],
-                logger=logger,
-            )
-        except ZexAPIError as e:
-            logger.error(f"Error at sending deposit to Zex: {e}")
-            return
+
+        await send_result_to_zex(
+            client,
+            encoded_data,
+            result["nonce"],
+            result["signature"],
+            logger=logger,
+        )
         await upsert_transfers(users_transfers)
         await to_reorg(chain.chain_id, from_block, to_block, TransferStatus.FINALIZED)
 
@@ -130,13 +126,18 @@ async def deposit(chain: ChainConfig):
             client = httpx.AsyncClient()
             w3 = await async_web3_factory(chain)
             dkg_party = dkg_key["party"]
-            (
-                zex_latest_block,
-                finalized_block,
-            ) = await asyncio.gather(
-                get_zex_latest_block(client, chain),
-                get_finalized_block_number(w3, chain),
-            )
+            try:
+                (
+                    zex_latest_block,
+                    finalized_block,
+                ) = await asyncio.gather(
+                    get_zex_latest_block(client, chain),
+                    get_finalized_block_number(w3, chain),
+                )
+            except json.JSONDecodeError as e:
+                logger.error(f"Can not get from_block or to_block, error: {e}")
+                continue
+
             if zex_latest_block is None:
                 _logger.info(
                     f"Zex did not return latest block for chain: {chain.chain_id.value}"
@@ -144,8 +145,10 @@ async def deposit(chain: ChainConfig):
                 continue
 
             from_block = zex_latest_block + 1
-            to_block = finalized_block - 5
-            _logger.info(f"from_block: {from_block} , to_block: {to_block}")
+            to_block = finalized_block - chain.finalize_block_count
+            _logger.info(
+                f"from_block: {from_block} , to_block: {to_block}, block_diff: {to_block - from_block}"
+            )
             if from_block > to_block:
                 continue
             for i in range(
@@ -163,12 +166,21 @@ async def deposit(chain: ChainConfig):
                         dkg_party,
                         logger=_logger,
                     )
-                except AssertionError as e:
-                    logger.error(f"Validator error, to_block: {to_block} | error: {e}")
+                except ZexAPIError as e:
+                    _logger.error(f"Error at sending deposit to Zex: {e}")
                     break
+                except AssertionError as e:
+                    _logger.error(f"Validator error, to_block: {to_block} | error: {e}")
+                    break
+                except (KeyError, json.JSONDecodeError, TypeError) as e:
+                    _logger.exception(f"Error occurred in pyfrost, {e}")
+                    break
+                except asyncio.TimeoutError as e:
+                    logger.error(f"Timeout occurred continue after 1 min, error {e}")
+                    await asyncio.sleep(60)
         finally:
             await client.aclose()
-            await asyncio.sleep(SA_DELAY_SECOND)
+            await asyncio.sleep(chain.delay)
 
 
 async def main():
