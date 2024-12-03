@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from operator import add
 import time
 from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
@@ -9,7 +8,6 @@ from pydantic import ValidationError
 from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 from web3.middleware.geth_poa import async_geth_poa_middleware
 
-from zex_deposit.utils.abi import VAULT_ABI
 from zex_deposit.custom_types import (
     BlockNumber,
     ChainConfig,
@@ -19,6 +17,7 @@ from zex_deposit.custom_types import (
     TransferStatus,
     TxHash,
 )
+from zex_deposit.utils.abi import VAULT_ABI
 from zex_deposit.utils.transfer_decoder import (
     InvalidTxError,
     NotRecognizedSolidityFuncError,
