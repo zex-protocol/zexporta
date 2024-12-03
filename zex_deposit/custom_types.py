@@ -13,12 +13,12 @@ TxHash: TypeAlias = str
 class ChainConfig(BaseModel):
     private_rpc: URI | str
     chain_id: ChainId
-    from_block: BlockNumber | int
     symbol: str
     poa: bool = Field(default=False)
     finalize_block_count: int = Field(default=15)
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
+    vault_address: ChecksumAddress
 
 
 class TransferStatus(Enum):
