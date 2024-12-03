@@ -62,41 +62,27 @@ USER_DEPOSIT_ABI = [
 VAULT_ABI = [
     {
         "inputs": [
-            {
-                "internalType": "address",
-                "name": "tokenAddress_",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "amount_",
-                "type": "uint256"
-            },
-            {
-                "internalType": "address",
-                "name": "recipient_",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "nonce_",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "signature_",
-                "type": "uint256"
-            },
+            {"internalType": "address", "name": "tokenAddress_", "type": "address"},
+            {"internalType": "uint256", "name": "amount_", "type": "uint256"},
+            {"internalType": "address", "name": "recipient_", "type": "address"},
+            {"internalType": "uint256", "name": "nonce_", "type": "uint256"},
+            {"internalType": "uint256", "name": "signature_", "type": "uint256"},
             {
                 "internalType": "address",
                 "name": "nonceTimesGeneratorAddress_",
-                "type": "address"
-            }
+                "type": "address",
+            },
         ],
         "name": "withdraw",
-        "outputs": [
-        ],
+        "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    }
+        "type": "function",
+    },
+    {
+        "inputs": [],
+        "name": "nonce",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function",
+    },
 ]

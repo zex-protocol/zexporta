@@ -5,6 +5,7 @@ import time
 from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
 from eth_typing import HexStr
+from pydantic import ValidationError
 from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 from web3.middleware.geth_poa import async_geth_poa_middleware
 
@@ -92,6 +93,8 @@ async def extract_transfer_from_block(
             ...
         except InvalidTxError as e:
             logger.error(f"invalid tx {tx}, error: {e}")
+        except ValidationError as e:
+            logger.error(f"Invalid transaction input, tx: {tx}, error {e}")
     logger.debug(f"Observing block number {block_number} end")
     return result
 

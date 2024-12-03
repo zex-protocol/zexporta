@@ -19,6 +19,7 @@ class ZexPath(Enum):
     DEPOSIT = "/deposit"
     LATEST_BLOCK = "/block/latest"
     WITHDRAWS = "/withdraws"
+    LAST_WITHDRAW_NONCE = "/withdraw/nonce/last"
 
 
 class ZexAPIError(Exception):
@@ -61,7 +62,26 @@ async def get_zex_latest_block(
             url=f"{ZEX_BASE_URL}{ZexPath.LATEST_BLOCK.value}",
             params={"chain": chain.symbol},
         )
+        res.raise_for_status()
         return res.json().get("block")
+    except (
+        httpx.RequestError,
+        httpx.HTTPStatusError,
+        JSONDecodeError,
+        AttributeError,
+    ) as e:
+        raise ZexAPIError(e)
+
+async def get_zex_last_withdraw_nonce(
+    async_client: httpx.AsyncClient, chain: ChainConfig
+) -> int:
+    try:
+        res = await async_client.get(
+            url=f"{ZEX_BASE_URL}{ZexPath.LAST_WITHDRAW_NONCE.value}",
+            params={"chain": chain.symbol},
+        )
+        res.raise_for_status()
+        return res.json().get("nonce")
     except (
         httpx.RequestError,
         httpx.HTTPStatusError,
@@ -74,16 +94,24 @@ async def get_zex_latest_block(
 async def get_zex_withdraw(
     async_client: httpx.AsyncClient, chain: ChainConfig, offset: int, limit: int = 100
 ) -> WithdrawRequest:
+    from web3 import Web3
+
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.WITHDRAWS.value}",
             params={"chain": chain.symbol, "offset": offset, "limit": limit},
             headers={"accept": "application/json"},
         )
+        res.raise_for_status()
         data = res.json()
         if not len(data):
             raise ZexAPIError("Active withdraw not been found.")
         data = data[0]
-        return WithdrawRequest(**data)
+        return WithdrawRequest(
+            amount=data.get("amount"),
+            nonce=data.get("nonce"),
+            recipient=Web3.to_checksum_address(data.get("destination")),
+            token_address=Web3.to_checksum_address(data.get("tokenContract")),
+        )
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
         raise ZexAPIError(e)
