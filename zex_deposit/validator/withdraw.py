@@ -16,7 +16,7 @@ async def get_withdraw_request(
     try:
         client = httpx.AsyncClient()
 
-        return await get_zex_withdraw(client, chain, offset=vault_nonce, limit=1)
+        return await get_zex_withdraw(client, chain, offset=vault_nonce, limit=vault_nonce+1)
     finally:
         await client.aclose()
 
