@@ -44,7 +44,7 @@ sa = SA(nodes_info, default_timeout=SA_TIMEOUT)
 dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
 
 
-async def process_sa(
+async def process_deposit(
     client: httpx.AsyncClient,
     chain: ChainConfig,
     from_block: BlockNumber | int,
@@ -147,7 +147,7 @@ async def deposit(chain: ChainConfig):
                 math.ceil((to_block - from_block) / SA_BATCH_BLOCK_NUMBER_SIZE)
             ):
                 try:
-                    await process_sa(
+                    await process_deposit(
                         client,
                         chain,
                         (i * SA_BATCH_BLOCK_NUMBER_SIZE) + from_block,
@@ -168,8 +168,8 @@ async def deposit(chain: ChainConfig):
                     _logger.exception(f"Error occurred in pyfrost, {e}")
                     break
                 except asyncio.TimeoutError as e:
-                    logger.error(f"Timeout occurred continue after 1 min, error {e}")
-                    await asyncio.sleep(60)
+                    _logger.error(f"Timeout occurred continue after 1 min, error {e}")
+                    break
         finally:
             await client.aclose()
             await asyncio.sleep(chain.delay)

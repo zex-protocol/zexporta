@@ -10,6 +10,7 @@ services:
     networks:
       zex_deposit_custom_network:
 
+
     volumes:
       - /opt/mongo/db:/data/db
 
@@ -26,12 +27,13 @@ services:
     networks:
       zex_deposit_custom_network:
 
-  sa-observer:
+
+  observer:
     build:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: sa-observer
+    container_name: observer
     entrypoint: poetry run python -m zex_deposit.sa.observer
     restart: always
     depends_on:
@@ -46,12 +48,13 @@ services:
     networks:
       zex_deposit_custom_network:
 
-  sa-finalizer:
+
+  finalizer:
     build:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: sa-finalizer
+    container_name: finalizer
     entrypoint: poetry run python -m zex_deposit.sa.finalizer
     restart: on-failure:5
     depends_on:
@@ -67,17 +70,17 @@ services:
     networks:
       zex_deposit_custom_network:
 
-  sa-withdrawer:
+
+  vault-depositor:
     build:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: sa-withdrawer
-    entrypoint: poetry run python -m zex_deposit.sa.withdrawer
-    restart: on-failure:5
+    container_name: vault-depositor
+    entrypoint: poetry run python -m zex_deposit.sa.vault_depositor
+    restart: always
     networks:
       zex_deposit_custom_network:
-
     depends_on:
       mongodb:
         condition: service_healthy
@@ -88,17 +91,32 @@ services:
     env_file:
       - .env
 
-  sa-sa:
+  sa-withdrawer:
     build:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: sa-sa
-    entrypoint: poetry run python -m zex_deposit.sa.sa
-    restart: on-failure:5
+    container_name: sa-withdrawer
+    entrypoint: poetry run python -m zex_deposit.sa.withdrawer
+    restart: always
     networks:
       zex_deposit_custom_network:
+    volumes:
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/sa:/var/log/sa
+    env_file:
+      - .env
 
+  sa-depositor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: sa-depositor
+    entrypoint: poetry run python -m zex_deposit.sa.depositor
+    restart: always
+    networks:
+      zex_deposit_custom_network:
     depends_on:
       mongodb:
         condition: service_healthy
@@ -114,13 +132,14 @@ services:
       context: .
     image: zex-deposit
     container_name: validator-1
-    entrypoint: poetry run python -m zex_deposit.validator.node 0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    environment:
+      - NODE_ID=0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
     ports:
       - "6002:6002"
     restart: on-failure:5
     networks:
       zex_deposit_custom_network:
-
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/validator:/var/log/validator
@@ -137,11 +156,12 @@ services:
       context: .
     image: zex-deposit
     container_name: validator-2
-    entrypoint: poetry run python -m zex_deposit.validator.node 0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    environment:
+      - NODE_ID=0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
     restart: on-failure:5
     networks:
       zex_deposit_custom_network:
-
     ports:
       - "6002:6002"
     volumes:
@@ -160,13 +180,14 @@ services:
       context: .
     image: zex-deposit
     container_name: validator-3
-    entrypoint: poetry run python -m zex_deposit.validator.node 0xfe6ec3f9e9ad332de8fcdf8d630ccdc209d54e71fcd9cc866785cebe2db5197b
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    environment:
+      - NODE_ID=0xfe6ec3f9e9ad332de8fcdf8d630ccdc209d54e71fcd9cc866785cebe2db5197b
     ports:
-      - "6002:6002" 
+      - "6002:6002"
     restart: on-failure:5
     networks:
       zex_deposit_custom_network:
-
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/validator:/var/log/validator
@@ -182,6 +203,6 @@ networks:
   zex_deposit_custom_network:
     driver: bridge
     ipam:
-     config:
-       - subnet: 172.20.0.0/24
-         gateway: 172.20.0.1
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
