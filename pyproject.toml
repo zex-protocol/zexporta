@@ -20,6 +20,7 @@ gunicorn = "^23.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "~=8.3.3"
+pre-commit = "^4.0.1"
 
 [build-system]
 requires = ["poetry-core"]
