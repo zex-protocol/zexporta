@@ -1,4 +1,5 @@
 import logging.config
+import os
 import sys
 
 from flask import Flask
@@ -14,6 +15,9 @@ from .node_validator import NodeValidators
 logging.config.dictConfig(get_logger_config(LOGGER_PATH))
 
 
+app = Flask(__name__)
+
+
 def run_node(node_id: int) -> None:
     data_manager = NodeDataManager(
         f"./zex_deposit/data/dkg_keys-{node_id}.json",
@@ -27,11 +31,7 @@ def run_node(node_id: int) -> None:
         NodeValidators.caller_validator,  # type: ignore
         NodeValidators.data_validator,  # type: ignore
     )
-    node_info = nodes_info.lookup_node(str(node_id))
-    app = Flask(__name__)
+    # node_info = nodes_info.lookup_node(str(node_id))
     app.register_blueprint(node.blueprint, url_prefix="/pyfrost")
-    app.run(host="0.0.0.0", port=int(node_info["port"]), debug=True)
 
-
-if __name__ == "__main__":
-    run_node(int(sys.argv[1], 16))
+run_node(int(os.environ["NODE_ID"], 16))
