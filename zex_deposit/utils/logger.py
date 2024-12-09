@@ -6,7 +6,7 @@ def get_logger_config(logger_path: str):
         "version": 1,
         "formatters": {
             "standard": {
-                "format": f"%(levelname)s | %(asctime)s | %(module)s  | %(message)s"
+                "format": "%(levelname)s | %(asctime)s | %(module)s  | %(message)s"
             }
         },
         "handlers": {

@@ -6,6 +6,10 @@ from eth_typing import ChecksumAddress
 
 from zex_deposit.custom_types import RawTransfer
 from zex_deposit.db.address import get_active_address, insert_new_address_to_db
+from zex_deposit.db.chain import (
+    get_last_observed_block,
+    upsert_chain_last_observed_block,
+)
 from zex_deposit.db.transfer import insert_transfers_if_not_exists
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
 from zex_deposit.utils.observer import Observer
@@ -32,20 +36,25 @@ async def filter_transfer(
 
 async def observe_deposit(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
-    last_observed_block = None
+    last_observed_block = await get_last_observed_block(chain.chain_id)
     while True:
         w3 = await async_web3_factory(chain)
         observer = Observer(chain=chain, w3=w3)
         accepted_addresses = await get_active_address()
         latest_block = await w3.eth.get_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
-            _logger.info(f"block {last_observed_block} already observed continue")
+            _logger.info(f"Block {last_observed_block} already observed continue")
             await asyncio.sleep(chain.delay)
             continue
         last_observed_block = last_observed_block or latest_block
+        if last_observed_block >= latest_block:
+            _logger.warning(
+                f"last_observed_block: {last_observed_block} is bigger then latest_block {latest_block}"
+            )
+            continue
         await insert_new_address_to_db()
         accepted_transfers = await observer.observe(
-            last_observed_block,
+            last_observed_block + 1,
             latest_block,
             accepted_addresses,
             extract_transfer_from_block,
@@ -55,6 +64,7 @@ async def observe_deposit(chain: ChainConfig):
         )
         if len(accepted_transfers) > 0:
             await insert_transfers_if_not_exists(accepted_transfers)
+        await upsert_chain_last_observed_block(chain.chain_id, latest_block)
         last_observed_block = latest_block
 
 

@@ -39,24 +39,6 @@ class Observer(BaseModel):
         ]
         return block_batches
 
-    async def get_accepted_transfers(
-        self,
-        transfers: list[RawTransfer],
-        accepted_addresses: dict[ChecksumAddress, UserId],
-    ) -> list[UserTransfer]:
-        result = []
-        for transfer in transfers:
-            if (user_id := accepted_addresses.get(transfer.to)) is not None:
-                decimals = await get_token_decimals(
-                    self.w3, self.chain.chain_id, transfer.token
-                )
-                result.append(
-                    UserTransfer(
-                        user_id=user_id, decimals=decimals, **transfer.model_dump()
-                    )
-                )
-        return result
-
     async def observe(
         self,
         from_block: BlockNumber | int,
@@ -84,8 +66,8 @@ class Observer(BaseModel):
                 logger=logger,
                 **kwargs,
             )
-            accepted_transfers = await self.get_accepted_transfers(
-                transfers, accepted_addresses
+            accepted_transfers = await get_accepted_transfers(
+                self.w3, self.chain, transfers, accepted_addresses
             )
             result.extend(accepted_transfers)
         return result
@@ -102,3 +84,21 @@ async def get_token_decimals(
         decimals = await w3_get_token_decimals(w3, token_address)
         await insert_token(chain_id, token_address, decimals)
     return decimals
+
+
+async def get_accepted_transfers(
+    w3: AsyncWeb3,
+    chain: ChainConfig,
+    transfers: list[RawTransfer],
+    accepted_addresses: dict[ChecksumAddress, UserId],
+) -> list[UserTransfer]:
+    result = []
+    for transfer in transfers:
+        if (user_id := accepted_addresses.get(transfer.to)) is not None:
+            decimals = await get_token_decimals(w3, chain.chain_id, transfer.token)
+            result.append(
+                UserTransfer(
+                    user_id=user_id, decimals=decimals, **transfer.model_dump()
+                )
+            )
+    return result

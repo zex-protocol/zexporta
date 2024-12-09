@@ -3,22 +3,22 @@ import json
 import logging
 import logging.config
 
-from eth_typing import ChecksumAddress
 import httpx
+from eth_account.signers.local import LocalAccount
+from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
 from web3 import AsyncWeb3, Web3
-from eth_account.signers.local import LocalAccount
 
 from zex_deposit.custom_types import (
     ChainConfig,
     WithdrawRequest,
 )
-from .config import WITHDRAWER_PRIVATE_KEY
 from zex_deposit.utils.abi import VAULT_ABI
 from zex_deposit.utils.dkg import parse_dkg_json
+from zex_deposit.utils.encoder import get_withdraw_hash
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
 from zex_deposit.utils.node_info import NodesInfo
-from zex_deposit.utils.web3 import async_web3_factory, get_vault_nonce
+from zex_deposit.utils.web3 import async_web3_factory, get_signed_data, get_vault_nonce
 from zex_deposit.utils.zex_api import (
     ZexAPIError,
     get_zex_last_withdraw_nonce,
@@ -30,7 +30,9 @@ from .config import (
     DKG_NAME,
     LOGGER_PATH,
     SA_DELAY_SECOND,
+    SA_SHIELD_PRIVATE_KEY,
     SA_TIMEOUT,
+    WITHDRAWER_PRIVATE_KEY,
 )
 
 logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/sa-withdrawer.log"))
@@ -71,7 +73,6 @@ async def process_withdraw_sa(
 
     if result.get("result") == "SUCCESSFUL":
         data = list(result["signature_data_from_node"].values())[0]
-
         await send_withdraw(
             w3,
             chain,
@@ -94,6 +95,9 @@ async def send_withdraw(
 ):
     vault = w3.eth.contract(address=chain.vault_address, abi=VAULT_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
+    withdraw_hash = get_withdraw_hash(withdraw_request, chain)
+    signed_data = get_signed_data(SA_SHIELD_PRIVATE_KEY, withdraw_hash)
+    logger.debug(f"Signed Withdraw data is: {signed_data}")
     tx = await vault.functions.withdraw(
         withdraw_request.token_address,
         withdraw_request.amount,
@@ -101,6 +105,7 @@ async def send_withdraw(
         withdraw_request.nonce,
         signature,
         signature_nonce,
+        signed_data,
     ).build_transaction({"from": account.address, "nonce": nonce})
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)

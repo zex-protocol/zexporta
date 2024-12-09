@@ -39,7 +39,7 @@ CHAINS_CONFIG = {
         delay=1,
         batch_block_size=20,
         vault_address=Web3.to_checksum_address(
-            "0xcA3423244F6EC002fa057d633294480e00F04fEF"
+            "0xc3D07c4FDE03b8B1F9FeE3C19d906681b7b66B82"
         ),
     ),
     10: ChainConfig(
@@ -51,7 +51,7 @@ CHAINS_CONFIG = {
         delay=1,
         batch_block_size=20,
         vault_address=Web3.to_checksum_address(
-            "0xcA3423244F6EC002fa057d633294480e00F04fEF"
+            "0xBa4e58D407F2D304f4d4eb476DECe5D9304D9c0E"
         ),
     ),
     56: ChainConfig(
@@ -63,7 +63,7 @@ CHAINS_CONFIG = {
         delay=1,
         batch_block_size=30,
         vault_address=Web3.to_checksum_address(
-            "0x701E471BFaBeb55a5d5b864ACeD49fE745d530c2"
+            "0xc3D07c4FDE03b8B1F9FeE3C19d906681b7b66B82"
         ),
     ),
 }
@@ -73,3 +73,6 @@ ZEX_ENCODE_VERSION = 1
 SA_TIMEOUT = 200
 SA_BATCH_BLOCK_NUMBER_SIZE = int(os.getenv("SA_BATCH_BLOCK_NUMBER_SIZE", 100))
 WITHDRAWER_PRIVATE_KEY = os.environ["WITHDRAWER_PRIVATE_KEY"]
+SA_SHIELD_PRIVATE_KEY = (
+    "0xdc1349a720a14a08858984d312f4921135f5eb683a49a75ef7a8be17d995b3d9"
+)

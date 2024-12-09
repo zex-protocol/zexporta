@@ -1,10 +1,11 @@
 import asyncio
 from typing import Iterable
 
-from pymongo import ASCENDING
 from eth_typing import ChainId
+from pymongo import ASCENDING
 
 from zex_deposit.custom_types import BlockNumber, TransferStatus, UserTransfer
+
 from .database import transfer_collection
 
 
@@ -16,7 +17,6 @@ async def insert_transfer_if_not_exists(transfer: UserTransfer):
     record = await transfer_collection.find_one(query)
     if not record:
         await transfer_collection.insert_one(transfer.model_dump())
-
 
 
 async def insert_transfers_if_not_exists(transfers: Iterable[UserTransfer]):
@@ -93,6 +93,19 @@ async def get_pending_transfers_block_number(
         "status": TransferStatus.PENDING.value,
         "block_number": {"$lte": finalized_block_number},
     }
+    block_numbers = set()
+    async for record in transfer_collection.find(
+        query,
+        sort=[("block_number", ASCENDING)],
+    ):
+        block_numbers.add(BlockNumber(record["block_number"]))
+    return list(block_numbers)
+
+
+async def get_block_numbers_by_status(
+    chain_id: ChainId, status: TransferStatus
+) -> list[BlockNumber]:
+    query = {"chain_id": chain_id.value, "status": status.value}
     block_numbers = set()
     async for record in transfer_collection.find(
         query,

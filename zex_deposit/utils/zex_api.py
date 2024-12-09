@@ -72,6 +72,7 @@ async def get_zex_latest_block(
     ) as e:
         raise ZexAPIError(e)
 
+
 async def get_zex_last_withdraw_nonce(
     async_client: httpx.AsyncClient, chain: ChainConfig
 ) -> int:

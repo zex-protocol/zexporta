@@ -1,22 +1,20 @@
 import asyncio
 import logging
 import logging.config
-import os
 
-from web3 import AsyncWeb3
 from eth_account.signers.local import LocalAccount
-
+from web3 import AsyncWeb3
 
 from zex_deposit.custom_types import (
     ChainConfig,
-    TransferStatus,
     ChecksumAddress,
+    TransferStatus,
     UserTransfer,
 )
-from zex_deposit.utils.abi import FACTORY_ABI, USER_DEPOSIT_ABI
 from zex_deposit.db.transfer import find_transactions_by_status, upsert_transfer
-from zex_deposit.utils.web3 import async_web3_factory
+from zex_deposit.utils.abi import FACTORY_ABI, USER_DEPOSIT_ABI
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
+from zex_deposit.utils.web3 import async_web3_factory
 
 from .config import (
     CHAINS_CONFIG,
@@ -24,7 +22,6 @@ from .config import (
     USER_DEPOSIT_FACTORY_ADDRESS,
     WITHDRAWER_PRIVATE_KEY,
 )
-
 
 logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/withdraw.log"))
 logger = logging.getLogger(__name__)

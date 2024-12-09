@@ -3,6 +3,8 @@ import logging
 import time
 from typing import Any, Callable, Coroutine, Iterable, TypeVar
 
+from eth_account import Account
+from eth_account.messages import encode_defunct
 from eth_typing import HexStr
 from pydantic import ValidationError
 from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
@@ -148,3 +150,9 @@ async def get_token_decimals(w3: AsyncWeb3, token_address: ChecksumAddress) -> i
 async def get_vault_nonce(w3: AsyncWeb3, vault_address: ChecksumAddress) -> int:
     contract = w3.eth.contract(address=vault_address, abi=VAULT_ABI)
     return await contract.functions.nonce().call()
+
+
+def get_signed_data(private_key, data: bytes) -> str:
+    signable = encode_defunct(data)
+    signed_message = Account.sign_message(signable, private_key)
+    return signed_message.signature.hex()
