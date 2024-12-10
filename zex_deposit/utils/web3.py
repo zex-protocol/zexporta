@@ -19,7 +19,6 @@ from zex_deposit.custom_types import (
     TransferStatus,
     TxHash,
 )
-from zex_deposit.utils.abi import VAULT_ABI
 from zex_deposit.utils.transfer_decoder import (
     InvalidTxError,
     NotRecognizedSolidityFuncError,
@@ -145,11 +144,6 @@ async def get_token_decimals(w3: AsyncWeb3, token_address: ChecksumAddress) -> i
     contract = w3.eth.contract(address=token_address, abi=min_abi)
     decimals = await contract.functions.decimals().call()
     return decimals
-
-
-async def get_vault_nonce(w3: AsyncWeb3, vault_address: ChecksumAddress) -> int:
-    contract = w3.eth.contract(address=vault_address, abi=VAULT_ABI)
-    return await contract.functions.nonce().call()
 
 
 def get_signed_data(private_key, data: bytes) -> str:

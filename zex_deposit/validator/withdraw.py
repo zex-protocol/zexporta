@@ -11,20 +11,22 @@ limit_tx = 1
 
 
 async def get_withdraw_request(
-    chain: ChainConfig, vault_nonce: int, logger: LoggerAdapter
+    chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter
 ) -> WithdrawRequest:
     try:
         client = httpx.AsyncClient()
 
         return await get_zex_withdraw(
-            client, chain, offset=vault_nonce, limit=vault_nonce + 1
+            client, chain, offset=sa_withdraw_nonce, limit=sa_withdraw_nonce + 1
         )
     finally:
         await client.aclose()
 
 
-def withdraw(chain: ChainConfig, vault_nonce: int, logger: LoggerAdapter):
-    withdraw_request = asyncio.run(get_withdraw_request(chain, vault_nonce, logger))
+def withdraw(chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter):
+    withdraw_request = asyncio.run(
+        get_withdraw_request(chain, sa_withdraw_nonce, logger)
+    )
     zex_withdraw_hash = get_withdraw_hash(withdraw_request, chain)
 
     logger.info(f"hash for withdraw is: {zex_withdraw_hash}")

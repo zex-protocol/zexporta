@@ -4,7 +4,6 @@ from pyfrost.network.abstract import Validators
 
 from zex_deposit.utils.logger import ChainLoggerAdapter
 
-
 from .config import CHAINS_CONFIG, VALIDATED_IPS
 from .deposit import deposit
 from .withdraw import withdraw
@@ -32,7 +31,7 @@ class NodeValidators(Validators):
             return deposit(chain, data, _logger)
 
         if method == "withdraw":
-            vault_nonce = data["vault_nonce"]
-            return withdraw(chain, vault_nonce, logger=_logger)
+            sa_withdraw_nonce = data["sa_withdraw_nonce"]
+            return withdraw(chain, sa_withdraw_nonce, logger=_logger)
 
         raise NotImplementedError()
