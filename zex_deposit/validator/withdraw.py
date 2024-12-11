@@ -27,7 +27,7 @@ def withdraw(chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter):
     withdraw_request = asyncio.run(
         get_withdraw_request(chain, sa_withdraw_nonce, logger)
     )
-    zex_withdraw_hash = get_withdraw_hash(withdraw_request, chain)
+    zex_withdraw_hash = get_withdraw_hash(withdraw_request)
 
     logger.info(f"hash for withdraw is: {zex_withdraw_hash}")
     return {

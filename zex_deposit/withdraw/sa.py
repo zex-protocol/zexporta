@@ -60,7 +60,7 @@ async def check_validator_data(
     zex_withdraw: WithdrawRequest,
     validator_hash: str,
 ):
-    withdraw_hash = get_withdraw_hash(zex_withdraw, chain)
+    withdraw_hash = get_withdraw_hash(zex_withdraw)
     if withdraw_hash != validator_hash:
         raise WithdrawDifferentHash(
             f"validator_hash: {validator_hash}, withdraw_hash: {withdraw_hash}"
@@ -132,7 +132,7 @@ async def send_withdraw(
 ):
     vault = w3.eth.contract(address=chain.vault_address, abi=VAULT_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
-    withdraw_hash = get_withdraw_hash(withdraw_request, chain)
+    withdraw_hash = get_withdraw_hash(withdraw_request)
     signed_data = get_signed_data(SA_SHIELD_PRIVATE_KEY, hexstr=withdraw_hash)
     logger.debug(f"Signed Withdraw data is: {signed_data}")
     tx = await vault.functions.withdraw(

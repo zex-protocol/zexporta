@@ -45,7 +45,7 @@ def encode_zex_deposit(
     return header + deposit_data
 
 
-def get_withdraw_hash(withdraw_request: WithdrawRequest, chain: ChainConfig):
+def get_withdraw_hash(withdraw_request: WithdrawRequest):
     return (
         Web3.solidity_keccak(
             ["address", "address", "uint256", "uint256", "uint256"],
@@ -54,7 +54,7 @@ def get_withdraw_hash(withdraw_request: WithdrawRequest, chain: ChainConfig):
                 withdraw_request.token_address,
                 withdraw_request.amount,
                 withdraw_request.nonce,
-                chain.chain_id,
+                withdraw_request.chain_id,
             ],
         )
         .hex()

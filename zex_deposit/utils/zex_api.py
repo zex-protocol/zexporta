@@ -113,6 +113,7 @@ async def get_zex_withdraw(
             nonce=data.get("nonce"),
             recipient=Web3.to_checksum_address(data.get("destination")),
             token_address=Web3.to_checksum_address(data.get("tokenContract")),
+            chain_id=chain.chain_id,
         )
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
         raise ZexAPIError(e)

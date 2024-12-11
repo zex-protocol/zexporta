@@ -80,6 +80,7 @@ class WithdrawRequest(BaseModel):
     amount: int
     recipient: ChecksumAddress
     nonce: int
+    chain_id: ChainId
 
     class Config:
         extra = "ignore"
