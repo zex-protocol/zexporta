@@ -6,7 +6,7 @@ from pymongo import ASCENDING
 
 from zex_deposit.custom_types import BlockNumber, TransferStatus, UserTransfer
 
-from .database import transfer_collection
+from .collections import transfer_collection
 
 
 async def insert_transfer_if_not_exists(transfer: UserTransfer):

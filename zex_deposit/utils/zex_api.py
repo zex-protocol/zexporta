@@ -42,11 +42,11 @@ async def get_last_zex_user_id(async_client: httpx.AsyncClient) -> UserId | None
         return res.json().get("id")
 
 
-async def send_deposits(async_client: httpx.AsyncClient, data: list):
+async def send_deposits(async_client: httpx.AsyncClient, withdraw: list):
     try:
         res = await async_client.post(
             url=f"{ZEX_BASE_URL}{ZexPath.DEPOSIT.value}",
-            json=data,
+            json=withdraw,
         )
         res.raise_for_status()
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
@@ -92,28 +92,36 @@ async def get_zex_last_withdraw_nonce(
         raise ZexAPIError(e)
 
 
-async def get_zex_withdraw(
-    async_client: httpx.AsyncClient, chain: ChainConfig, offset: int, limit: int = 100
-) -> WithdrawRequest:
+async def get_zex_withdraws(
+    async_client: httpx.AsyncClient,
+    chain: ChainConfig,
+    offset: int,
+    limit: int | None = None,
+) -> list[WithdrawRequest]:
     from web3 import Web3
 
+    params = dict()
+    if limit is not None:
+        params["limit"] = limit
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.WITHDRAWS.value}",
-            params={"chain": chain.symbol, "offset": offset, "limit": limit},
+            params={"chain": chain.symbol, "offset": offset, **params},
             headers={"accept": "application/json"},
         )
         res.raise_for_status()
-        data = res.json()
-        if not len(data):
+        withdraws = res.json()
+        if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
-        data = data[0]
-        return WithdrawRequest(
-            amount=data.get("amount"),
-            nonce=data.get("nonce"),
-            recipient=Web3.to_checksum_address(data.get("destination")),
-            token_address=Web3.to_checksum_address(data.get("tokenContract")),
-            chain_id=chain.chain_id,
-        )
+        return [
+            WithdrawRequest(
+                amount=withdraw.get("amount"),
+                nonce=withdraw.get("nonce"),
+                recipient=Web3.to_checksum_address(withdraw.get("destination")),
+                token_address=Web3.to_checksum_address(withdraw.get("tokenContract")),
+                chain_id=chain.chain_id,
+            )
+            for withdraw in withdraws
+        ]
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
         raise ZexAPIError(e)

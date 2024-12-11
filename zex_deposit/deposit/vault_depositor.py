@@ -73,7 +73,7 @@ async def transfer_ERC20(
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
     await w3.eth.wait_for_transaction_receipt(tx_hash)
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
-    transfer = transfer.model_copy(update={"status": TransferStatus.WITHDRAW.value})
+    transfer = transfer.model_copy(update={"status": TransferStatus.SUCCESSFUL.value})
     await upsert_transfer(transfer)
 
 

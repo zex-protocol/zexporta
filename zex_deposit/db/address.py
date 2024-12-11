@@ -12,11 +12,11 @@ from zex_deposit.utils.zex_api import (
     get_last_zex_user_id,
 )
 
+from .collections import address_collection
 from .config import (
     USER_DEPOSIT_BYTECODE_HASH,
     USER_DEPOSIT_FACTORY_ADDRESS,
 )
-from .database import address_collection
 
 
 class UserNotExists(Exception):

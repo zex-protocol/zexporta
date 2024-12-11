@@ -5,7 +5,7 @@ import httpx
 
 from zex_deposit.custom_types import ChainConfig, WithdrawRequest
 from zex_deposit.utils.encoder import get_withdraw_hash
-from zex_deposit.utils.zex_api import get_zex_withdraw
+from zex_deposit.utils.zex_api import get_zex_withdraws
 
 limit_tx = 1
 
@@ -15,10 +15,14 @@ async def get_withdraw_request(
 ) -> WithdrawRequest:
     try:
         client = httpx.AsyncClient()
+        withdraw = (
+            await get_zex_withdraws(
+                client, chain, offset=sa_withdraw_nonce, limit=sa_withdraw_nonce + 1
+            )
+        )[0]
 
-        return await get_zex_withdraw(
-            client, chain, offset=sa_withdraw_nonce, limit=sa_withdraw_nonce + 1
-        )
+        return withdraw
+
     finally:
         await client.aclose()
 

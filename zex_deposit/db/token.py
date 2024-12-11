@@ -1,5 +1,6 @@
 from zex_deposit.custom_types import ChainId, ChecksumAddress
-from .database import token_collection
+
+from .collections import token_collection
 
 
 async def get_decimals(chain_id: int, token_address: ChecksumAddress) -> int | None:

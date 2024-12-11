@@ -21,13 +21,20 @@ class ChainConfig(BaseModel):
     vault_address: ChecksumAddress
 
 
-class TransferStatus(Enum):
-    PENDING = 1
-    FINALIZED = 2
-    VERIFIED = 3
-    WITHDRAW = 4
-    REORG = 5
-    REJECTED = 6
+class TransferStatus(str, Enum):
+    PENDING = "pending"
+    FINALIZED = "finalized"
+    VERIFIED = "verified"
+    SUCCESSFUL = "successful"
+    REORG = "reorg"
+    REJECTED = "rejected"
+
+
+class WithdrawStatus(Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESSFUL = "successful"
+    REJECTED = "rejected"
 
 
 class Token(BaseModel):
@@ -81,6 +88,10 @@ class WithdrawRequest(BaseModel):
     recipient: ChecksumAddress
     nonce: int
     chain_id: ChainId
+    tx_hash: TxHash | None = None
+    status: WithdrawStatus = WithdrawStatus.PENDING
 
     class Config:
         extra = "ignore"
+        use_enum_values = True
+        validate_default = True

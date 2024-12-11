@@ -44,7 +44,7 @@ services:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/sa:/var/log/sa
+      - /var/log/zex_deposit/deposit/:/var/log/deposit/
     env_file:
       - .env
 
@@ -62,7 +62,7 @@ services:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/sa:/var/log/sa
+      - /var/log/zex_deposit/deposit/:/var/log/deposit/
     env_file:
       - .env
     networks:
@@ -83,7 +83,7 @@ services:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/sa:/var/log/sa
+      - /var/log/zex_deposit/deposit/:/var/log/deposit/
     env_file:
       - .env
 
@@ -107,7 +107,7 @@ services:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/sa:/var/log/sa
+      - /var/log/zex_deposit/deposit/:/var/log/deposit/
     env_file:
       - .env
 
@@ -126,7 +126,26 @@ services:
       zex_deposit_custom_network:
     volumes:
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/sa:/var/log/sa
+      - /var/log/zex_deposit/withdraw/:/var/log/withdraw/
+    env_file:
+      - .env
+
+  withdraw-observer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: withdraw-observer
+    entrypoint: poetry run python -m zex_deposit.withdraw.observer
+    restart: always
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      zex_deposit_custom_network:
+    volumes:
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/zex_deposit/withdraw/:/var/log/withdraw/
     env_file:
       - .env
 
@@ -145,7 +164,7 @@ services:
       zex_deposit_custom_network:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
-      - /var/log/validator:/var/log/validator
+      - /var/log/zex_deposit/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
@@ -169,7 +188,7 @@ services:
       - "6002:6002"
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
-      - /var/log/validator:/var/log/validator
+      - /var/log/zex_deposit/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
@@ -193,7 +212,7 @@ services:
       zex_deposit_custom_network:
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
-      - /var/log/validator:/var/log/validator
+      - /var/log/zex_deposit/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
