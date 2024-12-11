@@ -28,13 +28,33 @@ services:
       zex_deposit_custom_network:
 
 
-  observer:
+  deposit-sa:
     build:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: observer
-    entrypoint: poetry run python -m zex_deposit.sa.observer
+    container_name: deposit-sa
+    entrypoint: poetry run python -m zex_deposit.deposit.sa
+    restart: always
+    networks:
+      zex_deposit_custom_network:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/sa:/var/log/sa
+    env_file:
+      - .env
+
+  deposit-observer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: deposit-observer
+    entrypoint: poetry run python -m zex_deposit.deposit.observer
     restart: always
     depends_on:
       mongodb:
@@ -49,13 +69,13 @@ services:
       zex_deposit_custom_network:
 
 
-  finalizer:
+  deposit-finalizer:
     build:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: finalizer
-    entrypoint: poetry run python -m zex_deposit.sa.finalizer
+    container_name: deposit-finalizer
+    entrypoint: poetry run python -m zex_deposit.deposit.finalizer
     restart: on-failure:5
     depends_on:
       mongodb:
@@ -71,13 +91,13 @@ services:
       zex_deposit_custom_network:
 
 
-  vault-depositor:
+  deposit-vault-depositor:
     build:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: vault-depositor
-    entrypoint: poetry run python -m zex_deposit.sa.vault_depositor
+    container_name: deposit-vault-depositor
+    entrypoint: poetry run python -m zex_deposit.deposit.vault_depositor
     restart: always
     networks:
       zex_deposit_custom_network:
@@ -91,37 +111,20 @@ services:
     env_file:
       - .env
 
-  sa-withdrawer:
+  withdraw-sa:
     build:
       context: .
       dockerfile: Dockerfile
     image: zex-deposit
-    container_name: sa-withdrawer
-    entrypoint: poetry run python -m zex_deposit.sa.withdrawer
+    container_name: withdraw-sa
+    entrypoint: poetry run python -m zex_deposit.withdraw.sa
     restart: always
-    networks:
-      zex_deposit_custom_network:
-    volumes:
-      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/sa:/var/log/sa
-    env_file:
-      - .env
-
-  sa-depositor:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: zex-deposit
-    container_name: sa-depositor
-    entrypoint: poetry run python -m zex_deposit.sa.depositor
-    restart: always
-    networks:
-      zex_deposit_custom_network:
     depends_on:
       mongodb:
         condition: service_healthy
+    networks:
+      zex_deposit_custom_network:
     volumes:
-      - ./zex_deposit/data:/app/zex_deposit/data
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
       - /var/log/sa:/var/log/sa
     env_file:

@@ -2,9 +2,10 @@ import os
 
 from dotenv import load_dotenv
 
+from zex_deposit.config import (
+    MONGO_URI,
+    USER_DEPOSIT_BYTECODE_HASH,
+    USER_DEPOSIT_FACTORY_ADDRESS,
+)
+
 load_dotenv()
-
-
-USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
-USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")

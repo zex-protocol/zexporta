@@ -146,7 +146,7 @@ async def get_token_decimals(w3: AsyncWeb3, token_address: ChecksumAddress) -> i
     return decimals
 
 
-def get_signed_data(private_key, data: bytes) -> str:
-    signable = encode_defunct(data)
+def get_signed_data(private_key, *, primitive: bytes = None, hexstr: str = None) -> str:  # type: ignore
+    signable = encode_defunct(primitive=primitive, hexstr=hexstr)
     signed_message = Account.sign_message(signable, private_key)
     return signed_message.signature.hex()

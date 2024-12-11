@@ -19,6 +19,7 @@ from zex_deposit.db.chain import (
     upsert_chain_last_withdraw_nonce,
 )
 from zex_deposit.utils.abi import VAULT_ABI
+from zex_deposit.utils.decode_error import decode_custom_error_data
 from zex_deposit.utils.dkg import parse_dkg_json
 from zex_deposit.utils.encoder import get_withdraw_hash
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
@@ -71,13 +72,13 @@ async def process_withdraw_sa(
     client: httpx.AsyncClient,
     account: LocalAccount,
     chain: ChainConfig,
-    sa_nonce: int,
+    sa_withdraw_nonce: int,
     dkg_party,
     logger: ChainLoggerAdapter,
 ):
     last_nonce = await get_zex_last_withdraw_nonce(client, chain)
 
-    if sa_nonce >= last_nonce:
+    if sa_withdraw_nonce >= last_nonce:
         logger.info("No withdraw to process ...")
         return
 
@@ -90,7 +91,7 @@ async def process_withdraw_sa(
         "method": "withdraw",
         "data": {
             "chain_id": chain.chain_id,
-            "sa_withdraw_nonce": sa_nonce,
+            "sa_withdraw_nonce": sa_withdraw_nonce,
         },
     }
 
@@ -100,7 +101,7 @@ async def process_withdraw_sa(
     if result.get("result") == "SUCCESSFUL":
         validator_hash = result["message_hash"]
         zex_withdraw = await get_zex_withdraw(
-            client, chain, offset=sa_nonce, limit=sa_nonce + 1
+            client, chain, offset=sa_withdraw_nonce, limit=sa_withdraw_nonce + 1
         )
         await check_validator_data(
             chain, zex_withdraw=zex_withdraw, validator_hash=validator_hash
@@ -114,6 +115,9 @@ async def process_withdraw_sa(
             zex_withdraw,
             Web3.to_checksum_address(result["nonce"]),
             logger,
+        )
+        await upsert_chain_last_withdraw_nonce(
+            chain_id=chain.chain_id, nonce=sa_withdraw_nonce + 1
         )
 
 
@@ -129,7 +133,7 @@ async def send_withdraw(
     vault = w3.eth.contract(address=chain.vault_address, abi=VAULT_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
     withdraw_hash = get_withdraw_hash(withdraw_request, chain)
-    signed_data = get_signed_data(SA_SHIELD_PRIVATE_KEY, withdraw_hash)
+    signed_data = get_signed_data(SA_SHIELD_PRIVATE_KEY, hexstr=withdraw_hash)
     logger.debug(f"Signed Withdraw data is: {signed_data}")
     tx = await vault.functions.withdraw(
         withdraw_request.token_address,
@@ -157,43 +161,40 @@ async def withdraw(chain: ChainConfig):
             client = httpx.AsyncClient()
             dkg_party = dkg_key["party"]
             last_withdraw_nonce = await get_last_withdraw_nonce(chain.chain_id)
+            await process_withdraw_sa(
+                w3=w3,
+                client=client,
+                account=account,
+                chain=chain,
+                sa_withdraw_nonce=last_withdraw_nonce + 1,
+                dkg_party=dkg_party,
+                logger=_logger,
+            )
+        except ZexAPIError as e:
+            _logger.error(f"Error at sending deposit to Zex: {e}")
+            continue
+        except (web3.exceptions.ContractCustomError,) as e:
+            _logger.error(
+                f"Contract Error, error: {e.message} , decoded_error: {decode_custom_error_data(e.message, VAULT_ABI)}"
+            )
 
-            try:
-                await process_withdraw_sa(
-                    w3=w3,
-                    client=client,
-                    account=account,
-                    chain=chain,
-                    sa_nonce=last_withdraw_nonce + 1,
-                    dkg_party=dkg_party,
-                    logger=_logger,
-                )
-            except ZexAPIError as e:
-                _logger.error(f"Error at sending deposit to Zex: {e}")
-                continue
-            except (
-                web3.exceptions.ContractCustomError,
-                web3.exceptions.ContractLogicError,
-            ) as e:
-                _logger.error(f"Contract Error: {e}")
+            await upsert_chain_last_withdraw_nonce(
+                chain_id=chain.chain_id, nonce=last_withdraw_nonce + 1
+            )
 
-                await upsert_chain_last_withdraw_nonce(
-                    chain_id=chain.chain_id, nonce=last_withdraw_nonce + 1
-                )
-
-            except web3.exceptions.Web3Exception as e:
-                _logger.error(f"Web3Error: {e}")
-                await asyncio.sleep(60)
-            except AssertionError as e:
-                _logger.error(f"Validator error, error: {e}")
-                continue
-            except (KeyError, json.JSONDecodeError, TypeError) as e:
-                _logger.exception(f"Error occurred in pyfrost, {e}")
-                continue
-            except asyncio.TimeoutError as e:
-                logger.error(f"Timeout occurred continue after 1 min, error {e}")
-                await asyncio.sleep(60)
-                continue
+        except web3.exceptions.Web3Exception as e:
+            _logger.error(f"Web3Error: {e}")
+            await asyncio.sleep(60)
+        except AssertionError as e:
+            _logger.error(f"Validator error, error: {e}")
+            continue
+        except (KeyError, json.JSONDecodeError, TypeError) as e:
+            _logger.exception(f"Error occurred in pyfrost, {e}")
+            continue
+        except asyncio.TimeoutError as e:
+            logger.error(f"Timeout occurred continue after 1 min, error {e}")
+            await asyncio.sleep(60)
+            continue
         finally:
             await client.aclose()
             await asyncio.sleep(SA_DELAY_SECOND)

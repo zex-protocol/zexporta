@@ -23,7 +23,7 @@ from .config import (
     WITHDRAWER_PRIVATE_KEY,
 )
 
-logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/withdraw.log"))
+logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/vault_depositor.log"))
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +58,7 @@ async def deploy_contract(
         raise ValueError("Deployed event not found in transaction logs")
 
 
-async def transferERC20(
+async def transfer_ERC20(
     w3: AsyncWeb3,
     account: LocalAccount,
     transfer: UserTransfer,
@@ -104,7 +104,7 @@ async def withdraw(chain: ChainConfig):
                         logger=_logger,
                     )
 
-                await transferERC20(w3, account, transfer, logger=_logger)
+                await transfer_ERC20(w3, account, transfer, logger=_logger)
 
         except ValueError as e:
             _logger.error(f"Can not deploy contract for {transfer.to}, error: {e}")

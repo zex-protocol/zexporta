@@ -105,7 +105,7 @@ async def send_result_to_zex(
 ) -> None:
     logger.debug("Start sending deposit to Zex.")
     _data = msg + nonce.encode() + signature.to_bytes(32, "big")
-    signed_data = get_signed_data(SA_SHIELD_PRIVATE_KEY, msg).encode()
+    signed_data = get_signed_data(SA_SHIELD_PRIVATE_KEY, primitive=msg).encode()
     data = _data + signed_data
     logger.debug(f"encoded data to send: {data}")
     result = await send_deposits(client, [data.decode("latin-1")])

@@ -3,6 +3,7 @@ import logging
 import logging.config
 import math
 
+from zex_deposit.custom_types import ChainConfig
 from zex_deposit.db.transfer import (
     get_pending_transfers_block_number,
     to_finalized,
@@ -19,7 +20,6 @@ from zex_deposit.utils.web3 import (
 from .config import (
     CHAINS_CONFIG,
     LOGGER_PATH,
-    ChainConfig,
 )
 
 logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalizer.log"))  # type: ignore

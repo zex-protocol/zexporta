@@ -4,7 +4,7 @@ import logging.config
 
 from eth_typing import ChecksumAddress
 
-from zex_deposit.custom_types import RawTransfer
+from zex_deposit.custom_types import ChainConfig, RawTransfer
 from zex_deposit.db.address import get_active_address, insert_new_address_to_db
 from zex_deposit.db.chain import (
     get_last_observed_block,
@@ -21,7 +21,6 @@ from zex_deposit.utils.web3 import (
 from .config import (
     CHAINS_CONFIG,
     LOGGER_PATH,
-    ChainConfig,
 )
 
 logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/observer.log"))

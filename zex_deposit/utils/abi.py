@@ -86,4 +86,12 @@ VAULT_ABI = [
         "stateMutability": "view",
         "type": "function",
     },
+    {
+        "inputs": [{"internalType": "uint256", "name": "Nonce", "type": "uint256"}],
+        "name": "InvalidNonce",
+        "type": "error",
+    },
+    {"inputs": [], "name": "InvalidSignature", "type": "error"},
+    {"inputs": [], "name": "TokenTransferFailed", "type": "error"},
+    {"inputs": [], "name": "ZeroAddress", "type": "error"},
 ]
