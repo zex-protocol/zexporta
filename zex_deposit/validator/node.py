@@ -1,13 +1,14 @@
 import logging.config
 import os
 
+import sentry_sdk
 from flask import Flask
 from pyfrost.network.node import Node
 
 from zex_deposit.utils.logger import get_logger_config
 from zex_deposit.utils.node_info import NodesInfo
 
-from .config import LOGGER_PATH, PRIVATE_KEY
+from .config import LOGGER_PATH, PRIVATE_KEY, SENTRY_DNS
 from .node_data_manager import NodeDataManager
 from .node_validator import NodeValidators
 
@@ -34,4 +35,8 @@ def run_node(node_id: int) -> None:
     app.register_blueprint(node.blueprint, url_prefix="/pyfrost")
 
 
-run_node(int(os.environ["NODE_ID"], 16))
+if __name__ == "__main__":
+    sentry_sdk.init(
+        dsn=SENTRY_DNS,
+    )
+    run_node(int(os.environ["NODE_ID"], 16))

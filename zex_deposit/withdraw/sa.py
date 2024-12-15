@@ -3,6 +3,7 @@ import json
 import logging
 import logging.config
 
+import sentry_sdk
 import web3.exceptions
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
@@ -34,6 +35,7 @@ from .config import (
     SA_DELAY_SECOND,
     SA_SHIELD_PRIVATE_KEY,
     SA_TIMEOUT,
+    SENTRY_DNS,
     WITHDRAWER_PRIVATE_KEY,
 )
 
@@ -210,5 +212,8 @@ async def main():
 
 
 if __name__ == "__main__":
+    sentry_sdk.init(
+        dsn=SENTRY_DNS,
+    )
     loop = asyncio.new_event_loop()
     loop.run_until_complete(main())

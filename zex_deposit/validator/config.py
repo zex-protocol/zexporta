@@ -1,6 +1,6 @@
 import os
 
-from zex_deposit.config import CHAINS_CONFIG, ZEX_ENCODE_VERSION  # noqa: F401
+from zex_deposit.config import CHAINS_CONFIG, SENTRY_DNS, ZEX_ENCODE_VERSION
 
 LOGGER_PATH = "/var/log/validator/validator.log"
 

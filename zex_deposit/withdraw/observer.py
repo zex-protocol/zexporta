@@ -2,6 +2,7 @@ import asyncio
 import logging.config
 
 import httpx
+import sentry_sdk
 
 from zex_deposit.custom_types import ChainConfig
 from zex_deposit.db.chain import (
@@ -16,7 +17,7 @@ from zex_deposit.utils.zex_api import (
     get_zex_withdraws,
 )
 
-from .config import CHAINS_CONFIG, LOGGER_PATH, WITHDRAW_DELAY_SECOND
+from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS, WITHDRAW_DELAY_SECOND
 
 logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/observer.log"))
 logger = logging.getLogger(__name__)
@@ -73,5 +74,8 @@ async def main():
 
 
 if __name__ == "__main__":
+    sentry_sdk.init(
+        dsn=SENTRY_DNS,
+    )
     loop = asyncio.new_event_loop()
     loop.run_until_complete(main())

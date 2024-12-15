@@ -5,6 +5,7 @@ import logging.config
 from hashlib import sha256
 
 import httpx
+import sentry_sdk
 from pyfrost.network.sa import SA
 
 from zex_deposit.custom_types import (
@@ -36,6 +37,7 @@ from .config import (
     SA_BATCH_BLOCK_NUMBER_SIZE,
     SA_SHIELD_PRIVATE_KEY,
     SA_TIMEOUT,
+    SENTRY_DNS,
     ZEX_ENCODE_VERSION,
 )
 
@@ -154,5 +156,8 @@ async def main():
 
 
 if __name__ == "__main__":
+    sentry_sdk.init(
+        dsn=SENTRY_DNS,
+    )
     loop = asyncio.new_event_loop()
     loop.run_until_complete(main())
