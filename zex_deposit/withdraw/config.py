@@ -3,6 +3,7 @@ from zex_deposit.config import (
     DKG_JSON_PATH,
     DKG_NAME,
     SA_SHIELD_PRIVATE_KEY,
+    SENTRY_DNS,
     WITHDRAWER_PRIVATE_KEY,
 )
 

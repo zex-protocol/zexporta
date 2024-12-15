@@ -3,6 +3,8 @@ import logging
 import logging.config
 import math
 
+import sentry_sdk
+
 from zex_deposit.custom_types import ChainConfig
 from zex_deposit.db.transfer import (
     get_pending_transfers_block_number,
@@ -17,10 +19,7 @@ from zex_deposit.utils.web3 import (
     get_finalized_block_number,
 )
 
-from .config import (
-    CHAINS_CONFIG,
-    LOGGER_PATH,
-)
+from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS
 
 logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalizer.log"))  # type: ignore
 logger = logging.getLogger(__name__)
@@ -66,5 +65,8 @@ async def main():
 
 
 if __name__ == "__main__":
+    sentry_sdk.init(
+        dsn=SENTRY_DNS,
+    )
     loop = asyncio.new_event_loop()
     loop.run_until_complete(main())

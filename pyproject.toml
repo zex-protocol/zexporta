@@ -16,6 +16,7 @@ pyfrost = { git = "https://github.com/zellular-xyz/pyfrost.git" }
 redis = "^5.2.0"
 gunicorn = "^23.0.0"
 fastapi = "^0.115.6"
+sentry-sdk = "^2.19.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "~=8.3.3"

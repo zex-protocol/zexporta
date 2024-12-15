@@ -1,6 +1,8 @@
 from eth_abi import decode
 from eth_utils import decode_hex, keccak
 
+from zex_deposit.utils.abi import FACTORY_ABI
+
 
 # Decode custom error data
 def decode_custom_error_data(response_error_data, contract_abi):
@@ -42,3 +44,7 @@ def decode_custom_error_data(response_error_data, contract_abi):
 
     except Exception as e:
         return {"error": str(e)}
+
+
+if __name__ == "__main__":
+    print(decode_custom_error_data("0xf4d678b8", FACTORY_ABI))

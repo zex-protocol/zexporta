@@ -2,6 +2,8 @@ import asyncio
 import logging
 import logging.config
 
+import sentry_sdk
+import web3.exceptions
 from eth_account.signers.local import LocalAccount
 from web3 import AsyncWeb3
 
@@ -19,6 +21,7 @@ from zex_deposit.utils.web3 import async_web3_factory
 from .config import (
     CHAINS_CONFIG,
     LOGGER_PATH,
+    SENTRY_DNS,
     USER_DEPOSIT_FACTORY_ADDRESS,
     WITHDRAWER_PRIVATE_KEY,
 )
@@ -103,8 +106,12 @@ async def withdraw(chain: ChainConfig):
                         transfer.user_id,
                         logger=_logger,
                     )
-
-                await transfer_ERC20(w3, account, transfer, logger=_logger)
+                try:
+                    await transfer_ERC20(w3, account, transfer, logger=_logger)
+                except web3.exceptions.ContractCustomError as e:
+                    _logger.error(
+                        f"Error while trying to transfer ERC20 to contract {transfer.to} , error: {e}"
+                    )
 
         except ValueError as e:
             _logger.error(f"Can not deploy contract for {transfer.to}, error: {e}")
@@ -121,5 +128,8 @@ async def main():
 
 
 if __name__ == "__main__":
+    sentry_sdk.init(
+        dsn=SENTRY_DNS,
+    )
     loop = asyncio.new_event_loop()
     loop.run_until_complete(main())
