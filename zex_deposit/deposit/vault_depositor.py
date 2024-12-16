@@ -115,7 +115,6 @@ async def withdraw(chain: ChainConfig):
 
         except ValueError as e:
             _logger.error(f"Can not deploy contract for {transfer.to}, error: {e}")
-            exit(1)
 
         finally:
             await asyncio.sleep(10)

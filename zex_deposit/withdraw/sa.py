@@ -136,6 +136,7 @@ async def send_withdraw(
     ).build_transaction({"from": account.address, "nonce": nonce})
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    withdraw_request.tx_hash = tx_hash.hex()
     await w3.eth.wait_for_transaction_receipt(tx_hash)
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
 

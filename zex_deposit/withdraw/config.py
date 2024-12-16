@@ -8,6 +8,6 @@ from zex_deposit.config import (
 )
 
 LOGGER_PATH = "/var/log/withdraw/"
-WITHDRAW_DELAY_SECOND = 120
+WITHDRAW_DELAY_SECOND = 10
 SA_TIMEOUT = 60
-SA_DELAY_SECOND = 60
+SA_DELAY_SECOND = 20
