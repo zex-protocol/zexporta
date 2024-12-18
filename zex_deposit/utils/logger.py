@@ -16,6 +16,7 @@ def get_logger_config(logger_path: str):
                 "formatter": "standard",
             },
             "file": {
+                "level": "DEBUG",
                 "class": "logging.handlers.TimedRotatingFileHandler",
                 "filename": logger_path,
                 "when": "midnight",

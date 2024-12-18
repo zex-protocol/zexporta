@@ -10,6 +10,12 @@ UserId: TypeAlias = int
 TxHash: TypeAlias = str
 
 
+class EnvEnum(str, Enum):
+    DEV = "dev"
+    PROD = "prod"
+    TEST = "test"
+
+
 class ChainConfig(BaseModel):
     private_rpc: URI | str
     chain_id: ChainId

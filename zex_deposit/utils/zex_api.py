@@ -4,14 +4,13 @@ from json import JSONDecodeError
 
 import httpx
 
+from zex_deposit.config import ZEX_BASE_URL
 from zex_deposit.custom_types import (
     BlockNumber,
     ChainConfig,
     UserId,
     WithdrawRequest,
 )
-
-ZEX_BASE_URL = "https://api.zex.zellular.xyz/v1"
 
 
 class ZexPath(Enum):
@@ -81,6 +80,8 @@ async def get_zex_last_withdraw_nonce(
             url=f"{ZEX_BASE_URL}{ZexPath.LAST_WITHDRAW_NONCE.value}",
             params={"chain": chain.symbol},
         )
+        if res.status_code == httpx.codes.NOT_FOUND:
+            return -1
         res.raise_for_status()
         return res.json().get("nonce")
     except (

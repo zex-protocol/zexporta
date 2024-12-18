@@ -1,0 +1,230 @@
+services:
+
+  mongodb:
+    image: mongo:7.0.15
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      zex_deposit_custom_network:
+
+
+    volumes:
+      - /opt/mongo/db:/data/db
+
+  redis:
+    image: redis:latest
+    restart: always
+    volumes:
+      - /opt/redis/data:/root/redis
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      zex_deposit_custom_network:
+
+
+  deposit-sa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: deposit-sa
+    entrypoint: poetry run python -m zex_deposit.deposit.sa
+    restart: always
+    networks:
+      zex_deposit_custom_network:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/zex_deposit/deposit/:/var/log/deposit/
+    env_file:
+      - .env.prod
+
+  deposit-observer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: deposit-observer
+    entrypoint: poetry run python -m zex_deposit.deposit.observer
+    restart: always
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/zex_deposit/deposit/:/var/log/deposit/
+    env_file:
+      - .env.prod
+    networks:
+      zex_deposit_custom_network:
+
+
+  deposit-finalizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: deposit-finalizer
+    entrypoint: poetry run python -m zex_deposit.deposit.finalizer
+    restart: on-failure:5
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/zex_deposit/deposit/:/var/log/deposit/
+    env_file:
+      - .env.prod
+
+    networks:
+      zex_deposit_custom_network:
+
+
+  deposit-vault-depositor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: deposit-vault-depositor
+    entrypoint: poetry run python -m zex_deposit.deposit.vault_depositor
+    restart: always
+    networks:
+      zex_deposit_custom_network:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/zex_deposit/deposit/:/var/log/deposit/
+    env_file:
+      - .env.prod
+
+  withdraw-sa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: withdraw-sa
+    entrypoint: poetry run python -m zex_deposit.withdraw.sa
+    restart: always
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      zex_deposit_custom_network:
+    volumes:
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/zex_deposit/withdraw/:/var/log/withdraw/
+    env_file:
+      - .env.prod
+
+  withdraw-observer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: withdraw-observer
+    entrypoint: poetry run python -m zex_deposit.withdraw.observer
+    restart: always
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      zex_deposit_custom_network:
+    volumes:
+      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
+      - /var/log/zex_deposit/withdraw/:/var/log/withdraw/
+    env_file:
+      - .env.prod
+
+  validator-1:
+    build:
+      context: .
+    image: zex-deposit
+    container_name: validator-1
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    environment:
+      - NODE_ID=0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
+    ports:
+      - "6002:6002"
+    restart: on-failure:5
+    networks:
+      zex_deposit_custom_network:
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - /var/log/zex_deposit/validator:/var/log/validator
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+
+  validator-2:
+    build:
+      context: .
+    image: zex-deposit
+    container_name: validator-2
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    environment:
+      - NODE_ID=0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
+    restart: on-failure:5
+    networks:
+      zex_deposit_custom_network:
+    ports:
+      - "6002:6002"
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - /var/log/zex_deposit/validator:/var/log/validator
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+
+  validator-3:
+    build:
+      context: .
+    image: zex-deposit
+    container_name: validator-3
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    environment:
+      - NODE_ID=0xfe6ec3f9e9ad332de8fcdf8d630ccdc209d54e71fcd9cc866785cebe2db5197b
+    ports:
+      - "6002:6002"
+    restart: on-failure:5
+    networks:
+      zex_deposit_custom_network:
+    volumes:
+      - ./zex_deposit/data:/app/zex_deposit/data
+      - /var/log/zex_deposit/validator:/var/log/validator
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+
+networks:
+  zex_deposit_custom_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1

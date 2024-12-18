@@ -28,6 +28,7 @@ services:
       zex_deposit_custom_network:
 
 
+
   deposit-sa:
     build:
       context: .
@@ -38,6 +39,7 @@ services:
     restart: always
     networks:
       zex_deposit_custom_network:
+        ipv4_address: 172.20.0.4
     depends_on:
       mongodb:
         condition: service_healthy
@@ -46,7 +48,7 @@ services:
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
       - /var/log/zex_deposit/deposit/:/var/log/deposit/
     env_file:
-      - .env
+      - .env.dev
 
   deposit-observer:
     build:
@@ -64,9 +66,10 @@ services:
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
       - /var/log/zex_deposit/deposit/:/var/log/deposit/
     env_file:
-      - .env
+      - .env.dev
     networks:
       zex_deposit_custom_network:
+        ipv4_address: 172.20.0.6
 
 
   deposit-finalizer:
@@ -85,10 +88,11 @@ services:
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
       - /var/log/zex_deposit/deposit/:/var/log/deposit/
     env_file:
-      - .env
+      - .env.dev
 
     networks:
       zex_deposit_custom_network:
+        ipv4_address: 172.20.0.7
 
 
   deposit-vault-depositor:
@@ -101,6 +105,7 @@ services:
     restart: always
     networks:
       zex_deposit_custom_network:
+        ipv4_address: 172.20.0.8
     depends_on:
       mongodb:
         condition: service_healthy
@@ -109,7 +114,7 @@ services:
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
       - /var/log/zex_deposit/deposit/:/var/log/deposit/
     env_file:
-      - .env
+      - .env.dev
 
   withdraw-sa:
     build:
@@ -124,11 +129,12 @@ services:
         condition: service_healthy
     networks:
       zex_deposit_custom_network:
+        ipv4_address: 172.20.0.5
     volumes:
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
       - /var/log/zex_deposit/withdraw/:/var/log/withdraw/
     env_file:
-      - .env
+      - .env.dev
 
   withdraw-observer:
     build:
@@ -143,25 +149,25 @@ services:
         condition: service_healthy
     networks:
       zex_deposit_custom_network:
+        ipv4_address: 172.20.0.9
     volumes:
       - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
       - /var/log/zex_deposit/withdraw/:/var/log/withdraw/
     env_file:
-      - .env
+      - .env.dev
 
   validator-1:
     build:
       context: .
     image: zex-deposit
     container_name: validator-1
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --access-logfile - --capture-output --log-level debug  --workers=5 zex_deposit.validator.node:app
     environment:
       - NODE_ID=0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
-    ports:
-      - "6002:6002"
     restart: on-failure:5
     networks:
       zex_deposit_custom_network:
+        ipv4_address: 172.20.0.10
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/zex_deposit/validator:/var/log/validator
@@ -171,21 +177,20 @@ services:
       redis:
         condition: service_healthy
     env_file:
-      - .env
+      - .env.dev
 
   validator-2:
     build:
       context: .
     image: zex-deposit
     container_name: validator-2
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zex_deposit.validator.node:app
     environment:
       - NODE_ID=0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
     restart: on-failure:5
     networks:
       zex_deposit_custom_network:
-    ports:
-      - "6002:6002"
+        ipv4_address: 172.20.0.11
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/zex_deposit/validator:/var/log/validator
@@ -195,21 +200,20 @@ services:
       redis:
         condition: service_healthy
     env_file:
-      - .env
+      - .env.dev
 
   validator-3:
     build:
       context: .
     image: zex-deposit
     container_name: validator-3
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --workers=5 zex_deposit.validator.node:app
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zex_deposit.validator.node:app
     environment:
       - NODE_ID=0xfe6ec3f9e9ad332de8fcdf8d630ccdc209d54e71fcd9cc866785cebe2db5197b
-    ports:
-      - "6002:6002"
     restart: on-failure:5
     networks:
       zex_deposit_custom_network:
+        ipv4_address: 172.20.0.12
     volumes:
       - ./zex_deposit/data:/app/zex_deposit/data
       - /var/log/zex_deposit/validator:/var/log/validator
@@ -219,7 +223,7 @@ services:
       redis:
         condition: service_healthy
     env_file:
-      - .env
+      - .env.dev
 
 networks:
   zex_deposit_custom_network:
