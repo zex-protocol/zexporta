@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from enum import Enum
+from enum import StrEnum
 from json import JSONDecodeError
 
 import httpx
@@ -13,7 +13,7 @@ from zex_deposit.custom_types import (
 )
 
 
-class ZexPath(Enum):
+class ZexPath(StrEnum):
     LAST_USER_ID = "/users/latest-id"
     DEPOSIT = "/deposit"
     LATEST_BLOCK = "/block/latest"
