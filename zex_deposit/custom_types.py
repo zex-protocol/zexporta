@@ -1,16 +1,16 @@
-from enum import Enum
-from typing import TypeAlias
+from enum import StrEnum
+from typing import Any
 
 from eth_typing import URI, BlockNumber, ChainId, ChecksumAddress
 from pydantic import BaseModel, Field
 
-Value: TypeAlias = int
-Timestamp: TypeAlias = int | float
-UserId: TypeAlias = int
-TxHash: TypeAlias = str
+type Value = int
+type Timestamp = int | float
+type UserId = int
+type TxHash = str
 
 
-class EnvEnum(str, Enum):
+class EnvEnum(StrEnum):
     DEV = "dev"
     PROD = "prod"
     TEST = "test"
@@ -27,7 +27,7 @@ class ChainConfig(BaseModel):
     vault_address: ChecksumAddress
 
 
-class TransferStatus(str, Enum):
+class TransferStatus(StrEnum):
     PENDING = "pending"
     FINALIZED = "finalized"
     VERIFIED = "verified"
@@ -36,7 +36,7 @@ class TransferStatus(str, Enum):
     REJECTED = "rejected"
 
 
-class WithdrawStatus(Enum):
+class WithdrawStatus(StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESSFUL = "successful"
@@ -44,12 +44,9 @@ class WithdrawStatus(Enum):
 
 
 class Token(BaseModel):
+    model_config = {"extra": "ignore"}
     token_address: ChecksumAddress
     decimals: int
-
-    class Config:
-        use_enum_values = True
-        extra = "ignore"
 
 
 class RawTransfer(BaseModel):
@@ -62,24 +59,20 @@ class RawTransfer(BaseModel):
     block_timestamp: Timestamp
     block_number: BlockNumber
 
-    class Config:
-        use_enum_values = True
-        validate_default = True
+    def __eq__(self, value: Any) -> bool:
+        if isinstance(value, RawTransfer):
+            return self.tx_hash == value.tx_hash
+        return NotImplemented
+
+    def __gt__(self, value: Any) -> bool:
+        if isinstance(value, RawTransfer):
+            return self.tx_hash > value.tx_hash
+        return NotImplemented
 
 
 class UserTransfer(RawTransfer):
     user_id: UserId
     decimals: int
-
-    class Config:
-        use_enum_values = True
-        validate_default = True
-
-    def __eq__(self, value: "UserTransfer") -> bool:
-        return self.tx_hash == value.tx_hash
-
-    def __gt__(self, value: "UserTransfer") -> bool:
-        return self.tx_hash > value.tx_hash
 
 
 class UserAddress(BaseModel):
@@ -89,6 +82,7 @@ class UserAddress(BaseModel):
 
 
 class WithdrawRequest(BaseModel):
+    model_config = {"extra": "ignore"}
     token_address: ChecksumAddress
     amount: int
     recipient: ChecksumAddress
@@ -96,8 +90,3 @@ class WithdrawRequest(BaseModel):
     chain_id: ChainId
     tx_hash: TxHash | None = None
     status: WithdrawStatus = WithdrawStatus.PENDING
-
-    class Config:
-        extra = "ignore"
-        use_enum_values = True
-        validate_default = True
