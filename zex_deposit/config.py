@@ -83,7 +83,7 @@ else:
             delay=1,
             batch_block_size=30,
             vault_address=Web3.to_checksum_address(
-                "0xcb00C4e20F84aE691C9739e4E202eaCafD187e8d"
+                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
             ),
         ),
     }
