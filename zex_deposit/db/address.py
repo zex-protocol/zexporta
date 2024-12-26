@@ -38,17 +38,17 @@ async def get_last_user_id() -> UserId:
         {"is_active": True}, sort=[("user_id", DESCENDING)]
     )
     if result:
-        return UserId(result["user_id"])
+        return result["user_id"]
     raise UserNotExists()
 
 
 async def insert_user_address(address: UserAddress):
-    await address_collection.insert_one(address.model_dump())
+    await address_collection.insert_one(address.model_dump_json())
 
 
 async def insert_many_user_address(users_address: list[UserAddress]):
     await address_collection.insert_many(
-        user_address.model_dump() for user_address in users_address
+        user_address.model_dump_json() for user_address in users_address
     )
 
 

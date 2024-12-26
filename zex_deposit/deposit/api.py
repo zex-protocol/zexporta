@@ -21,7 +21,7 @@ async def get_finalized_tx(
     transfers = await find_transactions_by_status(
         status, chain_id=ChainId(chain_id), from_block=from_block
     )
-    return JSONResponse(content=[transfer.model_dump() for transfer in transfers])
+    return JSONResponse(content=[transfer.model_dump_json() for transfer in transfers])
 
 
 app.include_router(route)

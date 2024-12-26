@@ -41,7 +41,8 @@ def deposit(chain_config: ChainConfig, data: dict, logger) -> dict:
         "hash": sha256(encoded_data).hexdigest(),
         "data": {
             "users_transfers": [
-                user_transfer.model_dump() for user_transfer in users_transfers
+                user_transfer.model_dump(mode="json")
+                for user_transfer in users_transfers
             ],
         },
     }

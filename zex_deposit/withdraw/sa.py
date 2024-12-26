@@ -40,7 +40,7 @@ from .config import (
 )
 
 
-class WithdrawDifferentHash(Exception):
+class WithdrawDifferentHashError(Exception):
     """Raise when validator hash is different from sa hash"""
 
 
@@ -57,13 +57,12 @@ dkg_key = dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
 
 
 async def check_validator_data(
-    chain: ChainConfig,
     zex_withdraw: WithdrawRequest,
     validator_hash: str,
 ):
     withdraw_hash = get_withdraw_hash(zex_withdraw)
     if withdraw_hash != validator_hash:
-        raise WithdrawDifferentHash(
+        raise WithdrawDifferentHashError(
             f"validator_hash: {validator_hash}, withdraw_hash: {withdraw_hash}"
         )
 
@@ -88,14 +87,14 @@ async def process_withdraw_sa(
             "sa_withdraw_nonce": withdraw_request.nonce,
         },
     }
-
+    logger.debug(f"Zex withdraw request is: {withdraw_request}")
     result = await sa.request_signature(dkg_key, nonces_for_sig, data, dkg_party)
     logger.debug(f"Validator results is: {result}")
 
     if result.get("result") == "SUCCESSFUL":
         validator_hash = result["message_hash"]
         await check_validator_data(
-            chain, zex_withdraw=withdraw_request, validator_hash=validator_hash
+            zex_withdraw=withdraw_request, validator_hash=validator_hash
         )
         data = list(result["signature_data_from_node"].values())[0]
         await send_withdraw(
@@ -176,9 +175,6 @@ async def withdraw(chain: ChainConfig):
                         f"Contract Error, error: {e.message} , decoded_error: {decode_custom_error_data(e.message, VAULT_ABI)}"
                     )
                     withdraw_request.status = WithdrawStatus.REJECTED
-                    withdraw_request = WithdrawRequest.model_validate(
-                        withdraw_request.model_dump()
-                    )
                     await upsert_withdraw(withdraw_request)
 
                 except web3.exceptions.Web3Exception as e:
@@ -196,11 +192,14 @@ async def withdraw(chain: ChainConfig):
                     continue
                 except ValidatorResultError as e:
                     _logger.error(f"Validator result is not successful, error {e}")
+                except WithdrawDifferentHashError as e:
+                    _logger.error(
+                        f"data that process in zex is different from validators: {e}"
+                    )
+                    withdraw_request.status = WithdrawStatus.REJECTED
+                    await upsert_withdraw(withdraw_request)
                 else:
                     withdraw_request.status = WithdrawStatus.SUCCESSFUL
-                    withdraw_request = WithdrawRequest.model_validate(
-                        withdraw_request.model_dump()
-                    )
                     await upsert_withdraw(withdraw_request)
         finally:
             await asyncio.sleep(SA_DELAY_SECOND)
