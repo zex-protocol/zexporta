@@ -19,7 +19,7 @@ async def insert_withdraw_if_not_exists(withdraw: WithdrawRequest):
     }
     record = await withdraw_collection.find_one(query)
     if not record:
-        await withdraw_collection.insert_one(withdraw.model_dump())
+        await withdraw_collection.insert_one(withdraw.model_dump_json())
 
 
 async def insert_withdraws_if_not_exists(withdraws: Iterable[WithdrawRequest]):
@@ -30,7 +30,7 @@ async def insert_withdraws_if_not_exists(withdraws: Iterable[WithdrawRequest]):
 
 async def upsert_withdraw(withdraw: WithdrawRequest):
     update = {
-        "$set": withdraw.model_dump(),
+        "$set": withdraw.model_dump_json(),
     }
     filter_ = {
         "nonce": withdraw.nonce,

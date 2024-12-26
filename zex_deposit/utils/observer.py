@@ -98,7 +98,9 @@ async def get_accepted_transfers(
             decimals = await get_token_decimals(w3, chain.chain_id, transfer.token)
             result.append(
                 UserTransfer(
-                    user_id=user_id, decimals=decimals, **transfer.model_dump()
+                    user_id=user_id,
+                    decimals=decimals,
+                    **transfer.model_dump(mode="json"),
                 )
             )
     return result

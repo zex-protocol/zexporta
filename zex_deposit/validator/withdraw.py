@@ -36,5 +36,5 @@ def withdraw(chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter):
     logger.info(f"hash for withdraw is: {zex_withdraw_hash}")
     return {
         "hash": zex_withdraw_hash,
-        "data": {**withdraw_request.model_dump(), "chain_id": chain.chain_id},
+        "data": withdraw_request.model_dump(mode="json"),
     }
