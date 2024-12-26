@@ -1,5 +1,6 @@
-import redis
 from typing import Any
+
+import redis
 
 
 class RedisInterface:
