@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import Any, Callable, Coroutine, Iterable, TypeVar
+from typing import Any, Callable, Coroutine, Iterable
 
 from eth_account import Account
 from eth_account.messages import encode_defunct
@@ -25,7 +25,6 @@ from zex_deposit.utils.transfer_decoder import (
     decode_transfer_tx,
 )
 
-T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +35,7 @@ async def async_web3_factory(chain: ChainConfig) -> AsyncWeb3:
     return w3
 
 
-async def _filter_blocks(
+async def _filter_blocks[T: (RawTransfer, TxHash)](
     w3: AsyncWeb3,
     blocks: Iterable[BlockNumber],
     fn: Callable[..., Coroutine[Any, Any, list[T]]],
@@ -49,7 +48,7 @@ async def _filter_blocks(
     return result
 
 
-async def filter_blocks(
+async def filter_blocks[T: (RawTransfer, TxHash)](
     w3,
     blocks_number: Iterable[BlockNumber],
     fn: Callable[..., Coroutine[Any, Any, list[T]]],
