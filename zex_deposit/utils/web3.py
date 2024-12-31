@@ -25,6 +25,8 @@ from zex_deposit.utils.transfer_decoder import (
     decode_transfer_tx,
 )
 
+from .abi import ERC20_ABI
+
 logger = logging.getLogger(__name__)
 
 
@@ -145,7 +147,19 @@ async def get_token_decimals(w3: AsyncWeb3, token_address: ChecksumAddress) -> i
     return decimals
 
 
-def get_signed_data(private_key, *, primitive: bytes = None, hexstr: str = None) -> str:  # type: ignore
-    signable = encode_defunct(primitive=primitive, hexstr=hexstr)
+def get_signed_data(
+    private_key, *, primitive: bytes | None = None, hexstr: str | None = None
+) -> str:
+    signable = encode_defunct(primitive=primitive, hexstr=hexstr)  # type: ignore
     signed_message = Account.sign_message(signable, private_key)
     return signed_message.signature.hex()
+
+
+async def get_ERC20_balance(
+    w3: AsyncWeb3, contract_address: ChecksumAddress, wallet_address: ChecksumAddress
+):
+    contract = w3.eth.contract(address=contract_address, abi=ERC20_ABI)
+
+    balance = await contract.functions.balanceOf(wallet_address).call()
+
+    return balance

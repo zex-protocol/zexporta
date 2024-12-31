@@ -10,6 +10,7 @@ from zex_deposit.custom_types import (
     ChainConfig,
     UserId,
     WithdrawRequest,
+    ZexUserAsset,
 )
 
 
@@ -19,6 +20,10 @@ class ZexPath(StrEnum):
     LATEST_BLOCK = "/block/latest"
     WITHDRAWS = "/withdraws"
     LAST_WITHDRAW_NONCE = "/withdraw/nonce/last"
+    EXCHANGE_INFO = "/exchangeInfo"
+    USER_ASSET = "/asset/getUserAsset"
+    USER_WITHDRAW_NONCE = "/user/withdraws/nonce"
+    WITHDRAW = "/withdraw"
 
 
 class ZexAPIError(Exception):
@@ -41,11 +46,11 @@ async def get_last_zex_user_id(async_client: httpx.AsyncClient) -> UserId | None
         return res.json().get("id")
 
 
-async def send_deposits(async_client: httpx.AsyncClient, withdraw: list):
+async def send_deposits(async_client: httpx.AsyncClient, deposits: list):
     try:
         res = await async_client.post(
             url=f"{ZEX_BASE_URL}{ZexPath.DEPOSIT.value}",
-            json=withdraw,
+            json=deposits,
         )
         res.raise_for_status()
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
@@ -125,4 +130,60 @@ async def get_zex_withdraws(
             for withdraw in withdraws
         ]
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
+        raise ZexAPIError(e)
+
+
+async def get_exchange_info(async_client: httpx.AsyncClient) -> dict:
+    try:
+        res = await async_client.get(
+            f"{ZEX_BASE_URL}{ZexPath.EXCHANGE_INFO}",
+            headers={"accept": "application/json"},
+        )
+        res.raise_for_status()
+        return res.json()
+    except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
+        raise ZexAPIError(e)
+
+
+async def get_user_asset(
+    async_client: httpx.AsyncClient,
+    user_id: UserId,
+) -> list[ZexUserAsset]:
+    try:
+        res = await async_client.get(
+            f"{ZEX_BASE_URL}{ZexPath.USER_ASSET}",
+            headers={"accept": "application/json"},
+            params={"id": user_id},
+        )
+        res.raise_for_status()
+        return [ZexUserAsset(**user_asset) for user_asset in res.json()]
+    except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
+        raise ZexAPIError(e)
+
+
+async def get_user_withdraw_nonce(
+    async_client: httpx.AsyncClient, chain: ChainConfig, user_id: UserId
+) -> int:
+    try:
+        res = await async_client.get(
+            f"{ZEX_BASE_URL}{ZexPath.USER_WITHDRAW_NONCE}",
+            headers={"accept": "application/json"},
+            params={"id": user_id, "chain": chain.symbol},
+        )
+        res.raise_for_status()
+        data = res.json()
+        return data["nonce"]
+    except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
+        raise ZexAPIError(e)
+
+
+async def send_withdraw_request(async_client: httpx.AsyncClient, withdraws: list[str]):
+    try:
+        res = await async_client.post(
+            url=f"{ZEX_BASE_URL}{ZexPath.WITHDRAW.value}",
+            json=withdraws,
+        )
+        res.raise_for_status()
+        return res.json()
+    except (httpx.RequestError, httpx.HTTPStatusError) as e:
         raise ZexAPIError(e)

@@ -27,7 +27,20 @@ services:
     networks:
       zex_deposit_custom_network:
 
-
+  monitoring-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zex-deposit
+    container_name: monitoring-bot
+    entrypoint: poetry run python -m zex_deposit.monitoring_bot.main
+    networks:
+      zex_deposit_custom_network:
+        ipv4_address: 172.20.0.13
+    volumes:
+      - /var/log/zex_deposit/monitoring_bot/:/var/log/monitoring_bot/
+    env_file:
+      - .env.dev
 
   deposit-sa:
     build:
