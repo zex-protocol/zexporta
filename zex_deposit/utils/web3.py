@@ -78,18 +78,20 @@ async def extract_transfer_from_block(
     for tx in block.transactions:  # type: ignore
         try:
             decoded_input = decode_transfer_tx(tx.input.hex())
-            result.append(
-                RawTransfer(
-                    tx_hash=tx.hash.hex(),
-                    block_number=block_number,
-                    chain_id=chain_id,
-                    to=decoded_input._to,
-                    value=decoded_input._value,
-                    status=transfer_status,
-                    token=tx.to,
-                    block_timestamp=block.timestamp,  # type: ignore
+            receipt = await w3.eth.get_transaction_receipt(tx.hash)
+            if receipt["status"] == 1:
+                result.append(
+                    RawTransfer(
+                        tx_hash=tx.hash.hex(),
+                        block_number=block_number,
+                        chain_id=chain_id,
+                        to=decoded_input._to,
+                        value=decoded_input._value,
+                        status=transfer_status,
+                        token=tx.to,
+                        block_timestamp=block.timestamp,  # type: ignore
+                    )
                 )
-            )
         except NotRecognizedSolidityFuncError as _:
             ...
         except InvalidTxError as e:
