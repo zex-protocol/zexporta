@@ -13,18 +13,14 @@ limit_tx = 1
 async def get_withdraw_request(
     chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter
 ) -> WithdrawRequest:
-    try:
-        client = httpx.AsyncClient()
+    async with httpx.AsyncClient() as client:
         withdraw = (
             await get_zex_withdraws(
                 client, chain, offset=sa_withdraw_nonce, limit=sa_withdraw_nonce + 1
             )
         )[0]
 
-        return withdraw
-
-    finally:
-        await client.aclose()
+    return withdraw
 
 
 def withdraw(chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter):

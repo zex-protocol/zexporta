@@ -16,7 +16,7 @@ async def insert_transfer_if_not_exists(transfer: UserTransfer):
     }
     record = await transfer_collection.find_one(query)
     if not record:
-        await transfer_collection.insert_one(transfer.model_dump_json())
+        await transfer_collection.insert_one(transfer.model_dump(mode="json"))
 
 
 async def insert_transfers_if_not_exists(transfers: Iterable[UserTransfer]):
@@ -117,7 +117,7 @@ async def get_block_numbers_by_status(
 
 async def upsert_transfer(transfer: UserTransfer):
     update = {
-        "$set": transfer.model_dump_json(),
+        "$set": transfer.model_dump(mode="json"),
     }
     filter_ = {
         "tx_hash": transfer.tx_hash,

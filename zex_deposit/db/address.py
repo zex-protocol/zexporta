@@ -43,12 +43,12 @@ async def get_last_user_id() -> UserId:
 
 
 async def insert_user_address(address: UserAddress):
-    await address_collection.insert_one(address.model_dump_json())
+    await address_collection.insert_one(address.model_dump(mode="json"))
 
 
 async def insert_many_user_address(users_address: list[UserAddress]):
     await address_collection.insert_many(
-        user_address.model_dump_json() for user_address in users_address
+        user_address.model_dump(mode="json") for user_address in users_address
     )
 
 

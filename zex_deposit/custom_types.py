@@ -90,3 +90,11 @@ class WithdrawRequest(BaseModel):
     chain_id: ChainId
     tx_hash: TxHash | None = None
     status: WithdrawStatus = WithdrawStatus.PENDING
+
+
+class ZexUserAsset(BaseModel):
+    asset: str
+    free: str
+    locked: str
+    freeze: str
+    withdrawing: str
