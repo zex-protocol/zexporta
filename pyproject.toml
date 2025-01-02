@@ -1,8 +1,8 @@
 [tool.poetry]
 package-mode = false
-name = "zex-deposit"
+name = "zexporta"
 version = "0.0.1"
-description = "Deposit module for Zellular Exchange"
+description = "Portal for Zellular Exchange"
 readme = "README.md"
 
 [tool.poetry.dependencies]

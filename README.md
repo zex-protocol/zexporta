@@ -1,6 +1,6 @@
 
 # Zellular Exchange Deposit
 
-This is the deposit module for Zellular Exchange (ZEX), which monitores the deposit trasacion to ZEX wallets and employs Pyfrost to issue a schnorr signature. The highlevel structure of this module is demonstrated in the figure below:
+This is the portal module for Zellular Exchange (ZEX), which monitors the deposit and withdraw transaction to ZEX wallets and employs Pyfrost to issue a schnorr signature. The highlevel structure of this module is demonstrated in the figure below:
 
-![ZEX Deposit Structure](./images/zex-flow.png "Figure 1: ZEX Deposit Structure")
+![Zexporta Structure](./images/zex-flow.png "Figure 1: Zexporta Structure")
