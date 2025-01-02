@@ -1,7 +1,7 @@
 # Makefile
 
 # Variables
-PROJECT_NAME := my_project
+PROJECT_NAME := zexporta
 VENV_DIR := .venv
 POETRY := poetry
 PRE_COMMIT := pre-commit
