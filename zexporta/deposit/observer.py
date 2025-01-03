@@ -38,23 +38,24 @@ async def observe_deposit(chain: ChainConfig):
     while True:
         w3 = await async_web3_factory(chain)
         observer = Observer(chain=chain, w3=w3)
-        accepted_addresses = await get_active_address()
         latest_block = await w3.eth.get_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
             _logger.info(f"Block {last_observed_block} already observed continue")
             await asyncio.sleep(chain.delay)
             continue
         last_observed_block = last_observed_block or latest_block
-        if last_observed_block >= latest_block:
+        to_block = min(latest_block, last_observed_block + chain.batch_block_size)
+        if last_observed_block >= to_block:
             _logger.warning(
-                f"last_observed_block: {last_observed_block} is bigger then latest_block {latest_block}"
+                f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}"
             )
             continue
         await insert_new_address_to_db()
+        accepted_addresses = await get_active_address()
         try:
             accepted_transfers = await observer.observe(
                 last_observed_block + 1,
-                latest_block,
+                to_block,
                 accepted_addresses,
                 extract_transfer_from_block,
                 logger=_logger,
@@ -62,11 +63,16 @@ async def observe_deposit(chain: ChainConfig):
                 max_delay_per_block_batch=chain.delay,
             )
         except web3.exceptions.BlockNotFound as e:
-            _logger.warning(f"Block not found: {latest_block}, error: {e}")
+            _logger.warning(f"Block not found: {to_block}, error: {e}")
+            continue
+        except ValueError as e:
+            _logger.error(f"ValueError: {e}")
+            await asyncio.sleep(10)
+            continue
         if len(accepted_transfers) > 0:
             await insert_transfers_if_not_exists(accepted_transfers)
-        await upsert_chain_last_observed_block(chain.chain_id, latest_block)
-        last_observed_block = latest_block
+        await upsert_chain_last_observed_block(chain.chain_id, to_block)
+        last_observed_block = to_block
 
 
 async def main():
