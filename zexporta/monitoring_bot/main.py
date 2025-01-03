@@ -78,8 +78,8 @@ async def monitor(chain: ChainConfig):
 def schedule_task(loop: asyncio.AbstractEventLoop):
     async def main():
         start_time = time.monotonic()
-        tasks = [loop.create_task(monitor(chain)) for chain in CHAINS_CONFIG.values()]
-        await asyncio.gather(*tasks)
+        _ = [await loop.create_task(monitor(chain)) for chain in CHAINS_CONFIG.values()]
+        # await asyncio.gather(*tasks)
         elapsed = time.monotonic() - start_time
         delay = max(DELAY - elapsed, 0)
         loop.call_later(delay, schedule_task, loop)
