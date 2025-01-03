@@ -6,7 +6,7 @@ from decimal import Decimal
 import httpx
 from web3 import Web3
 
-from zexporta.custom_types import ChainConfig
+from zexporta.custom_types import ChainConfig, ChecksumAddress
 from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.web3 import (
     async_web3_factory,
@@ -18,9 +18,7 @@ from zexporta.utils.zex_api import get_user_withdraw_nonce, send_withdraw_reques
 from .config import (
     MONITORING_TOKENS,
     TEST_USER_ID,
-    TEST_USER_PRIVATE_KEY,
-    WITHDRAW_DESTINATION,
-    WITHDRAW_PUBLIC_KEY,
+    WITHDRAWER_PRIVATE_KEY,
 )
 from .custom_types import MonitoringToke
 
@@ -55,16 +53,20 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
 
 
 def create_tx(
-    chain: ChainConfig, monitoring_token: MonitoringToke, nonce: int
+    chain: ChainConfig,
+    monitoring_token: MonitoringToke,
+    public_key: str,
+    destination_address: ChecksumAddress,
+    nonce: int,
 ) -> bytes:
     # Prepare withdrawal data
     version = 1
 
     token_chain = chain.symbol.encode()
     token_name = monitoring_token.symbol.encode()
-    destination = bytes.fromhex(WITHDRAW_DESTINATION)
+    destination = bytes.fromhex(destination_address[2:])
     t = int(time.time())
-    public = bytes.fromhex(WITHDRAW_PUBLIC_KEY)
+    public = bytes.fromhex(public_key)
     amount = float(Decimal(monitoring_token.amount / 10**monitoring_token.decimal))
     token_len = len(token_name)
     pack_format = f"> B 1s B 3s {token_len}s d 20s I I 33s"
@@ -94,18 +96,23 @@ async def monitor_withdraw(
 
     monitoring_token = monitoring_token[0]
     w3 = await async_web3_factory(chain)
+    withdrawer_account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
+    destination_address = withdrawer_account.address
+    public_key = withdrawer_account._key_obj.public_key.to_compressed_bytes().hex()
     balance_before = await get_ERC20_balance(
         w3,
         contract_address=monitoring_token.address,
-        wallet_address=Web3.to_checksum_address(WITHDRAW_DESTINATION),
+        wallet_address=Web3.to_checksum_address(destination_address),
     )
     user_withdraw_nonce = await get_user_withdraw_nonce(
         async_client, chain, TEST_USER_ID
     )
-    tx = create_tx(chain, monitoring_token, user_withdraw_nonce)
+    tx = create_tx(
+        chain, monitoring_token, public_key, destination_address, user_withdraw_nonce
+    )
     msg = withdraw_msg(tx, logger)
     signed_data = bytes.fromhex(
-        get_signed_data(TEST_USER_PRIVATE_KEY, primitive=msg)[2:]
+        get_signed_data(WITHDRAWER_PRIVATE_KEY, primitive=msg)[2:]
     )[1:]
     send_data = (tx + signed_data).decode("latin-1")
     await send_withdraw_request(async_client, [send_data])
@@ -113,7 +120,7 @@ async def monitor_withdraw(
     balance_after = await get_ERC20_balance(
         w3,
         contract_address=monitoring_token.address,
-        wallet_address=Web3.to_checksum_address(WITHDRAW_DESTINATION),
+        wallet_address=Web3.to_checksum_address(destination_address),
     )
     if balance_after == balance_before + monitoring_token.amount:
         return
