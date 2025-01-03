@@ -9,7 +9,15 @@ from zexporta.custom_types import (
     WithdrawRequest,
     WithdrawStatus,
 )
-from zexporta.db.collections import withdraw_collection
+from zexporta.db.collections import db
+
+
+async def __create_withdraw_index():
+    await _withdraw_collection.create_index(("nonce", "chain_id"), unique=True)
+
+
+_withdraw_collection = db["withdraw"]
+asyncio.run(__create_withdraw_index())
 
 
 async def insert_withdraw_if_not_exists(withdraw: WithdrawRequest):
@@ -17,9 +25,9 @@ async def insert_withdraw_if_not_exists(withdraw: WithdrawRequest):
         "chain_id": withdraw.chain_id,
         "nonce": withdraw.nonce,
     }
-    record = await withdraw_collection.find_one(query)
+    record = await _withdraw_collection.find_one(query)
     if not record:
-        await withdraw_collection.insert_one(withdraw.model_dump(mode="json"))
+        await _withdraw_collection.insert_one(withdraw.model_dump(mode="json"))
 
 
 async def insert_withdraws_if_not_exists(withdraws: Iterable[WithdrawRequest]):
@@ -36,7 +44,7 @@ async def upsert_withdraw(withdraw: WithdrawRequest):
         "nonce": withdraw.nonce,
         "chain_id": withdraw.chain_id,
     }
-    await withdraw_collection.update_one(filter=filter_, update=update, upsert=True)
+    await _withdraw_collection.update_one(filter=filter_, update=update, upsert=True)
 
 
 async def upsert_withdraws(withdraws: list[WithdrawRequest]):
@@ -54,7 +62,7 @@ async def find_withdraws_by_status(
         "chain_id": chain_id.value,
         "nonce": {"$gte": nonce},
     }
-    async for record in withdraw_collection.find(query, sort={"nonce": ASCENDING}):
+    async for record in _withdraw_collection.find(query, sort={"nonce": ASCENDING}):
         res.append(WithdrawRequest(**record))
     return res
 
@@ -67,7 +75,7 @@ async def find_withdraw_by_nonce(
         "chain_id": chain_id.value,
         "nonce": nonce,
     }
-    record = await withdraw_collection.find_one(query)
+    record = await _withdraw_collection.find_one(query)
 
     if record is not None:
         return WithdrawRequest(**record)

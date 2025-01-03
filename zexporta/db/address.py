@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from eth_typing import HexStr
@@ -12,11 +13,20 @@ from zexporta.utils.zex_api import (
     get_last_zex_user_id,
 )
 
-from .collections import address_collection
+from .collections import db
 from .config import (
     USER_DEPOSIT_BYTECODE_HASH,
     USER_DEPOSIT_FACTORY_ADDRESS,
 )
+
+
+async def __create_address_index():
+    await _address_collection.create_index("user_id", unique=True)
+    await _address_collection.create_index("address", unique=True)
+
+
+_address_collection = db["user_addresses"]
+asyncio.run(__create_address_index())
 
 
 class UserNotExists(Exception):
@@ -28,13 +38,13 @@ logger = logging.getLogger(__name__)
 
 async def get_active_address() -> dict[ChecksumAddress, UserId]:
     res = dict()
-    async for address in address_collection.find({"is_active": True}):
+    async for address in _address_collection.find({"is_active": True}):
         res[Web3.to_checksum_address(address["address"])] = address["user_id"]
     return res
 
 
 async def get_last_user_id() -> UserId:
-    result = await address_collection.find_one(
+    result = await _address_collection.find_one(
         {"is_active": True}, sort=[("user_id", DESCENDING)]
     )
     if result:
@@ -43,11 +53,11 @@ async def get_last_user_id() -> UserId:
 
 
 async def insert_user_address(address: UserAddress):
-    await address_collection.insert_one(address.model_dump(mode="json"))
+    await _address_collection.insert_one(address.model_dump(mode="json"))
 
 
 async def insert_many_user_address(users_address: list[UserAddress]):
-    await address_collection.insert_many(
+    await _address_collection.insert_many(
         user_address.model_dump(mode="json") for user_address in users_address
     )
 
