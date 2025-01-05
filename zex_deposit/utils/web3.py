@@ -25,12 +25,20 @@ from zex_deposit.utils.transfer_decoder import (
     decode_transfer_tx,
 )
 
+from ..config import USER_DEPOSIT_BYTECODE_HASH, USER_DEPOSIT_FACTORY_ADDRESS
 from .abi import ERC20_ABI
 
 logger = logging.getLogger(__name__)
 
 
 async def async_web3_factory(chain: ChainConfig) -> AsyncWeb3:
+    w3 = AsyncWeb3(AsyncHTTPProvider(chain.private_rpc))
+    if chain.poa:
+        w3.middleware_onion.inject(async_geth_poa_middleware, layer=0)
+    return w3
+
+
+def get_web3_client(chain: ChainConfig) -> AsyncWeb3:
     w3 = AsyncWeb3(AsyncHTTPProvider(chain.private_rpc))
     if chain.poa:
         w3.middleware_onion.inject(async_geth_poa_middleware, layer=0)
@@ -109,18 +117,23 @@ async def get_block_tx_hash(
     return [tx_hash.hex() for tx_hash in block.transactions]  # type: ignore
 
 
-async def get_finalized_block_number(w3: AsyncWeb3, chain: ChainConfig) -> BlockNumber:
+async def get_finalized_block_number(
+    client: AsyncWeb3, chain: ChainConfig
+) -> BlockNumber:
     if chain.finalize_block_count is None:
-        finalized_block = await w3.eth.get_block("finalized")
+        finalized_block = await client.eth.get_block("finalized")
         return finalized_block.number  # type: ignore
 
     finalized_block_number = chain.finalize_block_count + (
-        await w3.eth.get_block_number()
+        await client.eth.get_block_number()
     )
     return BlockNumber(finalized_block_number)
 
 
-def compute_create2_address(deployer_address: str, salt: int, bytecode_hash: HexStr):
+def compute_create2_address(salt: int):
+    deployer_address = USER_DEPOSIT_FACTORY_ADDRESS
+    bytecode_hash = HexStr(USER_DEPOSIT_BYTECODE_HASH)
+
     deployer_address = Web3.to_checksum_address(deployer_address)
     contract_address = Web3.keccak(
         b"\xff"

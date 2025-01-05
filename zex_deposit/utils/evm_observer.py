@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Callable, Coroutine
 
+import web3.exceptions
 from eth_typing import ChainId
 from pydantic import BaseModel
 from web3 import AsyncWeb3
@@ -16,7 +17,7 @@ from zex_deposit.custom_types import (
 from zex_deposit.db.token import get_decimals, insert_token
 from zex_deposit.utils.logger import ChainLoggerAdapter
 
-from .web3 import filter_blocks
+from .web3 import filter_blocks, get_finalized_block_number
 from .web3 import get_token_decimals as w3_get_token_decimals
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class Observer(BaseModel):
     chain: ChainConfig
-    w3: AsyncWeb3
+    client: AsyncWeb3
 
     def get_block_batches(
         self,
@@ -39,6 +40,12 @@ class Observer(BaseModel):
         ]
         return block_batches
 
+    async def get_finalized_block_number(self):
+        return await get_finalized_block_number(self.client, self.chain)
+
+    async def get_latest_block_number(self):
+        return await self.client.eth.get_block_number()
+
     async def observe(
         self,
         from_block: BlockNumber | int,
@@ -51,26 +58,29 @@ class Observer(BaseModel):
         logger: logging.Logger | ChainLoggerAdapter = logger,
         **kwargs,
     ) -> list[UserTransfer]:
-        result = []
-        block_batches = self.get_block_batches(
-            from_block, to_block, batch_size=batch_size
-        )
-        for blocks_number in block_batches:
-            logger.info(f"batch_blocks: {blocks_number}")
-            transfers = await filter_blocks(
-                self.w3,
-                blocks_number,
-                extract_block_logic,
-                chain_id=self.chain.chain_id,
-                max_delay_per_block_batch=max_delay_per_block_batch,
-                logger=logger,
-                **kwargs,
+        try:
+            result = []
+            block_batches = self.get_block_batches(
+                from_block, to_block, batch_size=batch_size
             )
-            accepted_transfers = await get_accepted_transfers(
-                self.w3, self.chain, transfers, accepted_addresses
-            )
-            result.extend(accepted_transfers)
-        return result
+            for blocks_number in block_batches:
+                logger.info(f"batch_blocks: {blocks_number}")
+                transfers = await filter_blocks(
+                    self.client,
+                    blocks_number,
+                    extract_block_logic,
+                    chain_id=self.chain.chain_id,
+                    max_delay_per_block_batch=max_delay_per_block_batch,
+                    logger=logger,
+                    **kwargs,
+                )
+                accepted_transfers = await get_accepted_transfers(
+                    self.client, self.chain, transfers, accepted_addresses
+                )
+                result.extend(accepted_transfers)
+            return result
+        except web3.exceptions.BlockNotFound:
+            return []
 
     class Config:
         arbitrary_types_allowed = True

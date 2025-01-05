@@ -5,10 +5,12 @@ e-venv/
 __pycache__/
 logs/
 temp/
-.env*
+.env
 .vscode/
 .venv/
 .ruff_cache/
 dkg_keys.json
 nonces.json
 data/
+.idea/
+fastecdsa-2.3.2-cp312-cp312-macosx_12_0_arm64.whl

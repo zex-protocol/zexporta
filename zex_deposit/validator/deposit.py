@@ -4,7 +4,7 @@ from hashlib import sha256
 from zex_deposit.custom_types import BlockNumber, ChainConfig, TransferStatus
 from zex_deposit.db.address import get_active_address, insert_new_address_to_db
 from zex_deposit.utils.encoder import DEPOSIT_OPERATION, encode_zex_deposit
-from zex_deposit.utils.observer import get_accepted_transfers
+from zex_deposit.utils.evm_observer import get_accepted_transfers
 from zex_deposit.utils.web3 import (
     async_web3_factory,
     extract_transfer_from_block,

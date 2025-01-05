@@ -1,10 +1,10 @@
 import logging
 
-from eth_typing import HexStr
 from pymongo import DESCENDING
 from web3 import Web3
 
 from zex_deposit.custom_types import ChecksumAddress, UserAddress, UserId
+from zex_deposit.utils.btc import compute_create_btc_address
 from zex_deposit.utils.web3 import compute_create2_address
 from zex_deposit.utils.zex_api import (
     ZexAPIError,
@@ -13,10 +13,6 @@ from zex_deposit.utils.zex_api import (
 )
 
 from .collections import address_collection
-from .config import (
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
-)
 
 
 class UserNotExists(Exception):
@@ -52,21 +48,26 @@ async def insert_many_user_address(users_address: list[UserAddress]):
     )
 
 
+ADDRESS_CREATOR_MAPPER = {
+    "BTC": compute_create_btc_address,
+    "EVM": compute_create2_address,
+}
+
+
 def get_users_address_to_insert(
     first_to_compute: UserId, last_to_compute: UserId
 ) -> list[UserAddress]:
     users_address_to_insert = []
-    for user_id in range(first_to_compute, last_to_compute + 1):
-        users_address_to_insert.append(
-            UserAddress(
-                user_id=user_id,
-                address=compute_create2_address(
-                    deployer_address=USER_DEPOSIT_FACTORY_ADDRESS,
-                    salt=user_id,
-                    bytecode_hash=HexStr(USER_DEPOSIT_BYTECODE_HASH),
-                ),
+    for address_creator in ADDRESS_CREATOR_MAPPER.values():
+        for user_id in range(first_to_compute, last_to_compute + 1):
+            users_address_to_insert.append(
+                UserAddress(
+                    user_id=user_id,
+                    address=address_creator(
+                        salt=user_id,
+                    ),
+                )
             )
-        )
     return users_address_to_insert
 
 

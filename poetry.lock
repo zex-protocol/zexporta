@@ -895,6 +895,19 @@ gmpy = ["gmpy"]
 gmpy2 = ["gmpy2"]
 
 [[package]]
+name = "embit"
+version = "0.8.0"
+description = "A minimal bitcoin library for MicroPython and Python3 with a focus on embedded systems."
+optional = false
+python-versions = "*"
+files = [
+    {file = "embit-0.8.0.tar.gz", hash = "sha256:8bf4b10073c67400370ce523fb16f035fe759f6fdd987c579bdcc268d75ed770"},
+]
+
+[package.extras]
+dev = ["black", "mkdocs", "mkdocs-material", "mkdocstrings[python]", "mypy", "pre-commit", "pytest", "pytest-cov", "requests"]
+
+[[package]]
 name = "eth-abi"
 version = "5.1.0"
 description = "eth_abi: Python utilities for working with Ethereum ABI definitions, especially encoding and decoding"
@@ -3058,4 +3071,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "2e035d69fadefc22db609b8b5ea3a5be780de9d5b12a71adc98a5d1d01d22a7e"
+content-hash = "17f0d1b9dd2c1a3ec3ad3eb51c12252ba6daeb54afb027d1c0e84a205beb7307"

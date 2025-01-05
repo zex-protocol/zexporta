@@ -8,6 +8,7 @@ type Value = int
 type Timestamp = int | float
 type UserId = int
 type TxHash = str
+type Address = str
 
 
 class EnvEnum(StrEnum):
@@ -18,13 +19,14 @@ class EnvEnum(StrEnum):
 
 class ChainConfig(BaseModel):
     private_rpc: URI | str
-    chain_id: ChainId
+    private_indexer_rpc: URI | str = ""
+    chain_id: ChainId | str
     symbol: str
     poa: bool = Field(default=False)
     finalize_block_count: int = Field(default=15)
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
-    vault_address: ChecksumAddress
+    vault_address: ChecksumAddress | Address
 
 
 class TransferStatus(StrEnum):
@@ -54,10 +56,10 @@ class RawTransfer(BaseModel):
     status: TransferStatus
     chain_id: ChainId
     value: Value
-    token: ChecksumAddress
-    to: ChecksumAddress
+    token: ChecksumAddress | Address
+    to: ChecksumAddress | Address
     block_timestamp: Timestamp
-    block_number: BlockNumber
+    block_number: BlockNumber | int
 
     def __eq__(self, value: Any) -> bool:
         if isinstance(value, RawTransfer):
@@ -77,7 +79,7 @@ class UserTransfer(RawTransfer):
 
 class UserAddress(BaseModel):
     user_id: UserId
-    address: ChecksumAddress
+    address: ChecksumAddress | Address
     is_active: bool = Field(default=True)
 
 

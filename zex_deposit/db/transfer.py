@@ -29,12 +29,17 @@ async def find_transactions_by_status(
     status: TransferStatus,
     chain_id: ChainId,
     from_block: BlockNumber | int | None = None,
+    to_block: BlockNumber | int | None = None,
 ) -> list[UserTransfer]:
     res = []
+    block_number_query = {"$gte": from_block or 0}
+    if to_block:
+        block_number_query["$lte"] = to_block
+
     query = {
         "status": status.value,
         "chain_id": chain_id.value,
-        "block_number": {"$gte": from_block or 0},
+        "block_number": block_number_query,
     }
     async for record in transfer_collection.find(
         query, sort={"block_number": ASCENDING}

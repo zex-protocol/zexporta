@@ -1,23 +1,14 @@
 import asyncio
-import logging
 import logging.config
-import math
 
 import sentry_sdk
 
-from zex_deposit.custom_types import ChainConfig
-from zex_deposit.db.transfer import (
-    get_pending_transfers_block_number,
-    to_finalized,
-    to_reorg,
+from zex_deposit.config import DEFAULTS
+from zex_deposit.deposit.networks import (
+    update_btc_finalized_transfers,
+    update_finalized_transfers,
 )
-from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
-from zex_deposit.utils.web3 import (
-    async_web3_factory,
-    filter_blocks,
-    get_block_tx_hash,
-    get_finalized_block_number,
-)
+from zex_deposit.utils.logger import get_logger_config
 
 from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS
 
@@ -25,40 +16,18 @@ logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalize
 logger = logging.getLogger(__name__)
 
 
-async def update_finalized_transfers(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
-    while True:
-        w3 = await async_web3_factory(chain)
-        finalized_block_number = await get_finalized_block_number(w3, chain)
-        pending_blocks_number = await get_pending_transfers_block_number(
-            chain_id=chain.chain_id, finalized_block_number=finalized_block_number
-        )
-
-        if len(pending_blocks_number) == 0:
-            _logger.info(
-                f"No pending tx has been found. finalized_block_number: {finalized_block_number}"
-            )
-            await asyncio.sleep(chain.delay)
-            continue
-
-        for i in range(math.ceil(len(pending_blocks_number) / chain.batch_block_size)):
-            blocks_to_check = pending_blocks_number[
-                (i * chain.batch_block_size) : ((i + 1) * chain.batch_block_size)
-            ]
-            results = await filter_blocks(
-                w3,
-                blocks_to_check,
-                get_block_tx_hash,
-                max_delay_per_block_batch=chain.delay,
-            )
-            await to_finalized(chain.chain_id, finalized_block_number, results)
-            await to_reorg(chain.chain_id, min(blocks_to_check), max(blocks_to_check))
+FINALIZER_MAPPING = {
+    "BTC": update_btc_finalized_transfers,
+    DEFAULTS: update_finalized_transfers,
+}
 
 
 async def main():
     loop = asyncio.get_running_loop()
     tasks = [
-        loop.create_task(update_finalized_transfers(chain))
+        loop.create_task(
+            FINALIZER_MAPPING.get(chain.symbol, FINALIZER_MAPPING[DEFAULTS])(chain)
+        )
         for chain in CHAINS_CONFIG.values()
     ]
     await asyncio.gather(*tasks)

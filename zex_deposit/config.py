@@ -1,5 +1,6 @@
 import os
 
+from embit.networks import NETWORKS
 from web3 import Web3
 
 from .custom_types import ChainConfig, ChainId, EnvEnum
@@ -46,7 +47,19 @@ if ENVIRONMENT == EnvEnum.PROD:
                 "0xc3D07c4FDE03b8B1F9FeE3C19d906681b7b66B82"
             ),
         ),
+        "BTC": ChainConfig(
+            private_rpc=os.environ["BTC_RPC"],
+            private_indexer_rpc=os.environ["BTC_INDEXER"],
+            chain_id="BTC",
+            symbol="BTC",
+            finalize_block_count=6,
+            poa=True,
+            delay=10,
+            batch_block_size=0,
+            vault_address="",
+        ),
     }
+    BTC_NETWORK_CONFIG = NETWORKS["main"]
 else:
     ZEX_BASE_URL = "https://zex.mshoaei.ir/v1"
     CHAINS_CONFIG = {
@@ -86,9 +99,24 @@ else:
                 "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
             ),
         ),
+        "BTC": ChainConfig(
+            private_rpc=os.environ["BTC_RPC"],  # set testnet rpc endpoint
+            private_indexer_rpc=os.environ["BTC_INDEXER"],
+            chain_id="BTC",
+            symbol="BTC",
+            finalize_block_count=6,
+            poa=True,
+            delay=10,
+            batch_block_size=0,
+            vault_address="",
+        ),
     }
+    BTC_NETWORK_CONFIG = NETWORKS["test"]
+
 
 ZEX_ENCODE_VERSION = 1
+
+BTC_DRIVE_PATH = os.getenv("BTC_DRIVE_PATH", default="m/86'/0'/0'/0/0")
 
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]
@@ -102,3 +130,5 @@ DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 WITHDRAWER_PRIVATE_KEY = os.environ["WITHDRAWER_PRIVATE_KEY"]
 
 SENTRY_DNS = os.getenv("SENTRY_DNS")
+
+DEFAULTS = "DEFAULTS"

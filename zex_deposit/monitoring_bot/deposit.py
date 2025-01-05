@@ -1,19 +1,15 @@
 import asyncio
-import logging
 import logging.config
 from decimal import Decimal
 
 import httpx
 from eth_account.signers.local import LocalAccount
-from eth_typing import HexStr
 from web3 import AsyncWeb3
 
 from zex_deposit.custom_types import ChainConfig, ChecksumAddress, UserId
 from zex_deposit.monitoring_bot.config import (
     MONITORING_TOKENS,
     TEST_USER_ID,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
     WITHDRAWER_PRIVATE_KEY,
 )
 from zex_deposit.utils.abi import ERC20_ABI
@@ -81,9 +77,7 @@ async def monitor_deposit(
         raise DepositError("No token for monitoring found")
     monitoring_token = monitoring_token[0]
     test_user_address = compute_create2_address(
-        USER_DEPOSIT_FACTORY_ADDRESS,
         TEST_USER_ID,
-        HexStr(USER_DEPOSIT_BYTECODE_HASH),
     )
 
     w3 = await async_web3_factory(chain)
