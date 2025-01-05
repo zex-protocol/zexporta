@@ -1,10 +1,10 @@
 import asyncio
 from hashlib import sha256
 
-from zexporta.custom_types import BlockNumber, ChainConfig, TransferStatus
+from zexporta.custom_types import BlockNumber, ChainConfig, DepositStatus
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.utils.encoder import DEPOSIT_OPERATION, encode_zex_deposit
-from zexporta.utils.observer import get_accepted_transfers
+from zexporta.utils.observer import get_accepted_deposits
 from zexporta.utils.web3 import (
     async_web3_factory,
     extract_transfer_from_block,
@@ -27,28 +27,23 @@ def deposit(chain_config: ChainConfig, data: dict, logger) -> dict:
     blocks = data["blocks"]
     if len(blocks) < 1:
         raise BlocksIsEmpty()
-    users_transfers = asyncio.run(
-        get_users_transfers(chain=chain_config, blocks=blocks)
-    )
+    deposits = asyncio.run(get_deposits(chain=chain_config, blocks=blocks))
     encoded_data = encode_zex_deposit(
         version=ZEX_ENCODE_VERSION,
         operation_type=DEPOSIT_OPERATION,
         chain=chain_config,
-        users_transfers=users_transfers,
+        deposits=deposits,
     )
     logger.info(f"encoded_data is: {encoded_data}")
     return {
         "hash": sha256(encoded_data).hexdigest(),
         "data": {
-            "users_transfers": [
-                user_transfer.model_dump(mode="json")
-                for user_transfer in users_transfers
-            ],
+            "deposits": [deposit.model_dump(mode="json") for deposit in deposits],
         },
     }
 
 
-async def get_users_transfers(chain: ChainConfig, blocks: list[BlockNumber]):
+async def get_deposits(chain: ChainConfig, blocks: list[BlockNumber]):
     blocks.sort()
     to_block = blocks[-1]
     w3 = await async_web3_factory(chain=chain)
@@ -59,20 +54,25 @@ async def get_users_transfers(chain: ChainConfig, blocks: list[BlockNumber]):
         )
     await insert_new_address_to_db()
     accepted_addresses = await get_active_address()
-    users_transfers = []
+    deposits = []
     for _blocks in [
         blocks[i : (i + chain.batch_block_size)]
         for i in range(0, len(blocks), chain.batch_block_size)
     ]:
-        raw_transfers = await filter_blocks(
+        transfers = await filter_blocks(
             w3,
             _blocks,
             extract_transfer_from_block,
             chain_id=chain.chain_id,
             max_delay_per_block_batch=chain.delay,
-            transfer_status=TransferStatus.VERIFIED,
         )
-        users_transfers.extend(
-            (await get_accepted_transfers(w3, chain, raw_transfers, accepted_addresses))
+        deposits.extend(
+            await get_accepted_deposits(
+                w3,
+                chain,
+                transfers,
+                accepted_addresses,
+                deposit_status=DepositStatus.VERIFIED,
+            )
         )
-    return sorted(users_transfers)
+    return sorted(deposits)

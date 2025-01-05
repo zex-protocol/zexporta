@@ -10,9 +10,10 @@ from zexporta.custom_types import (
     BlockNumber,
     ChainConfig,
     ChecksumAddress,
-    RawTransfer,
+    Deposit,
+    DepositStatus,
+    Transfer,
     UserId,
-    UserTransfer,
 )
 from zexporta.db.token import get_decimals, insert_token
 from zexporta.utils.logger import ChainLoggerAdapter
@@ -46,13 +47,13 @@ class Observer(BaseModel):
         from_block: BlockNumber | int,
         to_block: BlockNumber | int,
         accepted_addresses: dict[ChecksumAddress, UserId],
-        extract_block_logic: Callable[..., Coroutine[Any, Any, list[RawTransfer]]],
+        extract_block_logic: Callable[..., Coroutine[Any, Any, list[Transfer]]],
         *,
         batch_size=5,
         max_delay_per_block_batch: int | float = 10,
         logger: logging.Logger | ChainLoggerAdapter = logger,
         **kwargs,
-    ) -> list[UserTransfer]:
+    ) -> list[Deposit]:
         result = []
         block_batches = get_block_batches(from_block, to_block, batch_size=batch_size)
         for blocks_number in block_batches:
@@ -66,10 +67,10 @@ class Observer(BaseModel):
                 logger=logger,
                 **kwargs,
             )
-            accepted_transfers = await get_accepted_transfers(
+            accepted_deposits = await get_accepted_deposits(
                 self.w3, self.chain, transfers, accepted_addresses
             )
-            result.extend(accepted_transfers)
+            result.extend(accepted_deposits)
         return result
 
 
@@ -83,12 +84,13 @@ async def get_token_decimals(
     return decimals
 
 
-async def get_accepted_transfers(
+async def get_accepted_deposits(
     w3: AsyncWeb3,
     chain: ChainConfig,
-    transfers: list[RawTransfer],
+    transfers: list[Transfer],
     accepted_addresses: dict[ChecksumAddress, UserId],
-) -> list[UserTransfer]:
+    deposit_status: DepositStatus = DepositStatus.PENDING,
+) -> list[Deposit]:
     result = []
     for transfer in transfers:
         if (user_id := accepted_addresses.get(transfer.to)) is not None:
@@ -97,10 +99,11 @@ async def get_accepted_transfers(
                 receipt = await w3.eth.get_transaction_receipt(HexStr(transfer.tx_hash))
                 if receipt["status"] == 1:
                     result.append(
-                        UserTransfer(
+                        Deposit(
                             user_id=user_id,
                             decimals=decimals,
                             **transfer.model_dump(mode="json"),
+                            status=deposit_status,
                         )
                     )
             except web3.exceptions.TransactionNotFound as e:

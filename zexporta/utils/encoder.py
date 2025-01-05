@@ -4,7 +4,7 @@ from web3 import Web3
 
 from zexporta.custom_types import (
     ChainConfig,
-    UserTransfer,
+    Deposit,
     WithdrawRequest,
 )
 
@@ -15,7 +15,7 @@ def encode_zex_deposit(
     *,
     version: int,
     operation_type: str,
-    users_transfers: list[UserTransfer],
+    deposits: list[Deposit],
     chain: ChainConfig,
 ) -> bytes:
     # Encode the header
@@ -24,12 +24,12 @@ def encode_zex_deposit(
         version,
         operation_type.encode(),
         chain.symbol.lower().encode(),
-        len(users_transfers),
+        len(deposits),
     )
 
     # Encode each deposit
     deposit_data = b""
-    for deposit in users_transfers:
+    for deposit in deposits:
         deposit_data += struct.pack(
             ">66s 42s 32s B I Q B",  # I for uint32, d for double, I for uint32, s for bytes
             deposit.tx_hash.encode(),

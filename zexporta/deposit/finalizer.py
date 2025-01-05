@@ -6,8 +6,8 @@ import math
 import sentry_sdk
 
 from zexporta.custom_types import ChainConfig
-from zexporta.db.transfer import (
-    get_pending_transfers_block_number,
+from zexporta.db.deposit import (
+    get_pending_deposits_block_number,
     to_finalized,
     to_reorg,
 )
@@ -25,12 +25,12 @@ logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalize
 logger = logging.getLogger(__name__)
 
 
-async def update_finalized_transfers(chain: ChainConfig):
+async def update_finalized_deposits(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
     while True:
         w3 = await async_web3_factory(chain)
         finalized_block_number = await get_finalized_block_number(w3, chain)
-        pending_blocks_number = await get_pending_transfers_block_number(
+        pending_blocks_number = await get_pending_deposits_block_number(
             chain_id=chain.chain_id, finalized_block_number=finalized_block_number
         )
 
@@ -58,7 +58,7 @@ async def update_finalized_transfers(chain: ChainConfig):
 async def main():
     loop = asyncio.get_running_loop()
     tasks = [
-        loop.create_task(update_finalized_transfers(chain))
+        loop.create_task(update_finalized_deposits(chain))
         for chain in CHAINS_CONFIG.values()
     ]
     await asyncio.gather(*tasks)
