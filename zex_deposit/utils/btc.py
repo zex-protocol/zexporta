@@ -1,24 +1,66 @@
+import hashlib
 import logging
 from typing import Dict
 
-from embit import bip32, script
+from bitcoinutils.keys import PublicKey
+from bitcoinutils.setup import setup
+from ecdsa.curves import SECP256k1
+from ecdsa.ellipticcurve import Point
 
 from zex_deposit.clients import BTCAsyncClient
-from zex_deposit.custom_types import ChainConfig, ChainId, RawTransfer, TransferStatus
+from zex_deposit.config import BTC_PUBLIC_HEX, ENVIRONMENT
+from zex_deposit.custom_types import (
+    ChainConfig,
+    ChainId,
+    EnvEnum,
+    RawTransfer,
+    TransferStatus,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def compute_create_btc_address(salt: int):
-    from zex_deposit.config import BTC_DRIVE_PATH, BTC_NETWORK_CONFIG
+    if ENVIRONMENT == EnvEnum.PROD:
+        chain = "mainnet"
+    else:
+        chain = "testnet"
 
-    root_key = bip32.HDKey.from_seed(
-        str(salt).encode(), version=BTC_NETWORK_CONFIG["xprv"]
-    )
-    derivation_path = BTC_DRIVE_PATH
-    key = root_key.derive(derivation_path)
-    tr_script = script.p2tr(key)
-    return tr_script.address(BTC_NETWORK_CONFIG)
+    setup(chain)
+
+    # priv = PrivateKey.from_wif("cRPxBiKrJsH94FLugmiL4xnezMyoFqGcf4kdgNXGuypNERhMK6AT")
+    # pub = priv.get_public_key()
+
+    # pub = PublicKey.from_hex('03a957ff7ead882e4c95be2afa684ab0e84447149883aba60c067adc054472785b')
+    pub = PublicKey.from_hex(BTC_PUBLIC_HEX)
+
+    # Original pubkey point
+    x = pub.key.pubkey.point.x()
+    y = pub.key.pubkey.point.y()
+
+    # Salt & hash tweak
+    tweak = hashlib.sha256(pub.to_bytes() + str(salt).encode()).digest()
+    tweak_int = int.from_bytes(tweak, "big")
+
+    # Calculate the tweaked point
+    G = SECP256k1.generator
+    tweak_point = tweak_int * G
+    original_point = Point(SECP256k1.curve, x, y, SECP256k1.order)
+    tweaked_point = original_point + tweak_point
+
+    # Convert tweaked point to compressed pubkey (BIP340 style)
+    x_coord = tweaked_point.x()
+    y_coord = tweaked_point.y()
+
+    # Taproot keys use 0x02 if y is even, 0x03 if odd
+    prefix = b"\x02" if (y_coord % 2 == 0) else b"\x03"
+    tweaked_pub_bytes = prefix + x_coord.to_bytes(32, "big")
+
+    # Use bitcoinutils to wrap and get Taproot address
+    tweaked_pub_obj = PublicKey.from_hex(tweaked_pub_bytes.hex())
+    taproot_addr = tweaked_pub_obj.get_taproot_address()
+
+    return taproot_addr.to_string()
 
 
 def extract_btc_transfer_from_block(

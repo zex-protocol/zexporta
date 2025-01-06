@@ -1,6 +1,5 @@
 import os
 
-from embit.networks import NETWORKS
 from web3 import Web3
 
 from .custom_types import ChainConfig, ChainId, EnvEnum
@@ -59,7 +58,7 @@ if ENVIRONMENT == EnvEnum.PROD:
             vault_address="",
         ),
     }
-    BTC_NETWORK_CONFIG = NETWORKS["main"]
+
 else:
     ZEX_BASE_URL = "https://zex.mshoaei.ir/v1"
     CHAINS_CONFIG = {
@@ -111,12 +110,11 @@ else:
             vault_address="",
         ),
     }
-    BTC_NETWORK_CONFIG = NETWORKS["test"]
 
 
 ZEX_ENCODE_VERSION = 1
 
-BTC_DRIVE_PATH = os.getenv("BTC_DRIVE_PATH", default="m/86'/0'/0'/0/0")
+BTC_PUBLIC_HEX = os.getenv("BTC_PUBLIC_HEX", default="m/86'/0'/0'/0/0")
 
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]
