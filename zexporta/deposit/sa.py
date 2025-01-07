@@ -11,13 +11,13 @@ from pyfrost.network.sa import SA
 from zexporta.custom_types import (
     BlockNumber,
     ChainConfig,
-    TransferStatus,
-    UserTransfer,
+    Deposit,
+    DepositStatus,
 )
-from zexporta.db.transfer import (
+from zexporta.db.deposit import (
     get_block_numbers_by_status,
     to_reorg,
-    upsert_transfers,
+    upsert_deposits,
 )
 from zexporta.utils.dkg import parse_dkg_json
 from zexporta.utils.encoder import DEPOSIT_OPERATION, encode_zex_deposit
@@ -74,13 +74,13 @@ async def process_deposit(
     logger.debug(f"Validator results is: {result}")
 
     if result.get("result") == "SUCCESSFUL":
-        data = list(result["signature_data_from_node"].values())[0]["users_transfers"]
-        users_transfers = [UserTransfer(**user_transfer) for user_transfer in data]
+        data = list(result["signature_data_from_node"].values())[0]["deposits"]
+        deposits = [Deposit(**deposit) for deposit in data]
         encoded_data = encode_zex_deposit(
             version=ZEX_ENCODE_VERSION,
             operation_type=DEPOSIT_OPERATION,
             chain=chain,
-            users_transfers=users_transfers,
+            deposits=deposits,
         )
         hash_ = sha256(encoded_data).hexdigest()
         if hash_ != result["message_hash"]:
@@ -94,8 +94,8 @@ async def process_deposit(
             result["signature"],
             logger=logger,
         )
-        await upsert_transfers(users_transfers)
-        await to_reorg(chain.chain_id, blocks[0], blocks[-1], TransferStatus.FINALIZED)
+        await upsert_deposits(deposits)
+        await to_reorg(chain.chain_id, blocks[0], blocks[-1], DepositStatus.FINALIZED)
 
 
 async def send_result_to_zex(
@@ -121,17 +121,17 @@ async def deposit(chain: ChainConfig):
         try:
             client = httpx.AsyncClient()
             dkg_party = dkg_key["party"]
-            finalized_transfer_blocks_number = await get_block_numbers_by_status(
-                chain.chain_id, TransferStatus.FINALIZED
+            finalized_deposit_blocks_number = await get_block_numbers_by_status(
+                chain.chain_id, DepositStatus.FINALIZED
             )
-            if len(finalized_transfer_blocks_number) <= 0:
-                _logger.info("No finalized transfer exits.")
+            if len(finalized_deposit_blocks_number) <= 0:
+                _logger.info("No finalized deposit found.")
                 continue
             try:
                 await process_deposit(
                     client,
                     chain,
-                    finalized_transfer_blocks_number[:SA_BATCH_BLOCK_NUMBER_SIZE],
+                    finalized_deposit_blocks_number[:SA_BATCH_BLOCK_NUMBER_SIZE],
                     dkg_party,
                     logger=_logger,
                 )

@@ -15,8 +15,7 @@ from zexporta.custom_types import (
     ChainConfig,
     ChainId,
     ChecksumAddress,
-    RawTransfer,
-    TransferStatus,
+    Transfer,
     TxHash,
 )
 from zexporta.utils.transfer_decoder import (
@@ -44,7 +43,7 @@ async def async_web3_factory(chain: ChainConfig) -> AsyncWeb3:
     return w3
 
 
-async def _filter_blocks[T: (RawTransfer, TxHash)](
+async def _filter_blocks[T: (Transfer, TxHash)](
     w3: AsyncWeb3,
     blocks: Iterable[BlockNumber],
     fn: Callable[..., Coroutine[Any, Any, list[T]]],
@@ -57,7 +56,7 @@ async def _filter_blocks[T: (RawTransfer, TxHash)](
     return result
 
 
-async def filter_blocks[T: (RawTransfer, TxHash)](
+async def filter_blocks[T: (Transfer, TxHash)](
     w3,
     blocks_number: Iterable[BlockNumber],
     fn: Callable[..., Coroutine[Any, Any, list[T]]],
@@ -75,10 +74,9 @@ async def extract_transfer_from_block(
     w3: AsyncWeb3,
     block_number: BlockNumber,
     chain_id: ChainId,
-    transfer_status: TransferStatus = TransferStatus.PENDING,
     logger=logger,
     **kwargs,
-) -> list[RawTransfer]:
+) -> list[Transfer]:
     logger.debug(f"Observing block number {block_number} start")
     block = await w3.eth.get_block(block_number, full_transactions=True)
     result = []
@@ -86,13 +84,12 @@ async def extract_transfer_from_block(
         try:
             decoded_input = decode_transfer_tx(tx.input.hex())
             result.append(
-                RawTransfer(
+                Transfer(
                     tx_hash=tx.hash.hex(),
                     block_number=block_number,
                     chain_id=chain_id,
                     to=decoded_input._to,
                     value=decoded_input._value,
-                    status=transfer_status,
                     token=tx.to,
                     block_timestamp=block.timestamp,  # type: ignore
                 )
