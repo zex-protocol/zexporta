@@ -140,6 +140,62 @@ async def send_withdraw(
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
 
 
+# async def btc_send_withdraw(
+#     chain: ChainConfig,
+#     signature: str,
+#     withdraw_request: WithdrawRequest,
+#     signature_nonce: ChecksumAddress,
+#     nonces_dict: dict,
+#     logger: logging.Logger | ChainLoggerAdapter = logger,
+# ):
+#     FEE_AMOUNT = to_satoshis(0.00003000)
+#
+#     client = get_btc_async_client(chain)
+#
+#     from_address = withdraw_request.token_address
+#     to_address = withdraw_request.recipient
+#     amount = withdraw_request.amount
+#     logging.info(f"Sending to {to_address}")
+#
+#     send_amount = to_satoshis(amount)
+#
+#     utxos = await client.get_utxo(address=from_address)
+#     logging.debug(f"UTxOs {utxos}")
+#
+#     tx, tx_digests = get_simple_withdraw_tx(
+#         from_address, utxos, to_address, send_amount, FEE_AMOUNT
+#     )
+#     data = {
+#         "method": "get_simple_withdraw_tx",
+#         "data": {
+#             "from": from_address,
+#             "fee": FEE_AMOUNT,
+#             "utxos": utxos,
+#             "send_amount": send_amount,
+#             "to": to_address,
+#             "hash": tx_digests.hex(),
+#         },
+#     }
+#
+#     group_sign = asyncio.run(
+#         sa.request_signature(dkg_key, nonces_dict, data, dkg_key["party"])
+#     )
+#     sig = bytes_from_int(int(group_sign["public_nonce"]["x"], 16)) + bytes_from_int(
+#         group_sign["signature"]
+#     )
+#     tx.witnesses.append(TxWitnessInput([sig.hex()]))
+#     raw_tx = tx.serialize()
+#     logging.info(f"Raw tx: {raw_tx}")
+#
+#     resp = await client.send_tx(raw_tx)
+#     logger.info(
+#         f"Transaction Info: {json.dumps({'raw_tx': raw_tx, 'tx_hash': resp.text}, indent=4)}"
+#     )
+#
+#
+# WITHDRAW_SENDER_MAPPER = {"BTC": btc_send_withdraw, DEFAULTS: evm_send_withdraw}
+
+
 async def withdraw(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
 

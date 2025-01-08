@@ -26,7 +26,7 @@ class BTCObserver(BaseModel):
     ) -> list[Dict]:
         block_batches = []
         for block_number in range(from_block, to_block + 1):
-            block = await self.btc.get_block_by_number(block_number)
+            block = await self.btc.get_block_by_identifier(block_number)
             block_batches.append(block)
             await asyncio.sleep(block_sleep)
         return block_batches

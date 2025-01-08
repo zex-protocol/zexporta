@@ -85,9 +85,9 @@ class UserAddress(BaseModel):
 
 class WithdrawRequest(BaseModel):
     model_config = {"extra": "ignore"}
-    token_address: ChecksumAddress
+    token_address: ChecksumAddress | str
     amount: int
-    recipient: ChecksumAddress
+    recipient: ChecksumAddress | str
     nonce: int
     chain_id: ChainId
     tx_hash: TxHash | None = None

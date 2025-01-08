@@ -1,5 +1,6 @@
 import os
 
+from bitcoinutils.setup import setup
 from web3 import Web3
 
 from .custom_types import ChainConfig, ChainId, EnvEnum
@@ -58,6 +59,7 @@ if ENVIRONMENT == EnvEnum.PROD:
             vault_address="",
         ),
     }
+    setup("mainnet")
 
 else:
     ZEX_BASE_URL = "https://zex.mshoaei.ir/v1"
@@ -110,11 +112,12 @@ else:
             vault_address="",
         ),
     }
+    setup("testnet")
 
 
 ZEX_ENCODE_VERSION = 1
 
-BTC_PUBLIC_HEX = os.getenv("BTC_PUBLIC_HEX", default="m/86'/0'/0'/0/0")
+BTC_PUBLIC_HEX = os.getenv("BTC_PUBLIC_HEX")
 
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]

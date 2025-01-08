@@ -61,6 +61,7 @@ async def observe_withdraw(chain: ChainConfig):
             continue
 
         finally:
+            # TODO :: set client Global Statement To Fix Bug
             await client.aclose()  # TODO: if client connected not need this
             await asyncio.sleep(WITHDRAW_DELAY_SECOND)
 

@@ -3,16 +3,14 @@ import logging
 from typing import Dict
 
 from bitcoinutils.keys import PublicKey
-from bitcoinutils.setup import setup
 from ecdsa.curves import SECP256k1
 from ecdsa.ellipticcurve import Point
 
 from zex_deposit.clients import BTCAsyncClient
-from zex_deposit.config import BTC_PUBLIC_HEX, ENVIRONMENT
+from zex_deposit.config import BTC_PUBLIC_HEX
 from zex_deposit.custom_types import (
     ChainConfig,
     ChainId,
-    EnvEnum,
     RawTransfer,
     TransferStatus,
 )
@@ -21,13 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 def compute_create_btc_address(salt: int):
-    if ENVIRONMENT == EnvEnum.PROD:
-        chain = "mainnet"
-    else:
-        chain = "testnet"
-
-    setup(chain)
-
     # priv = PrivateKey.from_wif("cRPxBiKrJsH94FLugmiL4xnezMyoFqGcf4kdgNXGuypNERhMK6AT")
     # pub = priv.get_public_key()
 
@@ -73,16 +64,16 @@ def extract_btc_transfer_from_block(
     result = []
     for tx in block["txs"]:
         for out_put in tx["vout"]:
-            if out_put["isAddress"] and tx["addresses"]:
+            if out_put["isAddress"] and out_put["addresses"]:
                 result.append(
                     RawTransfer(
                         tx_hash=tx["txid"],
                         block_number=block["height"],
                         chain_id=chain_id,
-                        to=tx["addresses"][0],
+                        to=out_put["addresses"][0],
                         value=tx["value"],
                         status=transfer_status,
-                        token=tx.to,
+                        token=out_put["addresses"][0],
                         block_timestamp=block["time"],
                     )
                 )

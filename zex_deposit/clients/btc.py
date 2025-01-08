@@ -48,17 +48,18 @@ class BTCAsyncClient:
         params = {"confirmed": str(confirmed).lower()}
         return await self._request("GET", url, params=params)
 
-    async def get_block_by_hash(self, block_hash: int) -> dict:
-        url = f"{self.block_book_base_url}api/v2/block/{block_hash}"
+    async def get_block_by_identifier(self, identifier) -> dict:
+        url = f"{self.block_book_base_url}api/v2/block/{identifier}"
         return await self._request("GET", url)
 
     async def send_tx(self, hex_tx_data: str) -> dict:
         url = f"{self.block_book_base_url}api/v2/sendtx/{hex_tx_data}"
-        return await self._request("GET", url)
+        resp = await self._request("GET", url)
+        return resp and resp["result"]
 
     async def get_latest_block(self) -> dict:
         number = await self.get_latest_block_number()
-        return await self.get_block_by_number(number)
+        return await self.get_block_by_identifier(number)
 
     async def get_latest_block_number(self) -> int:
         url = f"{self.base_url}"
