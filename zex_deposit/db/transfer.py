@@ -60,7 +60,7 @@ async def delete_transaction(tx_hash):
 
 async def to_finalized(
     chain_id: ChainId,
-    finalized_block_number: BlockNumber,
+    finalized_block_number: int,
     tx_hashes: list[str],
 ):
     query = {

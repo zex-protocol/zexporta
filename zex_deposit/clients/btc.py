@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import httpx
 
@@ -41,21 +41,21 @@ class BTCAsyncClient:
     def __init__(self, base_url: str, indexer_url: str):
         self.base_url = base_url
         self.block_book_base_url = indexer_url
+        self.client = httpx.AsyncClient()
 
     async def _request(
         self,
         method: str = "GET",
         url: str = "",
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
-    ) -> Dict:
+        params: Optional[dict[str, Any]] = None,
+        data: Optional[dict[str, Any]] = None,
+    ) -> dict:
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.request(
-                    method, url, params=params, data=data, timeout=15
-                )
-                response.raise_for_status()
-                return response.json()
+            response = await self.client.request(
+                method, url, params=params, data=data, timeout=15
+            )
+            response.raise_for_status()
+            return response.json()
         except httpx.HTTPStatusError as http_err:
             # Raised for non-2xx responses
             raise BTCRequestError(
@@ -94,7 +94,7 @@ class BTCAsyncClient:
         return await self._request("GET", url)
 
     async def get_address_details(
-        self, address: str, details: Optional[str] = "txids"
+        self, address: str, details: str | None = "txids"
     ) -> dict:
         url = f"{self.block_book_base_url}api/v2/address/{address}"
         params = {"details": details}

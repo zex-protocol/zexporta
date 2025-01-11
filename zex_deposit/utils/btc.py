@@ -82,4 +82,6 @@ async def get_btc_finalized_block_number(
     client: BTCAsyncClient, chain: ChainConfig
 ) -> int:
     number = await client.get_latest_block_number()
+    if number is None or not isinstance(number, int) or number <= 0:
+        raise ValueError("Invalid block number received")
     return number and number - chain.finalize_block_count

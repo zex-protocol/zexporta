@@ -1,13 +1,12 @@
 import asyncio
 import logging.config
 
+from zex_deposit.clients import get_btc_async_client
+from zex_deposit.custom_types import ChainConfig, TransferStatus
+from zex_deposit.db.transfer import find_transactions_by_status, to_finalized
+from zex_deposit.deposit.config import LOGGER_PATH
+from zex_deposit.utils.btc import get_btc_finalized_block_number
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
-
-from ...clients import get_btc_async_client
-from ...custom_types import ChainConfig, TransferStatus
-from ...db.transfer import find_transactions_by_status, to_finalized
-from ...utils.btc import get_btc_finalized_block_number
-from ..config import LOGGER_PATH
 
 logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalizer.log"))  # type: ignore
 logger = logging.getLogger(__name__)
