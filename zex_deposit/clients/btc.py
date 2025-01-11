@@ -1,8 +1,40 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import httpx
 
 from zex_deposit.custom_types import ChainConfig
+
+
+class BTCClientError(Exception):
+    """Base exception for BTCAsyncClient errors."""
+
+    pass
+
+
+class BTCRequestError(BTCClientError):
+    """Exception raised for errors during HTTP requests."""
+
+    def __init__(self, message: str, status_code: Optional[int] = None):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class BTCConnectionError(BTCClientError):
+    """Exception raised for connection-related errors."""
+
+    pass
+
+
+class BTCTimeoutError(BTCClientError):
+    """Exception raised when a request times out."""
+
+    pass
+
+
+class BTCResponseError(BTCClientError):
+    """Exception raised for invalid or unexpected responses."""
+
+    pass
 
 
 class BTCAsyncClient:
@@ -14,15 +46,40 @@ class BTCAsyncClient:
         self,
         method: str = "GET",
         url: str = "",
-        params: Dict = None,
-        data: Dict = None,
-    ) -> dict:
-        async with httpx.AsyncClient() as client:
-            response = await client.request(
-                method, url, params=params, data=data, timeout=15
-            )
-            response.raise_for_status()
-            return response.json()
+        params: Optional[Dict[str, Any]] = None,
+        data: Optional[Dict[str, Any]] = None,
+    ) -> Dict:
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.request(
+                    method, url, params=params, data=data, timeout=15
+                )
+                response.raise_for_status()
+                return response.json()
+        except httpx.HTTPStatusError as http_err:
+            # Raised for non-2xx responses
+            raise BTCRequestError(
+                f"HTTP error occurred: {http_err.response.status_code} {http_err.response.reason_phrase}",
+                status_code=http_err.response.status_code,
+            ) from http_err
+        except httpx.ConnectError as conn_err:
+            # Raised for connection-related errors
+            raise BTCConnectionError(
+                f"Connection error occurred: {conn_err}"
+            ) from conn_err
+        except httpx.TimeoutException as timeout_err:
+            # Raised when a request times out
+            raise BTCTimeoutError(f"Request timed out: {timeout_err}") from timeout_err
+        except httpx.RequestError as req_err:
+            # Base class for all other request-related errors
+            raise BTCClientError(
+                f"An error occurred while requesting {req_err.request.url!r}."
+            ) from req_err
+        except ValueError as json_err:
+            # Raised if response.json() fails
+            raise BTCResponseError(
+                f"Failed to parse JSON response: {json_err}"
+            ) from json_err
 
     async def get_block_by_number(self, number: int) -> dict:
         url = f"{self.block_book_base_url}api/v2/block-index/{number}"

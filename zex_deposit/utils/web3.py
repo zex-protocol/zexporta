@@ -38,7 +38,7 @@ async def async_web3_factory(chain: ChainConfig) -> AsyncWeb3:
     return w3
 
 
-def get_web3_client(chain: ChainConfig) -> AsyncWeb3:
+def get_web3_async_client(chain: ChainConfig) -> AsyncWeb3:
     w3 = AsyncWeb3(AsyncHTTPProvider(chain.private_rpc))
     if chain.poa:
         w3.middleware_onion.inject(async_geth_poa_middleware, layer=0)

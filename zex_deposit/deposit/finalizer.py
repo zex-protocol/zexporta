@@ -4,7 +4,7 @@ import logging.config
 import sentry_sdk
 
 from zex_deposit.config import DEFAULTS
-from zex_deposit.deposit.networks import (
+from zex_deposit.deposit.networks_finalizers import (
     update_btc_finalized_transfers,
     update_finalized_transfers,
 )

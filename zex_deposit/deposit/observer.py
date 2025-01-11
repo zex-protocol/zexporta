@@ -19,7 +19,7 @@ from zex_deposit.utils.evm_observer import Observer
 from zex_deposit.utils.logger import ChainLoggerAdapter, get_logger_config
 from zex_deposit.utils.web3 import (
     extract_transfer_from_block,
-    get_web3_client,
+    get_web3_async_client,
 )
 
 from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS
@@ -36,7 +36,7 @@ async def filter_transfer(
 
 OBSERVERS = {"BTC": BTCObserver, DEFAULT: Observer}
 
-CLIENTS_GETTER = {"BTC": get_btc_async_client, DEFAULT: get_web3_client}
+CLIENTS_GETTER = {"BTC": get_btc_async_client, DEFAULT: get_web3_async_client}
 
 EXTRACTORS = {
     "BTC": extract_btc_transfer_from_block,

@@ -19,10 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 def compute_create_btc_address(salt: int):
-    # priv = PrivateKey.from_wif("cRPxBiKrJsH94FLugmiL4xnezMyoFqGcf4kdgNXGuypNERhMK6AT")
-    # pub = priv.get_public_key()
-
-    # pub = PublicKey.from_hex('03a957ff7ead882e4c95be2afa684ab0e84447149883aba60c067adc054472785b')
     pub = PublicKey.from_hex(BTC_PUBLIC_HEX)
 
     # Original pubkey point
@@ -82,6 +78,8 @@ def extract_btc_transfer_from_block(
     return result
 
 
-async def get_btc_finalized_block_number(client: BTCAsyncClient, chain: ChainConfig):
+async def get_btc_finalized_block_number(
+    client: BTCAsyncClient, chain: ChainConfig
+) -> int:
     number = await client.get_latest_block_number()
     return number and number - chain.finalize_block_count
