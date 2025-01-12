@@ -8,8 +8,8 @@ from zexporta.config import BTC_GROUP_KEY_PUB
 from zexporta.custom_types import (
     BTCConfig,
     ChainId,
-    RawTransfer,
-    TransferStatus,
+    DepositStatus,
+    Transfer,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,15 +24,15 @@ def extract_btc_transfer_from_block(
     block_number: int,
     block: Dict,
     chain_id: ChainId,
-    transfer_status: TransferStatus = TransferStatus.PENDING,
-) -> list[RawTransfer]:
+    transfer_status: DepositStatus = DepositStatus.PENDING,
+) -> list[Transfer]:
     logger.debug(f"Observing block number {block_number} start")
     result = []
     for tx in block["txs"]:
         for out_put in tx["vout"]:
             if out_put["isAddress"] and out_put["addresses"]:
                 result.append(
-                    RawTransfer(
+                    Transfer(
                         tx_hash=tx["txid"],
                         block_number=block["height"],
                         chain_id=chain_id,

@@ -8,9 +8,10 @@ from zexporta.clients import BTCAsyncClient
 from zexporta.custom_types import (
     BlockNumber,
     BTCConfig,
-    RawTransfer,
+    Deposit,
+    DepositStatus,
+    Transfer,
     UserId,
-    UserTransfer,
 )
 from zexporta.utils.logger import ChainLoggerAdapter
 
@@ -45,7 +46,7 @@ class BTCObserver(BaseModel):
         max_delay_per_block_batch: int | float = 10,
         logger: logging.Logger | ChainLoggerAdapter = logger,
         **kwargs,
-    ) -> list[UserTransfer]:
+    ) -> list[Deposit]:
         result = []
         block_batches = await self.get_block_batches(
             from_block=from_block, to_block=to_block, block_sleep=self.chain.delay
@@ -61,16 +62,17 @@ class BTCObserver(BaseModel):
 
 
 async def get_accepted_transfers(
-    transfers: list[RawTransfer],
+    transfers: list[Transfer],
     accepted_addresses: dict[str, UserId],
-) -> list[UserTransfer]:
+) -> list[Deposit]:
     result = []
     for transfer in transfers:
         if (user_id := accepted_addresses.get(transfer.to)) is not None:
             result.append(
-                UserTransfer(
+                Deposit(
                     user_id=user_id,
                     decimals=8,
+                    status=DepositStatus.PENDING,
                     **transfer.model_dump(mode="json"),
                 )
             )

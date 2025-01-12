@@ -186,17 +186,6 @@ files = [
 ]
 
 [[package]]
-name = "bech32"
-version = "1.2.0"
-description = "Reference implementation for Bech32 and segwit addresses."
-optional = false
-python-versions = ">=3.5"
-files = [
-    {file = "bech32-1.2.0-py3-none-any.whl", hash = "sha256:990dc8e5a5e4feabbdf55207b5315fdd9b73db40be294a19b3752cde9e79d981"},
-    {file = "bech32-1.2.0.tar.gz", hash = "sha256:7d6db8214603bd7871fcfa6c0826ef68b85b0abd90fa21c285a9c5e21d2bd899"},
-]
-
-[[package]]
 name = "bitarray"
 version = "3.0.0"
 description = "efficient arrays of booleans -- C extension"
@@ -3069,4 +3058,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "db393d11add4ff7e05c9e8978f06682763d38c71e85b922492b9eac37f9cc43c"
+content-hash = "2e035d69fadefc22db609b8b5ea3a5be780de9d5b12a71adc98a5d1d01d22a7e"

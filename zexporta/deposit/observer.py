@@ -27,12 +27,6 @@ logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/observer
 logger = logging.getLogger(__name__)
 
 
-# async def filter_transfer(
-#     transfers: list[RawTransfer], accepted_addresses: set[ChecksumAddress]
-# ) -> tuple[RawTransfer, ...]:
-#     return tuple(filter(lambda transfer: transfer.to in accepted_addresses, transfers))
-
-
 OBSERVERS = {BTCConfig: BTCObserver, ChainConfig: Observer}
 
 CLIENTS_GETTER = {BTCConfig: get_btc_async_client, ChainConfig: get_web3_async_client}

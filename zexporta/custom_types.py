@@ -19,14 +19,14 @@ class EnvEnum(StrEnum):
 
 
 class ChainConfig(BaseModel):
-    private_rpc: URI
+    private_rpc: URI | str
     chain_id: ChainId
     symbol: str
     poa: bool = Field(default=False)
     finalize_block_count: int = Field(default=15)
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
-    vault_address: ChecksumAddress | Address
+    vault_address: ChecksumAddress
 
 
 class BTCConfig(BaseModel):
@@ -96,9 +96,9 @@ class UserAddress(BaseModel):
 
 class WithdrawRequest(BaseModel):
     model_config = {"extra": "ignore"}
-    token_address: ChecksumAddress | str
+    token_address: ChecksumAddress | Address
     amount: int
-    recipient: ChecksumAddress | str
+    recipient: ChecksumAddress | Address
     nonce: int
     chain_id: ChainId
     tx_hash: TxHash | None = None
