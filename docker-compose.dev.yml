@@ -8,7 +8,7 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
 
 
     volumes:
@@ -25,20 +25,20 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
 
   monitoring-bot:
     build:
       context: .
       dockerfile: Dockerfile
-    image: zex-deposit
+    image: zexporta
     container_name: monitoring-bot
-    entrypoint: poetry run python -m zex_deposit.monitoring_bot.main
+    entrypoint: poetry run python -m zexporta.monitoring_bot.main
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.13
     volumes:
-      - /var/log/zex_deposit/monitoring_bot/:/var/log/monitoring_bot/
+      - /var/log/zexporta/monitoring_bot/:/var/log/monitoring_bot/
     env_file:
       - .env.dev
 
@@ -46,20 +46,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: zex-deposit
+    image: zexporta
     container_name: deposit-sa
-    entrypoint: poetry run python -m zex_deposit.deposit.sa
+    entrypoint: poetry run python -m zexporta.deposit.sa
     restart: always
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.4
     depends_on:
       mongodb:
         condition: service_healthy
     volumes:
-      - ./zex_deposit/data:/app/zex_deposit/data
-      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/zex_deposit/deposit/:/var/log/deposit/
+      - ./zexporta/data:/app/zexporta/data
+      - ./zexporta/dkgs/:/app/zexporta/dkgs/
+      - /var/log/zexporta/deposit/:/var/log/deposit/
     env_file:
       - .env.dev
 
@@ -67,21 +67,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: zex-deposit
+    image: zexporta
     container_name: deposit-observer
-    entrypoint: poetry run python -m zex_deposit.deposit.observer
+    entrypoint: poetry run python -m zexporta.deposit.observer
     restart: always
     depends_on:
       mongodb:
         condition: service_healthy
     volumes:
-      - ./zex_deposit/data:/app/zex_deposit/data
-      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/zex_deposit/deposit/:/var/log/deposit/
+      - ./zexporta/data:/app/zexporta/data
+      - ./zexporta/dkgs/:/app/zexporta/dkgs/
+      - /var/log/zexporta/deposit/:/var/log/deposit/
     env_file:
       - .env.dev
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.6
 
 
@@ -89,22 +89,22 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: zex-deposit
+    image: zexporta
     container_name: deposit-finalizer
-    entrypoint: poetry run python -m zex_deposit.deposit.finalizer
+    entrypoint: poetry run python -m zexporta.deposit.finalizer
     restart: on-failure:5
     depends_on:
       mongodb:
         condition: service_healthy
     volumes:
-      - ./zex_deposit/data:/app/zex_deposit/data
-      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/zex_deposit/deposit/:/var/log/deposit/
+      - ./zexporta/data:/app/zexporta/data
+      - ./zexporta/dkgs/:/app/zexporta/dkgs/
+      - /var/log/zexporta/deposit/:/var/log/deposit/
     env_file:
       - .env.dev
 
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.7
 
 
@@ -112,20 +112,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: zex-deposit
+    image: zexporta
     container_name: deposit-vault-depositor
-    entrypoint: poetry run python -m zex_deposit.deposit.vault_depositor
+    entrypoint: poetry run python -m zexporta.deposit.vault_depositor
     restart: always
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.8
     depends_on:
       mongodb:
         condition: service_healthy
     volumes:
-      - ./zex_deposit/data:/app/zex_deposit/data
-      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/zex_deposit/deposit/:/var/log/deposit/
+      - ./zexporta/data:/app/zexporta/data
+      - ./zexporta/dkgs/:/app/zexporta/dkgs/
+      - /var/log/zexporta/deposit/:/var/log/deposit/
     env_file:
       - .env.dev
 
@@ -133,19 +133,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: zex-deposit
+    image: zexporta
     container_name: withdraw-sa
-    entrypoint: poetry run python -m zex_deposit.withdraw.sa
+    entrypoint: poetry run python -m zexporta.withdraw.sa
     restart: always
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.5
     volumes:
-      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/zex_deposit/withdraw/:/var/log/withdraw/
+      - ./zexporta/dkgs/:/app/zexporta/dkgs/
+      - /var/log/zexporta/withdraw/:/var/log/withdraw/
     env_file:
       - .env.dev
 
@@ -153,37 +153,37 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: zex-deposit
+    image: zexporta
     container_name: withdraw-observer
-    entrypoint: poetry run python -m zex_deposit.withdraw.observer
+    entrypoint: poetry run python -m zexporta.withdraw.observer
     restart: always
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.9
     volumes:
-      - ./zex_deposit/dkgs/:/app/zex_deposit/dkgs/
-      - /var/log/zex_deposit/withdraw/:/var/log/withdraw/
+      - ./zexporta/dkgs/:/app/zexporta/dkgs/
+      - /var/log/zexporta/withdraw/:/var/log/withdraw/
     env_file:
       - .env.dev
 
   validator-1:
     build:
       context: .
-    image: zex-deposit
+    image: zexporta
     container_name: validator-1
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --access-logfile - --capture-output --log-level debug  --workers=5 zex_deposit.validator.node:app
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --access-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
     environment:
       - NODE_ID=0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
     restart: on-failure:5
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.10
     volumes:
-      - ./zex_deposit/data:/app/zex_deposit/data
-      - /var/log/zex_deposit/validator:/var/log/validator
+      - ./zexporta/data:/app/zexporta/data
+      - /var/log/zexporta/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
@@ -195,18 +195,18 @@ services:
   validator-2:
     build:
       context: .
-    image: zex-deposit
+    image: zexporta
     container_name: validator-2
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zex_deposit.validator.node:app
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
     environment:
       - NODE_ID=0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
     restart: on-failure:5
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.11
     volumes:
-      - ./zex_deposit/data:/app/zex_deposit/data
-      - /var/log/zex_deposit/validator:/var/log/validator
+      - ./zexporta/data:/app/zexporta/data
+      - /var/log/zexporta/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
@@ -218,18 +218,18 @@ services:
   validator-3:
     build:
       context: .
-    image: zex-deposit
+    image: zexporta
     container_name: validator-3
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zex_deposit.validator.node:app
+    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
     environment:
       - NODE_ID=0xfe6ec3f9e9ad332de8fcdf8d630ccdc209d54e71fcd9cc866785cebe2db5197b
     restart: on-failure:5
     networks:
-      zex_deposit_custom_network:
+      zexporta_custom_network:
         ipv4_address: 172.20.0.12
     volumes:
-      - ./zex_deposit/data:/app/zex_deposit/data
-      - /var/log/zex_deposit/validator:/var/log/validator
+      - ./zexporta/data:/app/zexporta/data
+      - /var/log/zexporta/validator:/var/log/validator
     depends_on:
       mongodb:
         condition: service_healthy
@@ -239,7 +239,7 @@ services:
       - .env.dev
 
 networks:
-  zex_deposit_custom_network:
+  zexporta_custom_network:
     driver: bridge
     ipam:
       config:
