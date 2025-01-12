@@ -1,9 +1,9 @@
 import logging
-from typing import Dict
 
 from pyfrost.btc_utils import taproot_tweak_pubkey
 
 from zexporta.clients import BTCAsyncClient
+from zexporta.clients.btc import Block
 from zexporta.config import BTC_GROUP_KEY_PUB
 from zexporta.custom_types import (
     BTCConfig,
@@ -22,25 +22,25 @@ def compute_create_btc_address(salt: int):
 
 def extract_btc_transfer_from_block(
     block_number: int,
-    block: Dict,
+    block: Block,
     chain_id: ChainId,
     transfer_status: DepositStatus = DepositStatus.PENDING,
 ) -> list[Transfer]:
     logger.debug(f"Observing block number {block_number} start")
     result = []
-    for tx in block["txs"]:
-        for out_put in tx["vout"]:
-            if out_put["isAddress"] and out_put["addresses"]:
+    for tx in block.txs:
+        for out_put in tx.vout:
+            if out_put.isAddress and out_put.addresses:
                 result.append(
                     Transfer(
-                        tx_hash=tx["txid"],
-                        block_number=block["height"],
+                        tx_hash=tx.txid,
+                        block_number=block.height,
                         chain_id=chain_id,
-                        to=out_put["addresses"][0],
-                        value=tx["value"],
+                        to=out_put.addresses[0],
+                        value=tx.value,
                         status=transfer_status,
-                        token=out_put["addresses"][0],
-                        block_timestamp=block["time"],
+                        token=out_put.addresses[0],
+                        block_timestamp=block.time,
                     )
                 )
 

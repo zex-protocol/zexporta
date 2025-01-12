@@ -1,10 +1,11 @@
 import asyncio
 import logging
-from typing import Callable, Dict
+from typing import Callable
 
 from pydantic import BaseModel
 
 from zexporta.clients import BTCAsyncClient
+from zexporta.clients.btc import Block
 from zexporta.custom_types import (
     BlockNumber,
     BTCConfig,
@@ -24,7 +25,7 @@ class BTCObserver(BaseModel):
 
     async def get_block_batches(
         self, from_block: int, to_block: int, block_sleep: int
-    ) -> list[Dict]:
+    ) -> list[Block]:
         block_batches = []
         for block_number in range(from_block, to_block + 1):
             block = await self.btc.get_block_by_identifier(block_number)
