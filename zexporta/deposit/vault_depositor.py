@@ -10,10 +10,10 @@ from web3 import AsyncWeb3
 from zexporta.custom_types import (
     ChainConfig,
     ChecksumAddress,
-    TransferStatus,
-    UserTransfer,
+    Deposit,
+    DepositStatus,
 )
-from zexporta.db.transfer import find_transactions_by_status, upsert_transfer
+from zexporta.db.deposit import find_deposit_by_status, upsert_deposit
 from zexporta.utils.abi import FACTORY_ABI, USER_DEPOSIT_ABI
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.web3 import async_web3_factory
@@ -64,57 +64,57 @@ async def deploy_contract(
 async def transfer_ERC20(
     w3: AsyncWeb3,
     account: LocalAccount,
-    transfer: UserTransfer,
+    deposit: Deposit,
     logger: logging.Logger | ChainLoggerAdapter = logger,
 ):
-    user_deposit = w3.eth.contract(address=transfer.to, abi=USER_DEPOSIT_ABI)
+    user_deposit = w3.eth.contract(address=deposit.to, abi=USER_DEPOSIT_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
     tx = await user_deposit.functions.transferERC20(
-        transfer.token, transfer.value
+        deposit.token, deposit.value
     ).build_transaction({"from": account.address, "nonce": nonce})
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
     await w3.eth.wait_for_transaction_receipt(tx_hash)
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
-    transfer = transfer.model_copy(update={"status": TransferStatus.SUCCESSFUL.value})
-    await upsert_transfer(transfer)
+    deposit.status = DepositStatus.SUCCESSFUL
+    await upsert_deposit(deposit)
 
 
 async def withdraw(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
     while True:
         try:
-            transfers = await find_transactions_by_status(
-                status=TransferStatus.VERIFIED, chain_id=chain.chain_id
+            deposits = await find_deposit_by_status(
+                status=DepositStatus.VERIFIED, chain_id=chain.chain_id
             )
-            if len(transfers) == 0:
-                _logger.debug("No transfer has been for withdrawing")
+            if len(deposits) == 0:
+                _logger.debug("Deposit not found.")
                 continue
             w3 = await async_web3_factory(chain)
             account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
 
-            for transfer in transfers:
-                is_contract = (await w3.eth.get_code(transfer.to)) != b""
+            for deposit in deposits:
+                is_contract = (await w3.eth.get_code(deposit.to)) != b""
                 if not is_contract:
                     _logger.info(
-                        f"Contract: {transfer.to} not found! Deploying a new one ..."
+                        f"Contract: {deposit.to} not found! Deploying a new one ..."
                     )
                     await deploy_contract(
                         w3,
                         account,
                         w3.to_checksum_address(USER_DEPOSIT_FACTORY_ADDRESS),
-                        transfer.user_id,
+                        deposit.user_id,
                         logger=_logger,
                     )
                 try:
-                    await transfer_ERC20(w3, account, transfer, logger=_logger)
+                    await transfer_ERC20(w3, account, deposit, logger=_logger)
                 except web3.exceptions.ContractCustomError as e:
                     _logger.error(
-                        f"Error while trying to transfer ERC20 to contract {transfer.to} , error: {e}"
+                        f"Error while trying to transfer ERC20 to contract {deposit.to} , error: {e}"
                     )
 
         except ValueError as e:
-            _logger.error(f"Can not deploy contract for {transfer.to}, error: {e}")
+            _logger.error(f"Can not deploy contract for {deposit.to}, error: {e}")
 
         finally:
             await asyncio.sleep(10)

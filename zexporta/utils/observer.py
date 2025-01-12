@@ -18,7 +18,7 @@ from zexporta.custom_types import (
 from zexporta.db.token import get_decimals, insert_token
 from zexporta.utils.logger import ChainLoggerAdapter
 
-from .web3 import filter_blocks, get_finalized_block_number
+from .web3 import filter_blocks
 from .web3 import get_token_decimals as w3_get_token_decimals
 
 logger = logging.getLogger(__name__)
@@ -40,26 +40,7 @@ def get_block_batches(
 class Observer(BaseModel):
     model_config: ConfigDict = {"arbitrary_types_allowed": True}
     chain: ChainConfig
-    client: AsyncWeb3
-
-    def get_block_batches(
-        self,
-        from_block: BlockNumber | int,
-        to_block: BlockNumber | int,
-        *,
-        batch_size: int = 5,
-    ) -> list[tuple[BlockNumber, ...]]:
-        block_batches = [
-            tuple(BlockNumber(j) for j in range(i, min(to_block + 1, i + batch_size)))
-            for i in range(from_block, to_block + 1, batch_size)
-        ]
-        return block_batches
-
-    async def get_finalized_block_number(self):
-        return await get_finalized_block_number(self.client, self.chain)
-
-    async def get_latest_block_number(self):
-        return await self.client.eth.get_block_number()
+    w3: AsyncWeb3
 
     async def observe(
         self,
@@ -73,29 +54,24 @@ class Observer(BaseModel):
         logger: logging.Logger | ChainLoggerAdapter = logger,
         **kwargs,
     ) -> list[Deposit]:
-        try:
-            result = []
-            block_batches = self.get_block_batches(
-                from_block, to_block, batch_size=batch_size
+        result = []
+        block_batches = get_block_batches(from_block, to_block, batch_size=batch_size)
+        for blocks_number in block_batches:
+            logger.info(f"batch_blocks: {blocks_number}")
+            transfers = await filter_blocks(
+                self.w3,
+                blocks_number,
+                extract_block_logic,
+                chain_id=self.chain.chain_id,
+                max_delay_per_block_batch=max_delay_per_block_batch,
+                logger=logger,
+                **kwargs,
             )
-            for blocks_number in block_batches:
-                logger.info(f"batch_blocks: {blocks_number}")
-                transfers = await filter_blocks(
-                    self.client,
-                    blocks_number,
-                    extract_block_logic,
-                    chain_id=self.chain.chain_id,
-                    max_delay_per_block_batch=max_delay_per_block_batch,
-                    logger=logger,
-                    **kwargs,
-                )
-                accepted_transfers = await get_accepted_deposits(
-                    self.client, self.chain, transfers, accepted_addresses
-                )
-                result.extend(accepted_transfers)
-            return result
-        except web3.exceptions.BlockNotFound:
-            return []
+            accepted_deposits = await get_accepted_deposits(
+                self.w3, self.chain, transfers, accepted_addresses
+            )
+            result.extend(accepted_deposits)
+        return result
 
 
 async def get_token_decimals(

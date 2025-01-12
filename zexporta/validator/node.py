@@ -22,7 +22,7 @@ sentry_sdk.init(
 
 def run_node(node_id: int) -> None:
     data_manager = NodeDataManager(
-        f"./zex_deposit/data/dkg_keys-{node_id}.json",
+        f"./zexporta/data/dkg_keys-{node_id}.json",
     )
     nodes_info = NodesInfo()
     node = Node(

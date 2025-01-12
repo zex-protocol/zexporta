@@ -40,7 +40,7 @@ class BTCConfig(BaseModel):
     vault_address: Address
 
 
-class TransferStatus(StrEnum):
+class DepositStatus(StrEnum):
     PENDING = "pending"
     FINALIZED = "finalized"
     VERIFIED = "verified"
@@ -62,9 +62,8 @@ class Token(BaseModel):
     decimals: int
 
 
-class RawTransfer(BaseModel):
+class Transfer(BaseModel):
     tx_hash: TxHash
-    status: TransferStatus
     chain_id: ChainId
     value: Value
     token: ChecksumAddress | Address
@@ -73,19 +72,20 @@ class RawTransfer(BaseModel):
     block_number: BlockNumber | int
 
     def __eq__(self, value: Any) -> bool:
-        if isinstance(value, RawTransfer):
+        if isinstance(value, Transfer):
             return self.tx_hash == value.tx_hash
         return NotImplemented
 
     def __gt__(self, value: Any) -> bool:
-        if isinstance(value, RawTransfer):
+        if isinstance(value, Transfer):
             return self.tx_hash > value.tx_hash
         return NotImplemented
 
 
-class UserTransfer(RawTransfer):
+class Deposit(Transfer):
     user_id: UserId
     decimals: int
+    status: DepositStatus
 
 
 class UserAddress(BaseModel):

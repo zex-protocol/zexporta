@@ -2,16 +2,16 @@ import asyncio
 import logging.config
 
 import sentry_sdk
-from eth_typing import ChecksumAddress
+import web3.exceptions
 
 from zexporta.clients import get_btc_async_client
-from zexporta.custom_types import BTCConfig, ChainConfig, RawTransfer
+from zexporta.custom_types import BTCConfig, ChainConfig
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.db.chain import (
     get_last_observed_block,
     upsert_chain_last_observed_block,
 )
-from zexporta.db.transfer import insert_transfers_if_not_exists
+from zexporta.db.deposit import insert_deposits_if_not_exists
 from zexporta.utils.btc import extract_btc_transfer_from_block
 from zexporta.utils.btc_observer import BTCObserver
 from zexporta.utils.evm_observer import Observer
@@ -27,10 +27,10 @@ logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/observer
 logger = logging.getLogger(__name__)
 
 
-async def filter_transfer(
-    transfers: list[RawTransfer], accepted_addresses: set[ChecksumAddress]
-) -> tuple[RawTransfer, ...]:
-    return tuple(filter(lambda transfer: transfer.to in accepted_addresses, transfers))
+# async def filter_transfer(
+#     transfers: list[RawTransfer], accepted_addresses: set[ChecksumAddress]
+# ) -> tuple[RawTransfer, ...]:
+#     return tuple(filter(lambda transfer: transfer.to in accepted_addresses, transfers))
 
 
 OBSERVERS = {BTCConfig: BTCObserver, ChainConfig: Observer}
@@ -56,19 +56,41 @@ async def observe_deposit(chain: ChainConfig):
     observer = get_chain_observer(chain=chain)
 
     while True:
-        accepted_addresses = await get_active_address()
         latest_block = await observer.get_latest_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
             _logger.info(f"Block {last_observed_block} already observed continue")
             await asyncio.sleep(chain.delay)
             continue
         last_observed_block = last_observed_block or latest_block
-        if last_observed_block >= latest_block:
+        to_block = min(latest_block, last_observed_block + chain.batch_block_size)
+        if last_observed_block >= to_block:
             _logger.warning(
-                f"last_observed_block: {last_observed_block} is bigger then latest_block {latest_block}"
+                f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}"
             )
             continue
         await insert_new_address_to_db()
+        accepted_addresses = await get_active_address()
+        try:
+            accepted_deposits = await observer.observe(
+                last_observed_block + 1,
+                to_block,
+                accepted_addresses,
+                extract_transfer_from_block,
+                logger=_logger,
+                batch_size=chain.batch_block_size,
+                max_delay_per_block_batch=chain.delay,
+            )
+        except web3.exceptions.BlockNotFound as e:
+            _logger.warning(f"Block not found: {to_block}, error: {e}")
+            continue
+        except ValueError as e:
+            _logger.error(f"ValueError: {e}")
+            await asyncio.sleep(10)
+            continue
+        if len(accepted_deposits) > 0:
+            await insert_deposits_if_not_exists(accepted_deposits)
+        await upsert_chain_last_observed_block(chain.chain_id, to_block)
+        last_observed_block = to_block
 
         accepted_transfers = await observer.observe(
             last_observed_block + 1,
@@ -81,7 +103,7 @@ async def observe_deposit(chain: ChainConfig):
         )
 
         if len(accepted_transfers) > 0:
-            await insert_transfers_if_not_exists(accepted_transfers)
+            await insert_deposits_if_not_exists(accepted_transfers)
         # todo :: fix last_observed_block race condition
         await upsert_chain_last_observed_block(chain.chain_id, latest_block)
         last_observed_block = latest_block

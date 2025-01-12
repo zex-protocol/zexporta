@@ -3,22 +3,21 @@ import logging.config
 
 import sentry_sdk
 
-from zexporta.custom_types import BTCConfig
-from zexporta.deposit.networks_finalizers import (
-    update_btc_finalized_transfers,
-    update_finalized_transfers,
+from zexporta.custom_types import BTCConfig, ChainConfig
+from zexporta.deposit.config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS
+from zexporta.deposit.finalizers import (
+    update_btc_finalized_deposits,
+    update_finalized_deposits,
 )
 from zexporta.utils.logger import get_logger_config
-
-from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS
 
 logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalizer.log"))  # type: ignore
 logger = logging.getLogger(__name__)
 
 
 FINALIZER_MAPPING = {
-    BTCConfig: update_btc_finalized_transfers,
-    CHAINS_CONFIG: update_finalized_transfers,
+    BTCConfig: update_btc_finalized_deposits,
+    ChainConfig: update_finalized_deposits,
 }
 
 
