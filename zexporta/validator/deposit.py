@@ -1,8 +1,17 @@
 import asyncio
 from hashlib import sha256
 
-from zexporta.custom_types import BlockNumber, ChainConfig, DepositStatus
+from zexporta.clients import get_btc_async_client
+from zexporta.config import ZEX_ENCODE_VERSION
+from zexporta.custom_types import BlockNumber, BTCConfig, ChainConfig, DepositStatus
 from zexporta.db.address import get_active_address, insert_new_address_to_db
+from zexporta.utils.btc import (
+    extract_btc_transfer_from_block,
+    get_btc_finalized_block_number,
+)
+from zexporta.utils.btc_observer import (
+    get_accepted_transfers as get_btc_accepted_transfers,
+)
 from zexporta.utils.encoder import DEPOSIT_OPERATION, encode_zex_deposit
 from zexporta.utils.observer import get_accepted_deposits
 from zexporta.utils.web3 import (
@@ -11,8 +20,6 @@ from zexporta.utils.web3 import (
     filter_blocks,
     get_finalized_block_number,
 )
-
-from .config import ZEX_ENCODE_VERSION
 
 
 class BlocksIsEmpty(Exception):
@@ -23,10 +30,11 @@ class NotFinalizedBlockError(Exception):
     "Raise when a block number is bigger then current finalized block"
 
 
-def deposit(chain_config: ChainConfig, data: dict, logger) -> dict:
+def deposit(chain_config, data: dict, logger) -> dict:
     blocks = data["blocks"]
     if len(blocks) < 1:
         raise BlocksIsEmpty()
+    get_deposits = DEPOSIT_GETTERS[chain_config]
     deposits = asyncio.run(get_deposits(chain=chain_config, blocks=blocks))
     encoded_data = encode_zex_deposit(
         version=ZEX_ENCODE_VERSION,
@@ -43,7 +51,7 @@ def deposit(chain_config: ChainConfig, data: dict, logger) -> dict:
     }
 
 
-async def get_deposits(chain: ChainConfig, blocks: list[BlockNumber]):
+async def get_evm_deposits(chain: ChainConfig, blocks: list[BlockNumber]):
     blocks.sort()
     to_block = blocks[-1]
     w3 = await async_web3_factory(chain=chain)
@@ -76,3 +84,28 @@ async def get_deposits(chain: ChainConfig, blocks: list[BlockNumber]):
             )
         )
     return sorted(deposits)
+
+
+async def get_btc_deposits(chain: BTCConfig, blocks: list[BlockNumber]):
+    blocks.sort()
+    to_block = blocks[-1]
+    btc = get_btc_async_client(chain)
+    finalized_block_number = await get_btc_finalized_block_number(btc, chain)
+    if to_block > finalized_block_number:
+        raise NotFinalizedBlockError(
+            f"to_block: {to_block} is not finalized, finalized_block: {finalized_block_number}"
+        )
+    await insert_new_address_to_db()
+    accepted_addresses = await get_active_address()
+    deposits = []
+    for i in blocks:
+        block = await btc.get_block_by_identifier(i)
+        transfers = extract_btc_transfer_from_block(i, block, chain.chain_id)
+        accepted_transfers = await get_btc_accepted_transfers(
+            transfers, accepted_addresses
+        )
+        deposits.extend(accepted_transfers)
+    return sorted(deposits)
+
+
+DEPOSIT_GETTERS = {ChainConfig: get_evm_deposits, BTCConfig: get_btc_deposits}
