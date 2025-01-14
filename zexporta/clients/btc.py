@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 
 import httpx
 from pydantic import BaseModel
@@ -18,7 +18,7 @@ class AddressDetails(BaseModel):
     unconfirmedBalance: int
     unconfirmedTxs: int
     txs: int
-    txids: List[str]
+    txids: list[str]
 
 
 # Model for UTXO (Unspent Transaction Outputs)
@@ -33,21 +33,21 @@ class UTXO(BaseModel):
 
 # Common Model for all Transaction outputs (vout)
 class Vout(BaseModel):
-    value: Union[int, float]
+    value: int | float
     n: int
-    addresses: Optional[List[str]] = None
+    addresses: list[str] | None = None
     isAddress: bool
-    hex: Optional[str] = None
-    scriptPubKey: Optional[dict] = None
+    hex: str = None
+    scriptPubKey: dict = None
 
 
 # Common Model for all Transaction inputs (vin)
 class Vin(BaseModel):
-    sequence: Optional[int] = None
-    n: Optional[int] = None
-    isAddress: Optional[bool] = None
-    coinbase: Optional[str] = None
-    txinwitness: Optional[List[str]] = None
+    sequence: int = None
+    n: int = None
+    isAddress: bool = None
+    coinbase: str = None
+    txinwitness: List[str] = None
 
 
 # Model for Transaction Details
@@ -89,13 +89,11 @@ class Block(BaseModel):
 class BTCClientError(Exception):
     """Base exception for BTCAsyncClient errors."""
 
-    pass
-
 
 class BTCRequestError(BTCClientError):
     """Exception raised for errors during HTTP requests."""
 
-    def __init__(self, message: str, status_code: Optional[int] = None):
+    def __init__(self, message: str, status_code: int = None):
         super().__init__(message)
         self.status_code = status_code
 
@@ -103,23 +101,21 @@ class BTCRequestError(BTCClientError):
 class BTCConnectionError(BTCClientError):
     """Exception raised for connection-related errors."""
 
-    pass
-
 
 class BTCTimeoutError(BTCClientError):
     """Exception raised when a request times out."""
-
-    pass
 
 
 class BTCResponseError(BTCClientError):
     """Exception raised for invalid or unexpected responses."""
 
-    pass
-
 
 class BTCAsyncClient:
-    def __init__(self, base_url: str, indexer_url: str):
+    def __init__(
+        self,
+        base_url: str = "https://rpc.ankr.com/btc",
+        indexer_url: str = "https://rpc.ankr.com/http/btc_blockbook",
+    ):
         self.base_url = base_url
         self.block_book_base_url = indexer_url
         self.client = httpx.AsyncClient()
@@ -128,10 +124,10 @@ class BTCAsyncClient:
         self,
         method: str = "GET",
         url: str = "",
-        headers: Optional[dict[str, Any]] = None,
-        params: Optional[dict[str, Any]] = None,
-        data: Optional[Any] = None,
-        json_data: Optional[Any] = None,  # Add json_data parameter
+        headers: dict[str, Any] = None,
+        params: dict[str, Any] = None,
+        data: Any = None,
+        json_data: Any = None,  # Add json_data parameter
     ) -> dict:
         try:
             # Choose between data and json based on the request
@@ -182,7 +178,7 @@ class BTCAsyncClient:
     async def get_tx_by_hash(self, tx_hash: str) -> Transaction:
         url = f"{self.block_book_base_url}/api/v2/tx/{tx_hash}"
         data = await self._request("GET", url)
-        return Transaction.parse_obj(data)
+        return Transaction.model_validate(data)
 
     async def get_address_details(
         self, address: str, details: str | None = "txids"
@@ -190,13 +186,13 @@ class BTCAsyncClient:
         url = f"{self.block_book_base_url}/api/v2/address/{address}"
         params = {"details": details}
         data = await self._request("GET", url, params=params)
-        return AddressDetails.parse_obj(data)
+        return AddressDetails.model_validate(data)
 
     async def get_utxo(self, address: str, confirmed: bool = True) -> List[UTXO]:
         url = f"{self.block_book_base_url}/api/v2/utxo/{address}"
         params = {"confirmed": str(confirmed).lower()}
         data = await self._request("GET", url, params=params)
-        return [UTXO.parse_obj(i) for i in data]
+        return [UTXO.model_validate(i) for i in data]
 
     async def get_block_by_identifier(self, identifier) -> Block:
         page = 1
@@ -215,9 +211,9 @@ class BTCAsyncClient:
 
             page += 1  # Move to the next page
         data["txs"] = all_txs
-        return Block.parse_obj(data)
+        return Block.model_validate(data)
 
-    async def send_tx(self, hex_tx_data: str) -> str:
+    async def send_tx(self, hex_tx_data: str) -> str | None:
         url = f"{self.block_book_base_url}/api/v2/sendtx/{hex_tx_data}"
         resp = await self._request("GET", url)
         return resp and resp["result"]
@@ -226,7 +222,7 @@ class BTCAsyncClient:
         number = await self.get_latest_block_number()
         return await self.get_block_by_identifier(number)
 
-    async def get_latest_block_number(self) -> int:
+    async def get_latest_block_number(self) -> int | None:
         url = f"{self.base_url}"
         data = {"id": "test", "method": "getblockchaininfo", "params": []}
         headers = {
