@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any
 
 import httpx
 from pydantic import BaseModel
@@ -47,22 +47,22 @@ class Vin(BaseModel):
     n: int = None
     isAddress: bool = None
     coinbase: str = None
-    txinwitness: List[str] = None
+    txinwitness: list[str] = None
 
 
 # Model for Transaction Details
 class Transaction(BaseModel):
     txid: str
-    vin: List[Vin]
-    vout: List[Vout]
+    vin: list[Vin]
+    vout: list[Vout]
     blockHash: str
     blockHeight: int
     confirmations: int
     blockTime: int
     vsize: int
-    value: Union[int, float]
-    valueIn: Union[int, float]
-    fees: Union[int, float]
+    value: int | float
+    valueIn: int | float
+    fees: int | float
 
 
 # Response for getting block by identifier (including multiple pages)
@@ -83,7 +83,7 @@ class Block(BaseModel):
     difficulty: str
     bits: str
     txCount: int
-    txs: List[Transaction] | None
+    txs: list[Transaction] | None
 
 
 class BTCClientError(Exception):
@@ -188,7 +188,7 @@ class BTCAsyncClient:
         data = await self._request("GET", url, params=params)
         return AddressDetails.model_validate(data)
 
-    async def get_utxo(self, address: str, confirmed: bool = True) -> List[UTXO]:
+    async def get_utxo(self, address: str, confirmed: bool = True) -> list[UTXO]:
         url = f"{self.block_book_base_url}/api/v2/utxo/{address}"
         params = {"confirmed": str(confirmed).lower()}
         data = await self._request("GET", url, params=params)

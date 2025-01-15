@@ -18,26 +18,22 @@ class EnvEnum(StrEnum):
     TEST = "test"
 
 
-class ChainConfig(BaseModel):
+class BasicChainConfig(BaseModel):
     private_rpc: URI | str
     chain_id: ChainId
     symbol: str
+    finalize_block_count: int = Field(default=15)
+    delay: int | float = Field(default=3)
+    batch_block_size: int = Field(default=5)
+    vault_address: ChecksumAddress | Address
+
+
+class ChainConfig(BasicChainConfig):
     poa: bool = Field(default=False)
-    finalize_block_count: int = Field(default=15)
-    delay: int | float = Field(default=3)
-    batch_block_size: int = Field(default=5)
-    vault_address: ChecksumAddress
 
 
-class BTCConfig(BaseModel):
-    private_rpc: URL
+class BTCConfig(BasicChainConfig):
     private_indexer_rpc: URL
-    chain_id: ChainId
-    symbol: str
-    finalize_block_count: int = Field(default=15)
-    delay: int | float = Field(default=3)
-    batch_block_size: int = Field(default=5)
-    vault_address: Address
 
 
 class DepositStatus(StrEnum):
