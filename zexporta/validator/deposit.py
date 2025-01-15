@@ -61,7 +61,7 @@ async def get_evm_deposits(chain: ChainConfig, blocks: list[BlockNumber]):
             f"to_block: {to_block} is not finalized, finalized_block: {finalized_block_number}"
         )
     await insert_new_address_to_db()
-    accepted_addresses = await get_active_address()
+    accepted_addresses = await get_active_address(chain)
     deposits = []
     for _blocks in [
         blocks[i : (i + chain.batch_block_size)]
@@ -96,7 +96,7 @@ async def get_btc_deposits(chain: BTCConfig, blocks: list[BlockNumber]):
             f"to_block: {to_block} is not finalized, finalized_block: {finalized_block_number}"
         )
     await insert_new_address_to_db()
-    accepted_addresses = await get_active_address()
+    accepted_addresses = await get_active_address(chain)
     deposits = []
     for i in blocks:
         block = await btc.get_block_by_identifier(i)

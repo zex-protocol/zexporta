@@ -2,7 +2,6 @@ import asyncio
 import logging.config
 
 import sentry_sdk
-import web3.exceptions
 
 from zexporta.clients import get_btc_async_client
 from zexporta.custom_types import BTCConfig, ChainConfig
@@ -37,10 +36,10 @@ EXTRACTORS = {
 }
 
 
-def get_chain_observer(chain: ChainConfig):
+def get_chain_observer(chain):
     observer = OBSERVERS[type(chain)]
     client = CLIENTS_GETTER[type(chain)]
-    return observer(client=client, chain=chain)
+    return observer(client=client(chain), chain=chain)
 
 
 async def observe_deposit(chain: ChainConfig):
@@ -52,7 +51,9 @@ async def observe_deposit(chain: ChainConfig):
     while True:
         latest_block = await observer.get_latest_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
-            _logger.info(f"Block {last_observed_block} already observed continue")
+            _logger.info(
+                f"{chain.symbol} Block {last_observed_block} already observed continue"
+            )
             await asyncio.sleep(chain.delay)
             continue
         last_observed_block = last_observed_block or latest_block
@@ -63,29 +64,7 @@ async def observe_deposit(chain: ChainConfig):
             )
             continue
         await insert_new_address_to_db()
-        accepted_addresses = await get_active_address()
-        try:
-            accepted_deposits = await observer.observe(
-                last_observed_block + 1,
-                to_block,
-                accepted_addresses,
-                extract_transfer_from_block,
-                logger=_logger,
-                batch_size=chain.batch_block_size,
-                max_delay_per_block_batch=chain.delay,
-            )
-        except web3.exceptions.BlockNotFound as e:
-            _logger.warning(f"Block not found: {to_block}, error: {e}")
-            continue
-        except ValueError as e:
-            _logger.error(f"ValueError: {e}")
-            await asyncio.sleep(10)
-            continue
-        if len(accepted_deposits) > 0:
-            await insert_deposits_if_not_exists(accepted_deposits)
-        await upsert_chain_last_observed_block(chain.chain_id, to_block)
-        last_observed_block = to_block
-
+        accepted_addresses = await get_active_address(chain)
         accepted_transfers = await observer.observe(
             last_observed_block + 1,
             latest_block,

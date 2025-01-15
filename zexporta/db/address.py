@@ -4,7 +4,7 @@ import logging
 from pymongo import DESCENDING
 from web3 import Web3
 
-from zexporta.custom_types import ChecksumAddress, UserAddress, UserId
+from zexporta.custom_types import ChainConfig, ChecksumAddress, UserAddress, UserId
 from zexporta.utils.btc import compute_create_btc_address
 from zexporta.utils.web3 import compute_create2_address
 from zexporta.utils.zex_api import (
@@ -32,10 +32,14 @@ class UserNotExists(Exception):
 logger = logging.getLogger(__name__)
 
 
-async def get_active_address() -> dict[ChecksumAddress, UserId]:
+async def get_active_address(chain) -> dict[ChecksumAddress, UserId]:
     res = dict()
     async for address in _address_collection.find({"is_active": True}):
-        res[Web3.to_checksum_address(address["address"])] = address["user_id"]
+        if isinstance(chain, ChainConfig):
+            key = Web3.to_checksum_address(address["address"])
+        else:
+            key = address["address"]
+        res[key] = address["user_id"]
     return res
 
 

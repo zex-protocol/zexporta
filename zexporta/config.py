@@ -50,7 +50,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         "BTC": BTCConfig(
             private_rpc=os.environ["BTC_RPC"],
             private_indexer_rpc=os.environ["BTC_INDEXER"],
-            chain_id=ChainId(0),  # consider as local network id
+            chain_id=ChainId(1),  # consider as local network id
             symbol="BTC",
             finalize_block_count=6,
             delay=10,
@@ -102,7 +102,7 @@ else:
         "BTC": BTCConfig(
             private_rpc=os.environ["BTC_RPC"],  # set testnet rpc endpoint
             private_indexer_rpc=os.environ["BTC_INDEXER"],
-            chain_id=ChainId(0),
+            chain_id=ChainId(1),
             symbol="BTC",
             finalize_block_count=6,
             delay=10,

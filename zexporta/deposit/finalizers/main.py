@@ -24,7 +24,7 @@ FINALIZER_MAPPING = {
 async def main():
     loop = asyncio.get_running_loop()
     tasks = [
-        loop.create_task(FINALIZER_MAPPING[type(chain)])
+        loop.create_task(FINALIZER_MAPPING[type(chain)](chain))
         for chain in CHAINS_CONFIG.values()
     ]
     await asyncio.gather(*tasks)

@@ -42,7 +42,7 @@ async def find_deposit_by_status(
     res = []
     block_number_query = {"$gte": from_block or 0}
     if to_block and isinstance(to_block, int):
-        block_number_query = {"$lte": from_block or 0}
+        block_number_query["$lte"] = to_block
 
     query = {
         "status": status.value,

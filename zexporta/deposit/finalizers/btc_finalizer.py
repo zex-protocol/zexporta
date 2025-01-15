@@ -18,9 +18,14 @@ async def update_btc_finalized_deposits(
 ):
     _logger = ChainLoggerAdapter(logger, chain.symbol)
     client = get_btc_async_client(chain)
+    _logger.info(f"{chain.symbol} start finalizing")
+
     while True:
         finalized_block_number = await get_btc_finalized_block_number(
             client=client, chain=chain
+        )
+        _logger.info(
+            f"finalizing {chain.symbol}, finalized_block_number: {finalized_block_number}"
         )
         pending_transfers = await find_deposit_by_status(
             chain_id=chain.chain_id,
