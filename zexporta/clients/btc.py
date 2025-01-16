@@ -124,10 +124,10 @@ class BTCAsyncClient:
         self,
         method: str = "GET",
         url: str = "",
-        headers: dict[str, Any] = None,
-        params: dict[str, Any] = None,
-        data: Any = None,
-        json_data: Any = None,  # Add json_data parameter
+        headers: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        data: Any | None = None,
+        json_data: Any | None = None,  # Add json_data parameter
     ) -> dict:
         try:
             # Choose between data and json based on the request

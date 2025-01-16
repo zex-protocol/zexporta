@@ -51,9 +51,7 @@ async def observe_deposit(chain: ChainConfig):
     while True:
         latest_block = await observer.get_latest_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
-            _logger.info(
-                f"{chain.symbol} Block {last_observed_block} already observed continue"
-            )
+            _logger.info(f"Block {last_observed_block} already observed continue")
             await asyncio.sleep(chain.delay)
             continue
         last_observed_block = last_observed_block or latest_block
