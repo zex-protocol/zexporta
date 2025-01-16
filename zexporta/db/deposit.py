@@ -4,7 +4,7 @@ from typing import Iterable
 from eth_typing import ChainId
 from pymongo import ASCENDING
 
-from zexporta.custom_types import BlockNumber, Deposit, DepositStatus
+from zexporta.custom_types import BlockNumber, Deposit, DepositStatus, TxHash
 
 from .collections import db
 
@@ -37,6 +37,7 @@ async def find_deposit_by_status(
     status: DepositStatus,
     chain_id: ChainId,
     from_block: BlockNumber | int | None = None,
+    limit: int | None = None,
 ) -> list[Deposit]:
     res = []
     query = {
@@ -48,6 +49,8 @@ async def find_deposit_by_status(
         query, sort={"block_number": ASCENDING}
     ):
         res.append(Deposit(**record))
+        if limit and len(record) >= limit:
+            break
     return res
 
 
@@ -64,12 +67,12 @@ async def delete_deposit(tx_hash):
 async def to_finalized(
     chain_id: ChainId,
     finalized_block_number: BlockNumber,
-    tx_hashes: list[str],
+    txs_hash: list[str],
 ):
     query = {
         "block_number": {"$lte": finalized_block_number},
         "status": DepositStatus.PENDING.value,
-        "tx_hash": {"$in": tx_hashes},
+        "tx_hash": {"$in": txs_hash},
         "chain_id": chain_id.value,
     }
 
@@ -78,7 +81,7 @@ async def to_finalized(
     await _deposit_collection.update_many(query, update)
 
 
-async def to_reorg(
+async def to_reorg_block_number(
     chain_id: ChainId,
     from_block: BlockNumber | int,
     to_block: BlockNumber | int,
@@ -88,6 +91,20 @@ async def to_reorg(
         "block_number": {"$lte": to_block, "$gte": from_block},
         "status": status.value,
         "chain_id": chain_id.value,
+    }
+    update = {"$set": {"status": DepositStatus.REORG.value}}
+    await _deposit_collection.update_many(query, update)
+
+
+async def to_reorg_with_tx_hash(
+    chain_id: ChainId,
+    txs_hash: list[TxHash],
+    status: DepositStatus = DepositStatus.PENDING,
+):
+    query = {
+        "status": status.value,
+        "chain_id": chain_id.value,
+        "tx_hash": {"$in": txs_hash},
     }
     update = {"$set": {"status": DepositStatus.REORG.value}}
     await _deposit_collection.update_many(query, update)

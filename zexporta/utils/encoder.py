@@ -36,7 +36,7 @@ def encode_zex_deposit(
             deposit.token.encode(),  # must be token address
             deposit.value.to_bytes(32, "big"),
             deposit.decimals,
-            deposit.block_timestamp,
+            deposit.sa_timestamp,
             deposit.user_id,
             0,
         )

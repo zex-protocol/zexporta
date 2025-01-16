@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import logging.config
+from datetime import datetime, timezone
 from hashlib import sha256
 
 import httpx
@@ -13,10 +14,12 @@ from zexporta.custom_types import (
     ChainConfig,
     Deposit,
     DepositStatus,
+    SaDepositSchema,
+    TxHash,
 )
 from zexporta.db.deposit import (
-    get_block_numbers_by_status,
-    to_reorg,
+    find_deposit_by_status,
+    to_reorg_with_tx_hash,
     upsert_deposits,
 )
 from zexporta.utils.dkg import parse_dkg_json
@@ -34,9 +37,9 @@ from .config import (
     DKG_JSON_PATH,
     DKG_NAME,
     LOGGER_PATH,
-    SA_BATCH_BLOCK_NUMBER_SIZE,
     SA_SHIELD_PRIVATE_KEY,
     SA_TIMEOUT,
+    SA_TRANSACTIONS_BATCH_SIZE,
     SENTRY_DNS,
     ZEX_ENCODE_VERSION,
 )
@@ -50,24 +53,31 @@ sa = SA(nodes_info, default_timeout=SA_TIMEOUT)
 dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
 
 
+class DepositDifferentHashError(Exception):
+    """Raise when validator hash is different from sa hash"""
+
+
 async def process_deposit(
     client: httpx.AsyncClient,
     chain: ChainConfig,
-    blocks: list[BlockNumber],
-    dkg_party,
+    txs_hash: list[TxHash],
+    dkg_party: list[str],
+    finalized_block_number: BlockNumber,
     logger: ChainLoggerAdapter,
 ):
-    logger.info(f"Processing blocks: {blocks}")
+    logger.info(f"Processing txs: {txs_hash}")
     nonces_response = await sa.request_nonces(dkg_party, number_of_nonces=1)
     nonces_for_sig = {}
     for id, nonce in nonces_response.items():
         nonces_for_sig[id] = nonce["data"][0]
     data = {
         "method": "deposit",
-        "data": {
-            "blocks": blocks,
-            "chain_id": chain.chain_id,
-        },
+        "data": SaDepositSchema(
+            txs_hash=txs_hash,
+            timestamp=int(datetime.now(timezone.utc).timestamp()),
+            chain_id=chain.chain_id,
+            finalized_block_number=finalized_block_number,
+        ).model_dump(mode="json"),
     }
 
     result = await sa.request_signature(dkg_key, nonces_for_sig, data, dkg_party)
@@ -84,8 +94,7 @@ async def process_deposit(
         )
         hash_ = sha256(encoded_data).hexdigest()
         if hash_ != result["message_hash"]:
-            logger.error("Hash message is not valid.")
-            return
+            raise DepositDifferentHashError("Hash message is not valid")
 
         await send_result_to_zex(
             client,
@@ -95,7 +104,9 @@ async def process_deposit(
             logger=logger,
         )
         await upsert_deposits(deposits)
-        await to_reorg(chain.chain_id, blocks[0], blocks[-1], DepositStatus.FINALIZED)
+        await to_reorg_with_tx_hash(
+            chain_id=chain.chain_id, txs_hash=txs_hash, status=DepositStatus.FINALIZED
+        )
 
 
 async def send_result_to_zex(
@@ -121,18 +132,23 @@ async def deposit(chain: ChainConfig):
         try:
             client = httpx.AsyncClient()
             dkg_party = dkg_key["party"]
-            finalized_deposit_blocks_number = await get_block_numbers_by_status(
-                chain.chain_id, DepositStatus.FINALIZED
+            deposits = await find_deposit_by_status(
+                chain_id=chain.chain_id,
+                status=DepositStatus.FINALIZED,
+                limit=SA_TRANSACTIONS_BATCH_SIZE,
             )
-            if len(finalized_deposit_blocks_number) <= 0:
+            txs_hash = [deposit.tx_hash for deposit in (deposits)]
+            if len(txs_hash) <= 0:
                 _logger.info("No finalized deposit found.")
                 continue
+            finalized_block_number = deposits[-1].block_number
             try:
                 await process_deposit(
                     client,
                     chain,
-                    finalized_deposit_blocks_number[:SA_BATCH_BLOCK_NUMBER_SIZE],
+                    txs_hash,
                     dkg_party,
+                    finalized_block_number=finalized_block_number,
                     logger=_logger,
                 )
             except ZexAPIError as e:
@@ -143,6 +159,8 @@ async def deposit(chain: ChainConfig):
                 _logger.exception(f"Error occurred in pyfrost, {e}")
             except asyncio.TimeoutError as e:
                 _logger.error(f"Timeout occurred continue after 1 min, error {e}")
+            except DepositDifferentHashError as e:
+                _logger.error(e)
 
         finally:
             await client.aclose()

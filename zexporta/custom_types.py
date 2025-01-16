@@ -55,7 +55,7 @@ class Transfer(BaseModel):
     value: Value
     token: ChecksumAddress
     to: ChecksumAddress
-    block_timestamp: Timestamp
+    sa_timestamp: Timestamp | None = None
     block_number: BlockNumber
 
     def __eq__(self, value: Any) -> bool:
@@ -67,6 +67,13 @@ class Transfer(BaseModel):
         if isinstance(value, Transfer):
             return self.tx_hash > value.tx_hash
         return NotImplemented
+
+
+class SaDepositSchema(BaseModel):
+    txs_hash: list[TxHash]
+    timestamp: Timestamp
+    chain_id: ChainId
+    finalized_block_number: BlockNumber
 
 
 class Deposit(Transfer):
