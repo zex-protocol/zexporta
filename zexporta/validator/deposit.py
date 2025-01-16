@@ -3,7 +3,13 @@ from hashlib import sha256
 
 from zexporta.clients import get_btc_async_client
 from zexporta.config import ZEX_ENCODE_VERSION
-from zexporta.custom_types import BlockNumber, BTCConfig, ChainConfig, DepositStatus
+from zexporta.custom_types import (
+    BlockNumber,
+    BTCConfig,
+    ChainConfig,
+    Deposit,
+    DepositStatus,
+)
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.utils.btc import (
     extract_btc_transfer_from_block,
@@ -51,7 +57,9 @@ def deposit(chain_config, data: dict, logger) -> dict:
     }
 
 
-async def get_evm_deposits(chain: ChainConfig, blocks: list[BlockNumber]):
+async def get_evm_deposits(
+    chain: ChainConfig, blocks: list[BlockNumber]
+) -> list[Deposit]:
     blocks.sort()
     to_block = blocks[-1]
     w3 = await async_web3_factory(chain=chain)
@@ -86,7 +94,9 @@ async def get_evm_deposits(chain: ChainConfig, blocks: list[BlockNumber]):
     return sorted(deposits)
 
 
-async def get_btc_deposits(chain: BTCConfig, blocks: list[BlockNumber]):
+async def get_btc_deposits(
+    chain: BTCConfig, blocks: list[BlockNumber]
+) -> list[Deposit]:
     blocks.sort()
     to_block = blocks[-1]
     btc = get_btc_async_client(chain)

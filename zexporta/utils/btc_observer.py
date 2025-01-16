@@ -34,7 +34,7 @@ class BTCObserver(BaseModel):
             await asyncio.sleep(block_sleep)
         return block_batches
 
-    async def get_latest_block_number(self):
+    async def get_latest_block_number(self) -> int | None:
         return await self.client.get_latest_block_number()
 
     async def observe(
@@ -48,19 +48,24 @@ class BTCObserver(BaseModel):
         max_delay_per_block_batch: int | float = 10,
         logger: logging.Logger | ChainLoggerAdapter = logger,
         **kwargs,
-    ) -> list[Deposit]:
-        result = []
-        block_batches = await self.get_block_batches(
-            from_block=from_block, to_block=to_block, block_sleep=self.chain.delay
-        )
-        for block in block_batches:
-            logger.info(f"batch_blocks: {block}")
-            transfers = extract_block_logic(from_block, block, self.chain.chain_id)
-            accepted_transfers = await get_accepted_transfers(
-                transfers, accepted_addresses
+    ) -> list[Deposit] | None:
+        try:
+            result = []
+            block_batches = await self.get_block_batches(
+                from_block=from_block, to_block=to_block, block_sleep=self.chain.delay
             )
-            result.extend(accepted_transfers)
-        return result
+            for block in block_batches:
+                logger.info(f"batch_blocks: {block}")
+                transfers = extract_block_logic(from_block, block, self.chain.chain_id)
+                accepted_transfers = await get_accepted_transfers(
+                    transfers, accepted_addresses
+                )
+                result.extend(accepted_transfers)
+            return result
+
+        except Exception as e:
+            logger.error(e)
+            return None
 
 
 async def get_accepted_transfers(

@@ -13,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 # min block confirmation 6
-async def update_btc_finalized_deposits(
-    chain: BTCConfig, delay: int = 10, block_confirmation: int = 6
-):
+async def update_btc_finalized_deposits(chain: BTCConfig, delay: int = 10):
     _logger = ChainLoggerAdapter(logger, chain.symbol)
     client = get_btc_async_client(chain)
     _logger.info(f"{chain.symbol} start finalizing")
@@ -29,7 +27,7 @@ async def update_btc_finalized_deposits(
         )
         pending_transfers = await find_deposit_by_status(
             chain_id=chain.chain_id,
-            to_block=finalized_block_number - block_confirmation,
+            to_block=finalized_block_number,
             status=DepositStatus.PENDING,
         )
 
@@ -39,19 +37,26 @@ async def update_btc_finalized_deposits(
             )
             await asyncio.sleep(delay)
             continue
+        to_finalize_txs = []
+        to_reorg_txs = []
 
         for transfer in pending_transfers:
             tx = await client.get_tx_by_hash(transfer.tx_hash)
             if tx:
-                await to_finalized(
-                    chain_id=chain.chain_id,
-                    finalized_block_number=transfer.block_number,
-                    tx_hashes=[transfer.tx_hash],
-                )
+                to_finalize_txs.append(transfer.tx_hash)
             else:
-                await to_reorg(
-                    chain_id=chain.id,
-                    from_block=transfer.block_number,
-                    to_block=transfer.block_number,
-                    tx_hashes=[transfer.tx_hash],
-                )
+                to_reorg_txs.append(transfer.tx_hash)
+
+        if to_finalize_txs:
+            await to_finalized(
+                chain_id=chain.chain_id,
+                finalized_block_number=finalized_block_number,
+                tx_hashes=to_finalize_txs,
+            )
+        if to_reorg_txs:
+            await to_reorg(
+                chain_id=chain.id,
+                from_block=0,
+                to_block=finalized_block_number,
+                tx_hashes=to_reorg_txs,
+            )

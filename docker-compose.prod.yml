@@ -75,7 +75,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: deposit-finalizer
-    entrypoint: poetry run python -m zexporta.deposit.finalizer
+    entrypoint: poetry run python -m zexporta.deposit.finalizers.main
     restart: on-failure:5
     depends_on:
       mongodb:

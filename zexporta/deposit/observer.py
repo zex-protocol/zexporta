@@ -77,7 +77,6 @@ async def observe_deposit(chain: ChainConfig):
 
         if len(accepted_transfers) > 0:
             await insert_deposits_if_not_exists(accepted_transfers)
-        # todo :: fix last_observed_block race condition
         await upsert_chain_last_observed_block(chain.chain_id, latest_block)
         last_observed_block = latest_block
 

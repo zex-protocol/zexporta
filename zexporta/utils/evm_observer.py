@@ -58,7 +58,7 @@ class Observer(BaseModel):
     async def get_finalized_block_number(self):
         return await get_finalized_block_number(self.client, self.chain)
 
-    async def get_latest_block_number(self):
+    async def get_latest_block_number(self) -> int | None:
         return await self.client.eth.get_block_number()
 
     async def observe(

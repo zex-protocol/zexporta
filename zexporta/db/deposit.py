@@ -68,7 +68,7 @@ async def delete_deposit(tx_hash):
 
 async def to_finalized(
     chain_id: ChainId,
-    finalized_block_number: BlockNumber,
+    finalized_block_number: BlockNumber | int,
     tx_hashes: list[str],
 ):
     query = {
