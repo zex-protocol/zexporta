@@ -36,11 +36,11 @@ class NotFinalizedBlockError(Exception):
     "Raise when a block number is bigger then current finalized block"
 
 
-def deposit(chain_config, data: dict, logger) -> dict:
+def deposit(chain_config: ChainConfig | BTCConfig, data: dict, logger) -> dict:
     blocks = data["blocks"]
     if len(blocks) < 1:
         raise BlocksIsEmpty()
-    get_deposits = DEPOSIT_GETTERS[chain_config]
+    get_deposits = DEPOSIT_GETTERS[type(chain_config)]
     deposits = asyncio.run(get_deposits(chain=chain_config, blocks=blocks))
     encoded_data = encode_zex_deposit(
         version=ZEX_ENCODE_VERSION,

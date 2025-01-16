@@ -6,6 +6,7 @@ from web3 import Web3
 from .custom_types import BTCConfig, ChainConfig, ChainId, EnvEnum
 
 ENVIRONMENT = EnvEnum(os.environ["ENV"])
+INTERNAL_BTC_CHAIN_ID = ChainId(0)
 
 if ENVIRONMENT == EnvEnum.PROD:
     ZEX_BASE_URL = "https://api.zex.zellular.xyz/v1"
@@ -50,12 +51,11 @@ if ENVIRONMENT == EnvEnum.PROD:
         "BTC": BTCConfig(
             private_rpc=os.environ["BTC_RPC"],
             private_indexer_rpc=os.environ["BTC_INDEXER"],
-            chain_id=ChainId(1),  # consider as local network id
+            chain_id=INTERNAL_BTC_CHAIN_ID,  # consider as local network id
             symbol="BTC",
             finalize_block_count=6,
             delay=10,
             batch_block_size=0,
-            vault_address="",
         ),
     }
     setup("mainnet")
@@ -102,12 +102,11 @@ else:
         "BTC": BTCConfig(
             private_rpc=os.environ["BTC_RPC"],  # set testnet rpc endpoint
             private_indexer_rpc=os.environ["BTC_INDEXER"],
-            chain_id=ChainId(1),
+            chain_id=INTERNAL_BTC_CHAIN_ID,
             symbol="BTC",
             finalize_block_count=6,
             delay=10,
             batch_block_size=0,
-            vault_address="",
         ),
     }
     setup("testnet")

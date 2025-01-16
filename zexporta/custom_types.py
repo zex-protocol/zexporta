@@ -25,11 +25,11 @@ class BasicChainConfig(BaseModel):
     finalize_block_count: int = Field(default=15)
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
-    vault_address: ChecksumAddress | Address
 
 
 class ChainConfig(BasicChainConfig):
     poa: bool = Field(default=False)
+    vault_address: ChecksumAddress
 
 
 class BTCConfig(BasicChainConfig):

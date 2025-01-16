@@ -38,16 +38,18 @@ class UserNotExists(Exception):
 logger = logging.getLogger(__name__)
 
 
-async def get_active_address(chain) -> dict[ChecksumAddress, UserId]:
+async def get_active_address(
+    chain: BTCConfig | ChainConfig,
+) -> dict[ChecksumAddress, UserId]:
     res = dict()
     async for address in _address_collection.find({"is_active": True}):
-        match type(chain):
-            case t if t is ChainConfig:
+        match chain:
+            case ChainConfig():
                 key = Web3.to_checksum_address(address["address"])
-            case t if t is BTCConfig:
+            case BTCConfig():
                 key = address["address"]
             case _:
-                continue
+                raise NotImplementedError("")
         res[key] = address["user_id"]
     return res
 

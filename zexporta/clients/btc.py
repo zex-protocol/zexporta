@@ -37,17 +37,17 @@ class Vout(BaseModel):
     n: int
     addresses: list[str] | None = None
     isAddress: bool
-    hex: str = None
-    scriptPubKey: dict = None
+    hex: str | None = None
+    scriptPubKey: dict | None = None
 
 
 # Common Model for all Transaction inputs (vin)
 class Vin(BaseModel):
-    sequence: int = None
-    n: int = None
-    isAddress: bool = None
-    coinbase: str = None
-    txinwitness: list[str] = None
+    sequence: int | None = None
+    n: int | None = None
+    isAddress: bool | None = None
+    coinbase: str | None = None
+    txinwitness: list[str] | None = None
 
 
 # Model for Transaction Details
@@ -83,7 +83,7 @@ class Block(BaseModel):
     difficulty: str
     bits: str
     txCount: int
-    txs: list[Transaction] | None
+    txs: list[Transaction] | None = None
 
 
 class BTCClientError(Exception):
@@ -93,7 +93,7 @@ class BTCClientError(Exception):
 class BTCRequestError(BTCClientError):
     """Exception raised for errors during HTTP requests."""
 
-    def __init__(self, message: str, status_code: int | None):
+    def __init__(self, message: str, status_code: int | None = None):
         super().__init__(message)
         self.status_code = status_code
 

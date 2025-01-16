@@ -36,7 +36,7 @@ EXTRACTORS = {
 }
 
 
-def get_chain_observer(chain):
+def get_chain_observer(chain: ChainConfig | BTCConfig):
     observer = OBSERVERS[type(chain)]
     client = CLIENTS_GETTER[type(chain)]
     return observer(client=client(chain), chain=chain)
