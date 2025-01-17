@@ -3,6 +3,7 @@ import logging
 import time
 from typing import Any, Callable, Coroutine, Iterable
 
+import web3.exceptions
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from eth_typing import HexStr
@@ -15,6 +16,7 @@ from zexporta.custom_types import (
     ChainConfig,
     ChainId,
     ChecksumAddress,
+    Timestamp,
     Transfer,
     TxHash,
 )
@@ -91,7 +93,6 @@ async def extract_transfer_from_block(
                     to=decoded_input._to,
                     value=decoded_input._value,
                     token=tx.to,
-                    block_timestamp=block.timestamp,  # type: ignore
                 )
             )
         except NotRecognizedSolidityFuncError as _:
@@ -167,3 +168,29 @@ async def get_ERC20_balance(
     balance = await contract.functions.balanceOf(wallet_address).call()
 
     return balance
+
+
+async def get_transfers_by_tx(
+    w3: AsyncWeb3, tx_hash: TxHash, sa_timestamp: Timestamp
+) -> Transfer | None:
+    tx = await w3.eth.get_transaction(HexStr(tx_hash))
+    w3.eth.get_transaction_receipt
+    try:
+        decoded_input = decode_transfer_tx(tx["input"].hex())  # type: ignore
+        return Transfer(
+            tx_hash=tx["hash"].hex(),  # type: ignore
+            block_number=tx["blockNumber"],  # type: ignore
+            chain_id=ChainId(tx["chainId"]),  # type: ignore
+            to=decoded_input._to,
+            value=decoded_input._value,
+            token=tx["to"],  # type: ignore
+            sa_timestamp=sa_timestamp,
+        )
+    except NotRecognizedSolidityFuncError:
+        ...
+    except InvalidTxError as e:
+        logger.error(f"Invalid tx {tx}, error: {e}")
+    except web3.exceptions.TransactionNotFound as e:
+        logger.error(f"transaction not found {tx_hash} : {e}")
+    except ValidationError as e:
+        logger.error(f"Invalid transaction input, tx: {tx}, error {e}")

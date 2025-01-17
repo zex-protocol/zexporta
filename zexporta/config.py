@@ -7,7 +7,7 @@ from .custom_types import ChainConfig, ChainId, EnvEnum
 ENVIRONMENT = EnvEnum(os.environ["ENV"])
 
 if ENVIRONMENT == EnvEnum.PROD:
-    ZEX_BASE_URL = "https://api.zex.zellular.xyz/v1"
+    ZEX_BASE_URL = "https://api.zex.finance/v1"
 
     CHAINS_CONFIG = {
         137: ChainConfig(
@@ -48,7 +48,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         ),
     }
 else:
-    ZEX_BASE_URL = "https://zex.mshoaei.ir/v1"
+    ZEX_BASE_URL = "https://api-dev.zex.finance/v1"
     CHAINS_CONFIG = {
         137: ChainConfig(
             private_rpc=os.environ["POL_RPC"],

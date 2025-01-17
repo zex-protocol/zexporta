@@ -9,7 +9,7 @@ from zexporta.custom_types import ChainConfig
 from zexporta.db.deposit import (
     get_pending_deposits_block_number,
     to_finalized,
-    to_reorg,
+    to_reorg_block_number,
 )
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.web3 import (
@@ -52,7 +52,9 @@ async def update_finalized_deposits(chain: ChainConfig):
                 max_delay_per_block_batch=chain.delay,
             )
             await to_finalized(chain.chain_id, finalized_block_number, results)
-            await to_reorg(chain.chain_id, min(blocks_to_check), max(blocks_to_check))
+            await to_reorg_block_number(
+                chain.chain_id, min(blocks_to_check), max(blocks_to_check)
+            )
 
 
 async def main():

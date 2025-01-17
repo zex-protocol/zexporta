@@ -1,33 +1,46 @@
 import asyncio
 from hashlib import sha256
 
-from zexporta.custom_types import BlockNumber, ChainConfig, DepositStatus
+from zexporta.custom_types import (
+    BlockNumber,
+    ChainConfig,
+    DepositStatus,
+    SaDepositSchema,
+    Timestamp,
+    TxHash,
+)
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.utils.encoder import DEPOSIT_OPERATION, encode_zex_deposit
 from zexporta.utils.observer import get_accepted_deposits
 from zexporta.utils.web3 import (
     async_web3_factory,
-    extract_transfer_from_block,
-    filter_blocks,
     get_finalized_block_number,
+    get_transfers_by_tx,
 )
 
 from .config import ZEX_ENCODE_VERSION
 
 
-class BlocksIsEmpty(Exception):
-    "Raise when a blocks list is empty"
+class NoTxHashError(Exception):
+    "Raise when a txs_hash list is empty"
 
 
 class NotFinalizedBlockError(Exception):
     "Raise when a block number is bigger then current finalized block"
 
 
-def deposit(chain_config: ChainConfig, data: dict, logger) -> dict:
-    blocks = data["blocks"]
-    if len(blocks) < 1:
-        raise BlocksIsEmpty()
-    deposits = asyncio.run(get_deposits(chain=chain_config, blocks=blocks))
+def deposit(chain_config: ChainConfig, data: SaDepositSchema, logger) -> dict:
+    txs_hash = data.txs_hash
+    if len(txs_hash) == 0:
+        raise NoTxHashError()
+    deposits = asyncio.run(
+        get_deposits(
+            chain=chain_config,
+            txs_hash=txs_hash,
+            sa_finalized_block_number=data.finalized_block_number,
+            sa_timestamp=data.timestamp,
+        )
+    )
     encoded_data = encode_zex_deposit(
         version=ZEX_ENCODE_VERSION,
         operation_type=DEPOSIT_OPERATION,
@@ -43,36 +56,33 @@ def deposit(chain_config: ChainConfig, data: dict, logger) -> dict:
     }
 
 
-async def get_deposits(chain: ChainConfig, blocks: list[BlockNumber]):
-    blocks.sort()
-    to_block = blocks[-1]
+async def get_deposits(
+    chain: ChainConfig,
+    txs_hash: list[TxHash],
+    sa_finalized_block_number: BlockNumber,
+    sa_timestamp: Timestamp,
+):
     w3 = await async_web3_factory(chain=chain)
     finalized_block_number = await get_finalized_block_number(w3, chain)
-    if to_block > finalized_block_number:
+    if sa_finalized_block_number > finalized_block_number:
         raise NotFinalizedBlockError(
-            f"to_block: {to_block} is not finalized, finalized_block: {finalized_block_number}"
+            f"sa_finalized_block_number: {sa_finalized_block_number} \
+            is not finalized in validator , finalized_block: {finalized_block_number}"
         )
     await insert_new_address_to_db()
     accepted_addresses = await get_active_address()
-    deposits = []
-    for _blocks in [
-        blocks[i : (i + chain.batch_block_size)]
-        for i in range(0, len(blocks), chain.batch_block_size)
-    ]:
-        transfers = await filter_blocks(
-            w3,
-            _blocks,
-            extract_transfer_from_block,
-            chain_id=chain.chain_id,
-            max_delay_per_block_batch=chain.delay,
-        )
-        deposits.extend(
-            await get_accepted_deposits(
-                w3,
-                chain,
-                transfers,
-                accepted_addresses,
-                deposit_status=DepositStatus.VERIFIED,
-            )
-        )
+    transfers = await asyncio.gather(
+        *[get_transfers_by_tx(w3, tx_hash, sa_timestamp) for tx_hash in txs_hash]
+    )
+    deposits = await get_accepted_deposits(
+        w3,
+        chain,
+        [
+            transfer
+            for transfer in transfers
+            if transfer is not None and transfer.block_number <= finalized_block_number
+        ],
+        accepted_addresses,
+        deposit_status=DepositStatus.VERIFIED,
+    )
     return sorted(deposits)
