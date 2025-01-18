@@ -1,6 +1,8 @@
 import logging
 
+from bitcoinutils.keys import PublicKey
 from pyfrost.btc_utils import taproot_tweak_pubkey
+from pyfrost.crypto_utils import code_to_pub
 
 from zexporta.clients import BTCAsyncClient
 from zexporta.clients.btc import Block
@@ -16,8 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def compute_create_btc_address(salt: int):
-    _, tweaked_pubkey = taproot_tweak_pubkey(BTC_GROUP_KEY_PUB, str(salt).encode())
-    return tweaked_pubkey
+    _, public_key = taproot_tweak_pubkey(BTC_GROUP_KEY_PUB, str(salt).encode())
+    public_key = code_to_pub(int(public_key.hex(), 16))
+    x_hex = hex(public_key.x)[2:].zfill(64)
+    y_hex = hex(public_key.y)[2:].zfill(64)
+    prefix = "02" if int(y_hex, 16) % 2 == 0 else "03"
+    compressed_pubkey = prefix + x_hex
+    public_key = PublicKey(compressed_pubkey)
+    taproot_address = public_key.get_taproot_address()
+    return taproot_address
 
 
 def extract_btc_transfer_from_block(
