@@ -1,10 +1,15 @@
 from enum import StrEnum
-from typing import Any
+from typing import Annotated, Any
 
 from eth_typing import URI, BlockNumber, ChainId, ChecksumAddress
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PlainSerializer
 
-type Value = int
+
+def convert_int_to_str(value: int) -> str:
+    return str(value)
+
+
+type Value = Annotated[int, PlainSerializer(convert_int_to_str, when_used="json")]
 type Timestamp = int | float
 type UserId = int
 type TxHash = str
@@ -91,7 +96,7 @@ class UserAddress(BaseModel):
 class WithdrawRequest(BaseModel):
     model_config = {"extra": "ignore"}
     token_address: ChecksumAddress
-    amount: int
+    amount: Value
     recipient: ChecksumAddress
     nonce: int
     chain_id: ChainId
