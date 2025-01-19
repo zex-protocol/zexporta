@@ -50,34 +50,33 @@ if ENVIRONMENT == EnvEnum.PROD:
 else:
     ZEX_BASE_URL = "https://api-dev.zex.finance/v1"
     CHAINS_CONFIG = {
-        137: ChainConfig(
-            private_rpc=os.environ["POL_RPC"],
-            chain_id=ChainId(137),
-            symbol="POL",
+        17000: ChainConfig(
+            private_rpc=os.environ["HOL_RPC"],
+            chain_id=ChainId(17000),
+            symbol="HOL",
             finalize_block_count=20,
-            poa=True,
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
-                "0xcb00C4e20F84aE691C9739e4E202eaCafD187e8d"
+                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
             ),
         ),
-        10: ChainConfig(
-            private_rpc=os.environ["OP_RPC"],
-            chain_id=ChainId(10),
-            symbol="OPT",
+        11155111: ChainConfig(
+            private_rpc=os.environ["SEP_RPC"],
+            chain_id=ChainId(11155111),
+            symbol="SEP",
             finalize_block_count=10,
             poa=True,
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
-                "0xcb00C4e20F84aE691C9739e4E202eaCafD187e8d"
+                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
             ),
         ),
-        56: ChainConfig(
-            private_rpc=os.environ["BSC_RPC"],
-            chain_id=ChainId(56),
-            symbol="BSC",
+        97: ChainConfig(
+            private_rpc=os.environ["BST_RPC"],
+            chain_id=ChainId(97),
+            symbol="BST",
             finalize_block_count=10,
             poa=True,
             delay=1,

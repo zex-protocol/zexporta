@@ -20,7 +20,7 @@ from .config import (
     TEST_USER_ID,
     WITHDRAWER_PRIVATE_KEY,
 )
-from .custom_types import MonitoringToke
+from .custom_types import MonitoringToken
 
 WITHDRAW_OPERATION = "w"
 
@@ -54,7 +54,7 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
 
 def create_tx(
     chain: ChainConfig,
-    monitoring_token: MonitoringToke,
+    monitoring_token: MonitoringToken,
     public_key: str,
     destination_address: ChecksumAddress,
     nonce: int,
@@ -114,6 +114,7 @@ async def monitor_withdraw(
     signed_data = bytes.fromhex(
         get_signed_data(WITHDRAWER_PRIVATE_KEY, primitive=msg)[2:]
     )[1:]
+    logger.debug(tx + signed_data)
     send_data = (tx + signed_data).decode("latin-1")
     await send_withdraw_request(async_client, [send_data])
     await asyncio.sleep(120)

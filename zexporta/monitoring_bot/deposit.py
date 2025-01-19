@@ -21,7 +21,7 @@ from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.web3 import async_web3_factory, compute_create2_address
 from zexporta.utils.zex_api import get_user_asset
 
-from .custom_types import MonitoringToke
+from .custom_types import MonitoringToken
 
 
 class DepositError(Exception):
@@ -30,7 +30,7 @@ class DepositError(Exception):
 
 async def _send_deposit(
     w3: AsyncWeb3,
-    monitoring_token: MonitoringToke,
+    monitoring_token: MonitoringToken,
     account: LocalAccount,
     user_address: ChecksumAddress,
     logger: logging.Logger | ChainLoggerAdapter,
