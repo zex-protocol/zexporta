@@ -1,5 +1,7 @@
 import logging
 
+from zexporta.custom_types import ChainSymbol
+
 
 def get_logger_config(logger_path: str):
     return {
@@ -36,8 +38,8 @@ def get_logger_config(logger_path: str):
 
 
 class ChainLoggerAdapter(logging.LoggerAdapter):
-    def __init__(self, logger, chain_id):
-        super().__init__(logger, {"chain": chain_id})
+    def __init__(self, logger, chain_symbol: ChainSymbol):
+        super().__init__(logger, {"chain": chain_symbol})
 
     def process(self, msg, kwargs):
         msg = f"{self.extra['chain']:<10} | {msg}"  # type:  ignore

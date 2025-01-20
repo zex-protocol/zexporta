@@ -7,7 +7,7 @@ from zexporta.config import (
     CHAINS_CONFIG,
     USER_DEPOSIT_BYTECODE_HASH,
     USER_DEPOSIT_FACTORY_ADDRESS,
-    ChainId,
+    ChainSymbol,
 )
 
 from .custom_types import MonitoringToken
@@ -21,21 +21,21 @@ WITHDRAWER_PRIVATE_KEY = os.environ["MONITORING_BOT_WITHDRAWER_PRIVATE_KEY"]
 MONITORING_TOKENS = [
     MonitoringToken(
         symbol="zUSDT",
-        chain_id=ChainId(11155111),
+        chain_symbol=ChainSymbol.SEP,
         amount=10_000,
         address=Web3.to_checksum_address("0x325CCd77e71Ac296892ed5C63bA428700ec0f868"),
         decimal=6,
     ),
     MonitoringToken(
         symbol="zUSDT",
-        chain_id=ChainId(97),
+        chain_symbol=ChainSymbol.BST,
         amount=10_000,
         address=Web3.to_checksum_address("0x325CCd77e71Ac296892ed5C63bA428700ec0f868"),
         decimal=6,
     ),
     MonitoringToken(
         symbol="zUSDT",
-        chain_id=ChainId(17000),
+        chain_symbol=ChainSymbol.HOL,
         amount=10_000,
         address=Web3.to_checksum_address("0x325CCd77e71Ac296892ed5C63bA428700ec0f868"),
         decimal=6,

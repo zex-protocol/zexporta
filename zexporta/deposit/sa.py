@@ -11,9 +11,9 @@ from pyfrost.network.sa import SA
 
 from zexporta.custom_types import (
     BlockNumber,
-    ChainConfig,
     Deposit,
     DepositStatus,
+    EVMConfig,
     SaDepositSchema,
     TxHash,
 )
@@ -59,7 +59,7 @@ class DepositDifferentHashError(Exception):
 
 async def process_deposit(
     client: httpx.AsyncClient,
-    chain: ChainConfig,
+    chain: EVMConfig,
     txs_hash: list[TxHash],
     dkg_party: list[str],
     finalized_block_number: BlockNumber,
@@ -75,7 +75,7 @@ async def process_deposit(
         "data": SaDepositSchema(
             txs_hash=txs_hash,
             timestamp=int(datetime.now(timezone.utc).timestamp()),
-            chain_id=chain.chain_id,
+            chain_symbol=chain.chain_symbol,
             finalized_block_number=finalized_block_number,
         ).model_dump(mode="json"),
     }
@@ -105,7 +105,9 @@ async def process_deposit(
         )
         await upsert_deposits(deposits)
         await to_reorg_with_tx_hash(
-            chain_id=chain.chain_id, txs_hash=txs_hash, status=DepositStatus.FINALIZED
+            chain_symbol=chain.chain_symbol,
+            txs_hash=txs_hash,
+            status=DepositStatus.FINALIZED,
         )
 
 
@@ -126,14 +128,14 @@ async def send_result_to_zex(
     return result
 
 
-async def deposit(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
+async def deposit(chain: EVMConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
         try:
             client = httpx.AsyncClient()
             dkg_party = dkg_key["party"]
             deposits = await find_deposit_by_status(
-                chain_id=chain.chain_id,
+                chain_symbol=chain.chain_symbol,
                 status=DepositStatus.FINALIZED,
                 limit=SA_TRANSACTIONS_BATCH_SIZE,
             )

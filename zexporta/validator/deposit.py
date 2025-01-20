@@ -3,8 +3,8 @@ from hashlib import sha256
 
 from zexporta.custom_types import (
     BlockNumber,
-    ChainConfig,
     DepositStatus,
+    EVMConfig,
     SaDepositSchema,
     Timestamp,
     TxHash,
@@ -29,7 +29,7 @@ class NotFinalizedBlockError(Exception):
     "Raise when a block number is bigger then current finalized block"
 
 
-def deposit(chain_config: ChainConfig, data: SaDepositSchema, logger) -> dict:
+def deposit(chain_config: EVMConfig, data: SaDepositSchema, logger) -> dict:
     txs_hash = data.txs_hash
     if len(txs_hash) == 0:
         raise NoTxHashError()
@@ -57,7 +57,7 @@ def deposit(chain_config: ChainConfig, data: SaDepositSchema, logger) -> dict:
 
 
 async def get_deposits(
-    chain: ChainConfig,
+    chain: EVMConfig,
     txs_hash: list[TxHash],
     sa_finalized_block_number: BlockNumber,
     sa_timestamp: Timestamp,
@@ -72,7 +72,10 @@ async def get_deposits(
     await insert_new_address_to_db()
     accepted_addresses = await get_active_address()
     transfers = await asyncio.gather(
-        *[get_transfers_by_tx(w3, tx_hash, sa_timestamp) for tx_hash in txs_hash]
+        *[
+            get_transfers_by_tx(w3, chain.chain_symbol, tx_hash, sa_timestamp)
+            for tx_hash in txs_hash
+        ]
     )
     deposits = await get_accepted_deposits(
         w3,

@@ -4,7 +4,7 @@ import logging.config
 import httpx
 import sentry_sdk
 
-from zexporta.custom_types import ChainConfig
+from zexporta.custom_types import EVMConfig
 from zexporta.db.chain import (
     get_last_withdraw_nonce,
     upsert_chain_last_withdraw_nonce,
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 async def did_last_nonce_observed(
-    client: httpx.AsyncClient, last_withdraw_nonce: int, chain: ChainConfig
+    client: httpx.AsyncClient, last_withdraw_nonce: int, chain: EVMConfig
 ) -> bool:
     zex_last_nonce = await get_zex_last_withdraw_nonce(client, chain)
 
@@ -33,13 +33,13 @@ async def did_last_nonce_observed(
     return False
 
 
-async def observe_withdraw(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
+async def observe_withdraw(chain: EVMConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
 
     while True:
+        client = httpx.AsyncClient()
         try:
-            client = httpx.AsyncClient()
-            last_withdraw_nonce = await get_last_withdraw_nonce(chain.chain_id)
+            last_withdraw_nonce = await get_last_withdraw_nonce(chain.chain_symbol)
 
             last_nonce_observed = await did_last_nonce_observed(
                 client, last_withdraw_nonce, chain
@@ -53,7 +53,7 @@ async def observe_withdraw(chain: ChainConfig):
             _logger.info(f"withdraws: {withdraws}")
             await insert_withdraws_if_not_exists(withdraws)
             await upsert_chain_last_withdraw_nonce(
-                chain.chain_id, last_withdraw_nonce + len(withdraws)
+                chain.chain_symbol, last_withdraw_nonce + len(withdraws)
             )
 
         except ZexAPIError as e:
@@ -61,7 +61,7 @@ async def observe_withdraw(chain: ChainConfig):
             continue
 
         finally:
-            await client.aclose()  # TODO: if client connected not need this
+            await client.aclose()
             await asyncio.sleep(WITHDRAW_DELAY_SECOND)
 
 

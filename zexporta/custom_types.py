@@ -21,14 +21,26 @@ class EnvEnum(StrEnum):
     TEST = "test"
 
 
+class ChainSymbol(StrEnum):
+    SEP = "SEP"
+    BST = "BST"
+    HOL = "HOL"
+    POL = "POL"
+    BSC = "BSC"
+    OPT = "OPT"
+
+
 class ChainConfig(BaseModel):
-    private_rpc: URI | str
-    chain_id: ChainId
-    symbol: str
-    poa: bool = Field(default=False)
+    chain_symbol: ChainSymbol
     finalize_block_count: int = Field(default=15)
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
+
+
+class EVMConfig(ChainConfig):
+    chain_id: ChainId
+    private_rpc: URI | str
+    poa: bool = Field(default=False)
     vault_address: ChecksumAddress
 
 
@@ -56,8 +68,8 @@ class Token(BaseModel):
 
 class Transfer(BaseModel):
     tx_hash: TxHash
-    chain_id: ChainId
     value: Value
+    chain_symbol: ChainSymbol
     token: ChecksumAddress
     to: ChecksumAddress
     sa_timestamp: Timestamp | None = None
@@ -77,7 +89,7 @@ class Transfer(BaseModel):
 class SaDepositSchema(BaseModel):
     txs_hash: list[TxHash]
     timestamp: Timestamp
-    chain_id: ChainId
+    chain_symbol: ChainSymbol
     finalized_block_number: BlockNumber
 
 
@@ -93,7 +105,7 @@ class UserAddress(BaseModel):
     is_active: bool = Field(default=True)
 
 
-class WithdrawRequest(BaseModel):
+class EVMWithdrawRequest(BaseModel):
     model_config = {"extra": "ignore"}
     token_address: ChecksumAddress
     amount: Value

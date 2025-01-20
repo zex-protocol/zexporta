@@ -7,9 +7,9 @@ import httpx
 from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
-    ChainConfig,
+    EVMConfig,
+    EVMWithdrawRequest,
     UserId,
-    WithdrawRequest,
     ZexUserAsset,
 )
 
@@ -59,12 +59,12 @@ async def send_deposits(async_client: httpx.AsyncClient, deposits: list):
 
 
 async def get_zex_latest_block(
-    async_client: httpx.AsyncClient, chain: ChainConfig
+    async_client: httpx.AsyncClient, chain: EVMConfig
 ) -> BlockNumber | None:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LATEST_BLOCK.value}",
-            params={"chain": chain.symbol},
+            params={"chain": chain.chain_symbol},
         )
         res.raise_for_status()
         return res.json().get("block")
@@ -78,12 +78,12 @@ async def get_zex_latest_block(
 
 
 async def get_zex_last_withdraw_nonce(
-    async_client: httpx.AsyncClient, chain: ChainConfig
+    async_client: httpx.AsyncClient, chain: EVMConfig
 ) -> int:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LAST_WITHDRAW_NONCE.value}",
-            params={"chain": chain.symbol},
+            params={"chain": chain.chain_symbol},
         )
         if res.status_code == httpx.codes.NOT_FOUND:
             return -1
@@ -100,10 +100,10 @@ async def get_zex_last_withdraw_nonce(
 
 async def get_zex_withdraws(
     async_client: httpx.AsyncClient,
-    chain: ChainConfig,
+    chain: EVMConfig,
     offset: int,
     limit: int | None = None,
-) -> list[WithdrawRequest]:
+) -> list[EVMWithdrawRequest]:
     from web3 import Web3
 
     params = dict()
@@ -112,7 +112,7 @@ async def get_zex_withdraws(
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.WITHDRAWS.value}",
-            params={"chain": chain.symbol, "offset": offset, **params},
+            params={"chain": chain.chain_symbol, "offset": offset, **params},
             headers={"accept": "application/json"},
         )
         res.raise_for_status()
@@ -120,7 +120,7 @@ async def get_zex_withdraws(
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
         return [
-            WithdrawRequest(
+            EVMWithdrawRequest(
                 amount=withdraw.get("amount"),
                 nonce=withdraw.get("nonce"),
                 recipient=Web3.to_checksum_address(withdraw.get("destination")),
@@ -162,13 +162,13 @@ async def get_user_asset(
 
 
 async def get_user_withdraw_nonce(
-    async_client: httpx.AsyncClient, chain: ChainConfig, user_id: UserId
+    async_client: httpx.AsyncClient, chain: EVMConfig, user_id: UserId
 ) -> int:
     try:
         res = await async_client.get(
             f"{ZEX_BASE_URL}{ZexPath.USER_WITHDRAW_NONCE}",
             headers={"accept": "application/json"},
-            params={"id": user_id, "chain": chain.symbol},
+            params={"id": user_id, "chain": chain.chain_symbol},
         )
         res.raise_for_status()
         data = res.json()

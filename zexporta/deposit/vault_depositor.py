@@ -8,10 +8,10 @@ from eth_account.signers.local import LocalAccount
 from web3 import AsyncWeb3
 
 from zexporta.custom_types import (
-    ChainConfig,
     ChecksumAddress,
     Deposit,
     DepositStatus,
+    EVMConfig,
 )
 from zexporta.db.deposit import find_deposit_by_status, upsert_deposit
 from zexporta.utils.abi import FACTORY_ABI, USER_DEPOSIT_ABI
@@ -80,12 +80,12 @@ async def transfer_ERC20(
     await upsert_deposit(deposit)
 
 
-async def withdraw(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
+async def withdraw(chain: EVMConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
         try:
             deposits = await find_deposit_by_status(
-                status=DepositStatus.VERIFIED, chain_id=chain.chain_id
+                status=DepositStatus.VERIFIED, chain_symbol=chain.chain_symbol
             )
             if len(deposits) == 0:
                 _logger.debug("Deposit not found.")

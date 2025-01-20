@@ -6,7 +6,7 @@ from decimal import Decimal
 import httpx
 from web3 import Web3
 
-from zexporta.custom_types import ChainConfig, ChecksumAddress
+from zexporta.custom_types import ChecksumAddress, EVMConfig
 from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.web3 import (
     async_web3_factory,
@@ -53,7 +53,7 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
 
 
 def create_tx(
-    chain: ChainConfig,
+    chain: EVMConfig,
     monitoring_token: MonitoringToken,
     public_key: str,
     destination_address: ChecksumAddress,
@@ -62,7 +62,7 @@ def create_tx(
     # Prepare withdrawal data
     version = 1
 
-    token_chain = chain.symbol.encode()
+    token_chain = chain.chain_symbol.encode()
     token_name = monitoring_token.symbol.encode()
     destination = bytes.fromhex(destination_address[2:])
     t = int(time.time())
@@ -86,10 +86,10 @@ def create_tx(
 
 
 async def monitor_withdraw(
-    async_client: httpx.AsyncClient, chain: ChainConfig, logger: ChainLoggerAdapter
+    async_client: httpx.AsyncClient, chain: EVMConfig, logger: ChainLoggerAdapter
 ):
     monitoring_token = [
-        token for token in MONITORING_TOKENS if token.chain_id == chain.chain_id
+        token for token in MONITORING_TOKENS if token.chain_symbol == chain.chain_symbol
     ]
     if len(monitoring_token) == 0:
         raise WithdrawError("No token for monitoring found.")

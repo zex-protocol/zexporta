@@ -8,7 +8,7 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import HexStr
 from web3 import AsyncWeb3
 
-from zexporta.custom_types import ChainConfig, ChecksumAddress, UserId
+from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
 from zexporta.monitoring_bot.config import (
     MONITORING_TOKENS,
     TEST_USER_ID,
@@ -72,10 +72,10 @@ async def get_user_balance(
 
 
 async def monitor_deposit(
-    async_client: httpx.AsyncClient, chain: ChainConfig, logger: ChainLoggerAdapter
+    async_client: httpx.AsyncClient, chain: EVMConfig, logger: ChainLoggerAdapter
 ):
     monitoring_token = [
-        token for token in MONITORING_TOKENS if token.chain_id == chain.chain_id
+        token for token in MONITORING_TOKENS if token.chain_symbol == chain.chain_symbol
     ]
     if len(monitoring_token) == 0:
         raise DepositError("No token for monitoring found")

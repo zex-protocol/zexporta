@@ -3,9 +3,9 @@ import struct
 from web3 import Web3
 
 from zexporta.custom_types import (
-    ChainConfig,
     Deposit,
-    WithdrawRequest,
+    EVMConfig,
+    EVMWithdrawRequest,
 )
 
 DEPOSIT_OPERATION = "d"
@@ -16,14 +16,14 @@ def encode_zex_deposit(
     version: int,
     operation_type: str,
     deposits: list[Deposit],
-    chain: ChainConfig,
+    chain: EVMConfig,
 ) -> bytes:
     # Encode the header
     header = struct.pack(
         ">B1s3sH",  # > for big-endian, B for uint8, s for char[], Q for uint64, H for uint16
         version,
         operation_type.encode(),
-        chain.symbol.lower().encode(),
+        chain.chain_symbol.lower().encode(),
         len(deposits),
     )
 
@@ -45,7 +45,7 @@ def encode_zex_deposit(
     return header + deposit_data
 
 
-def get_withdraw_hash(withdraw_request: WithdrawRequest):
+def get_withdraw_hash(withdraw_request: EVMWithdrawRequest):
     return (
         Web3.solidity_keccak(
             ["address", "address", "uint256", "uint256", "uint256"],
