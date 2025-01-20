@@ -5,7 +5,7 @@ import time
 
 import httpx
 
-from zexporta.custom_types import ChainConfig
+from zexporta.custom_types import EVMConfig
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 
 from .config import (
@@ -33,42 +33,42 @@ async def send_msg_to_telegram(async_client: httpx.AsyncClient, msg: str):
     )
 
 
-async def monitor(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
+async def monitor(chain: EVMConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     client = httpx.AsyncClient()
     try:
         try:
             await send_msg_to_telegram(
-                client, f"🟩 Start deposit on chain {chain.symbol} ..."
+                client, f"🟩 Start deposit on chain {chain.chain_symbol} ..."
             )
             _logger.info("Start monitoring deposit.")
             _ = await monitor_deposit(client, chain, _logger)
             _logger.info("Deposit was successful.")
             await send_msg_to_telegram(
-                client, f"🟩 Deposit was successful on chain {chain.symbol}."
+                client, f"🟩 Deposit was successful on chain {chain.chain_symbol}."
             )
         except Exception as e:
             _logger.error(f"DepositError occurred, type: {type(e)}, {str(e)}")
             await send_msg_to_telegram(
                 client,
-                f"🟥 Error at Deposit on chain {chain.symbol}, type: {type(e)}, {str(e)}",
+                f"🟥 Error at Deposit on chain {chain.chain_symbol}, type: {type(e)}, {str(e)}",
             )
             return
         try:
             await send_msg_to_telegram(
-                client, f"🟩 Start withdrawing on chain {chain.symbol} ..."
+                client, f"🟩 Start withdrawing on chain {chain.chain_symbol} ..."
             )
             _logger.info("Start monitoring withdraw.")
             _ = await monitor_withdraw(client, chain, _logger)
             _logger.info("Withdraw was successful")
             await send_msg_to_telegram(
-                client, f"🟩 Withdraw was successful for chin {chain.symbol}."
+                client, f"🟩 Withdraw was successful for chin {chain.chain_symbol}."
             )
         except Exception as e:
             _logger.error(f"WithdrawError occurred, type: {type(e)}, {e}")
             await send_msg_to_telegram(
                 client,
-                f"🟥 Error at Withdraw on chain {chain.symbol}, type: {type(e)}, {str(e)}",
+                f"🟥 Error at Withdraw on chain {chain.chain_symbol}, type: {type(e)}, {str(e)}",
             )
             return
     finally:

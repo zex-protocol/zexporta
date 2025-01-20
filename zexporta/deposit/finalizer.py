@@ -5,7 +5,7 @@ import math
 
 import sentry_sdk
 
-from zexporta.custom_types import ChainConfig
+from zexporta.custom_types import EVMConfig
 from zexporta.db.deposit import (
     get_pending_deposits_block_number,
     to_finalized,
@@ -25,13 +25,14 @@ logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalize
 logger = logging.getLogger(__name__)
 
 
-async def update_finalized_deposits(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
+async def update_finalized_deposits(chain: EVMConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
         w3 = await async_web3_factory(chain)
         finalized_block_number = await get_finalized_block_number(w3, chain)
         pending_blocks_number = await get_pending_deposits_block_number(
-            chain_id=chain.chain_id, finalized_block_number=finalized_block_number
+            chain_symbol=chain.chain_symbol,
+            finalized_block_number=finalized_block_number,
         )
 
         if len(pending_blocks_number) == 0:
@@ -51,9 +52,9 @@ async def update_finalized_deposits(chain: ChainConfig):
                 get_block_tx_hash,
                 max_delay_per_block_batch=chain.delay,
             )
-            await to_finalized(chain.chain_id, finalized_block_number, results)
+            await to_finalized(chain.chain_symbol, finalized_block_number, results)
             await to_reorg_block_number(
-                chain.chain_id, min(blocks_to_check), max(blocks_to_check)
+                chain.chain_symbol, min(blocks_to_check), max(blocks_to_check)
             )
 
 

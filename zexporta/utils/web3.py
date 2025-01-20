@@ -13,9 +13,9 @@ from web3.middleware.geth_poa import async_geth_poa_middleware
 
 from zexporta.custom_types import (
     BlockNumber,
-    ChainConfig,
-    ChainId,
+    ChainSymbol,
     ChecksumAddress,
+    EVMConfig,
     Timestamp,
     Transfer,
     TxHash,
@@ -30,18 +30,18 @@ from .abi import ERC20_ABI
 
 logger = logging.getLogger(__name__)
 
-_w3_clients: dict[int, AsyncWeb3] = {}
+_w3_clients: dict[str, AsyncWeb3] = {}
 
 
-async def async_web3_factory(chain: ChainConfig) -> AsyncWeb3:
-    if w3 := _w3_clients.get(chain.chain_id.value):
+async def async_web3_factory(chain: EVMConfig) -> AsyncWeb3:
+    if w3 := _w3_clients.get(chain.chain_symbol.value):
         if await w3.is_connected():
             return w3
 
     w3 = AsyncWeb3(AsyncHTTPProvider(chain.private_rpc))
     if chain.poa:
         w3.middleware_onion.inject(async_geth_poa_middleware, layer=0)
-    _w3_clients[chain.chain_id.value] = w3
+    _w3_clients[chain.chain_symbol.value] = w3
     return w3
 
 
@@ -75,7 +75,7 @@ async def filter_blocks[T: (Transfer, TxHash)](
 async def extract_transfer_from_block(
     w3: AsyncWeb3,
     block_number: BlockNumber,
-    chain_id: ChainId,
+    chain_symbol: ChainSymbol,
     logger=logger,
     **kwargs,
 ) -> list[Transfer]:
@@ -89,7 +89,7 @@ async def extract_transfer_from_block(
                 Transfer(
                     tx_hash=tx.hash.hex(),
                     block_number=block_number,
-                    chain_id=chain_id,
+                    chain_symbol=chain_symbol,
                     to=decoded_input._to,
                     value=decoded_input._value,
                     token=tx.to,
@@ -112,7 +112,7 @@ async def get_block_tx_hash(
     return [tx_hash.hex() for tx_hash in block.transactions]  # type: ignore
 
 
-async def get_finalized_block_number(w3: AsyncWeb3, chain: ChainConfig) -> BlockNumber:
+async def get_finalized_block_number(w3: AsyncWeb3, chain: EVMConfig) -> BlockNumber:
     if chain.finalize_block_count is None:
         finalized_block = await w3.eth.get_block("finalized")
         return finalized_block.number  # type: ignore
@@ -171,16 +171,15 @@ async def get_ERC20_balance(
 
 
 async def get_transfers_by_tx(
-    w3: AsyncWeb3, tx_hash: TxHash, sa_timestamp: Timestamp
+    w3: AsyncWeb3, chain_symbol: ChainSymbol, tx_hash: TxHash, sa_timestamp: Timestamp
 ) -> Transfer | None:
     tx = await w3.eth.get_transaction(HexStr(tx_hash))
-    w3.eth.get_transaction_receipt
     try:
         decoded_input = decode_transfer_tx(tx["input"].hex())  # type: ignore
         return Transfer(
             tx_hash=tx["hash"].hex(),  # type: ignore
             block_number=tx["blockNumber"],  # type: ignore
-            chain_id=ChainId(tx["chainId"]),  # type: ignore
+            chain_symbol=chain_symbol,
             to=decoded_input._to,
             value=decoded_input._value,
             token=tx["to"],  # type: ignore

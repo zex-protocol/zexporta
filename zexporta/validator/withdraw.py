@@ -3,7 +3,7 @@ from logging import LoggerAdapter
 
 import httpx
 
-from zexporta.custom_types import ChainConfig, WithdrawRequest
+from zexporta.custom_types import EVMConfig, EVMWithdrawRequest
 from zexporta.utils.encoder import get_withdraw_hash
 from zexporta.utils.zex_api import get_zex_withdraws
 
@@ -11,8 +11,8 @@ limit_tx = 1
 
 
 async def get_withdraw_request(
-    chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter
-) -> WithdrawRequest:
+    chain: EVMConfig, sa_withdraw_nonce: int, logger: LoggerAdapter
+) -> EVMWithdrawRequest:
     async with httpx.AsyncClient() as client:
         withdraw = (
             await get_zex_withdraws(
@@ -23,7 +23,7 @@ async def get_withdraw_request(
     return withdraw
 
 
-def withdraw(chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter):
+def withdraw(chain: EVMConfig, sa_withdraw_nonce: int, logger: LoggerAdapter):
     withdraw_request = asyncio.run(
         get_withdraw_request(chain, sa_withdraw_nonce, logger)
     )

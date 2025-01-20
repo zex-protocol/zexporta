@@ -5,7 +5,7 @@ import logging.config
 import sentry_sdk
 import web3.exceptions
 
-from zexporta.custom_types import ChainConfig
+from zexporta.custom_types import EVMConfig
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.db.chain import (
     get_last_observed_block,
@@ -25,9 +25,9 @@ logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/observer
 logger = logging.getLogger(__name__)
 
 
-async def observe_deposit(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
-    last_observed_block = await get_last_observed_block(chain.chain_id)
+async def observe_deposit(chain: EVMConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
+    last_observed_block = await get_last_observed_block(chain.chain_symbol)
     while True:
         w3 = await async_web3_factory(chain)
         observer = Observer(chain=chain, w3=w3)
@@ -64,7 +64,7 @@ async def observe_deposit(chain: ChainConfig):
             continue
         if len(accepted_deposits) > 0:
             await insert_deposits_if_not_exists(accepted_deposits)
-        await upsert_chain_last_observed_block(chain.chain_id, to_block)
+        await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
         last_observed_block = to_block
 
 

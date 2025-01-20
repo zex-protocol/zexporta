@@ -2,16 +2,17 @@ import logging
 from typing import Any, Callable, Coroutine
 
 import web3.exceptions
-from eth_typing import ChainId, HexStr
+from eth_typing import HexStr
 from pydantic import BaseModel, ConfigDict
 from web3 import AsyncWeb3
 
 from zexporta.custom_types import (
     BlockNumber,
-    ChainConfig,
+    ChainSymbol,
     ChecksumAddress,
     Deposit,
     DepositStatus,
+    EVMConfig,
     Transfer,
     UserId,
 )
@@ -39,7 +40,7 @@ def get_block_batches(
 
 class Observer(BaseModel):
     model_config: ConfigDict = {"arbitrary_types_allowed": True}
-    chain: ChainConfig
+    chain: EVMConfig
     w3: AsyncWeb3
 
     async def observe(
@@ -62,7 +63,7 @@ class Observer(BaseModel):
                 self.w3,
                 blocks_number,
                 extract_block_logic,
-                chain_id=self.chain.chain_id,
+                chain_symbol=self.chain.chain_symbol,
                 max_delay_per_block_batch=max_delay_per_block_batch,
                 logger=logger,
                 **kwargs,
@@ -75,18 +76,18 @@ class Observer(BaseModel):
 
 
 async def get_token_decimals(
-    w3: AsyncWeb3, chain_id: ChainId, token_address: ChecksumAddress
+    w3: AsyncWeb3, chain_symbol: ChainSymbol, token_address: ChecksumAddress
 ) -> int:
-    decimals = await get_decimals(chain_id, token_address)
+    decimals = await get_decimals(chain_symbol, token_address)
     if decimals is None:
         decimals = await w3_get_token_decimals(w3, token_address)
-        await insert_token(chain_id, token_address, decimals)
+        await insert_token(chain_symbol, token_address, decimals)
     return decimals
 
 
 async def get_accepted_deposits(
     w3: AsyncWeb3,
-    chain: ChainConfig,
+    chain: EVMConfig,
     transfers: list[Transfer],
     accepted_addresses: dict[ChecksumAddress, UserId],
     deposit_status: DepositStatus = DepositStatus.PENDING,
@@ -94,7 +95,7 @@ async def get_accepted_deposits(
     result = []
     for transfer in transfers:
         if (user_id := accepted_addresses.get(transfer.to)) is not None:
-            decimals = await get_token_decimals(w3, chain.chain_id, transfer.token)
+            decimals = await get_token_decimals(w3, chain.chain_symbol, transfer.token)
             try:
                 receipt = await w3.eth.get_transaction_receipt(HexStr(transfer.tx_hash))
                 if receipt["status"] == 1:
