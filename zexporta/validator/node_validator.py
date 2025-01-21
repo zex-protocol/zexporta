@@ -2,6 +2,7 @@ import logging
 
 from pyfrost.network.abstract import Validators
 
+from zexporta.custom_types import ChainSymbol, SaDepositSchema
 from zexporta.utils.logger import ChainLoggerAdapter
 
 from .config import CHAINS_CONFIG, VALIDATED_IPS
@@ -25,10 +26,10 @@ class NodeValidators(Validators):
     def data_validator(input_data: dict):
         method = input_data["method"]
         data = input_data["data"]
-        chain = CHAINS_CONFIG[(data["chain_id"])]
-        _logger = ChainLoggerAdapter(logger, chain)
+        chain = CHAINS_CONFIG[ChainSymbol(data["chain_symbol"]).value]
+        _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
         if method == "deposit":
-            return deposit(chain, data, _logger)
+            return deposit(chain, SaDepositSchema(**data), _logger)
 
         if method == "withdraw":
             sa_withdraw_nonce = data["sa_withdraw_nonce"]

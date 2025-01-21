@@ -9,7 +9,7 @@ from zexporta.clients.btc import Block
 from zexporta.config import BTC_GROUP_KEY_PUB
 from zexporta.custom_types import (
     BTCConfig,
-    ChainId,
+    ChainSymbol,
     DepositStatus,
     Transfer,
 )
@@ -32,11 +32,13 @@ def compute_create_btc_address(salt: int):
 def extract_btc_transfer_from_block(
     block_number: int,
     block: Block,
-    chain_id: ChainId,
+    chain_symbol: ChainSymbol,
     transfer_status: DepositStatus = DepositStatus.PENDING,
 ) -> list[Transfer]:
     logger.debug(f"Observing block number {block_number} start")
     result = []
+    if block.txs is None:
+        return []
     for tx in block.txs:
         for out_put in tx.vout:
             if out_put.isAddress and out_put.addresses:
@@ -44,12 +46,10 @@ def extract_btc_transfer_from_block(
                     Transfer(
                         tx_hash=tx.txid,
                         block_number=block.height,
-                        chain_id=chain_id,
+                        chain_symbol=chain_symbol,
                         to=out_put.addresses[0],
                         value=tx.value,
-                        status=transfer_status,
                         token=out_put.addresses[0],
-                        block_timestamp=block.time,
                     )
                 )
 

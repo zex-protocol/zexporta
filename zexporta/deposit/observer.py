@@ -1,24 +1,22 @@
 import asyncio
+import logging
 import logging.config
 
 import sentry_sdk
 
-from zexporta.clients import get_btc_async_client
-from zexporta.custom_types import BTCConfig, ChainConfig
+import zexporta.clients.exceptions as client_exception
+from zexporta.clients import (
+    get_async_client,
+)
+from zexporta.custom_types import ChainConfig
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.db.chain import (
     get_last_observed_block,
     upsert_chain_last_observed_block,
 )
 from zexporta.db.deposit import insert_deposits_if_not_exists
-from zexporta.utils.btc import extract_btc_transfer_from_block
-from zexporta.utils.btc_observer import BTCObserver
-from zexporta.utils.evm_observer import Observer
+from zexporta.explorer import explorer
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
-from zexporta.utils.web3 import (
-    extract_transfer_from_block,
-    get_web3_async_client,
-)
 
 from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS
 
@@ -26,30 +24,12 @@ logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/observer
 logger = logging.getLogger(__name__)
 
 
-OBSERVERS = {BTCConfig: BTCObserver, ChainConfig: Observer}
-
-CLIENTS_GETTER = {BTCConfig: get_btc_async_client, ChainConfig: get_web3_async_client}
-
-EXTRACTORS = {
-    BTCConfig: extract_btc_transfer_from_block,
-    ChainConfig: extract_transfer_from_block,
-}
-
-
-def get_chain_observer(chain: ChainConfig | BTCConfig):
-    observer = OBSERVERS[type(chain)]
-    client = CLIENTS_GETTER[type(chain)]
-    return observer(client=client(chain), chain=chain)
-
-
 async def observe_deposit(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
-    last_observed_block = await get_last_observed_block(chain.chain_id)
-
-    observer = get_chain_observer(chain=chain)
-
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
+    last_observed_block = await get_last_observed_block(chain.chain_symbol)
     while True:
-        latest_block = await observer.get_latest_block_number()
+        client = get_async_client(chain)
+        latest_block = await client.get_latest_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
             _logger.info(f"Block {last_observed_block} already observed continue")
             await asyncio.sleep(chain.delay)
@@ -63,20 +43,28 @@ async def observe_deposit(chain: ChainConfig):
             continue
         await insert_new_address_to_db()
         accepted_addresses = await get_active_address(chain)
-        accepted_transfers = await observer.observe(
-            last_observed_block + 1,
-            latest_block,
-            accepted_addresses,
-            EXTRACTORS[type(chain)],
-            logger=_logger,
-            batch_size=chain.batch_block_size,
-            max_delay_per_block_batch=chain.delay,
-        )
-
-        if len(accepted_transfers) > 0:
-            await insert_deposits_if_not_exists(accepted_transfers)
-        await upsert_chain_last_observed_block(chain.chain_id, latest_block)
-        last_observed_block = latest_block
+        try:
+            accepted_deposits = await explorer(
+                chain,
+                last_observed_block + 1,
+                to_block,
+                accepted_addresses,
+                client.extract_transfer_from_block,
+                logger=_logger,
+                batch_size=chain.batch_block_size,
+                max_delay_per_block_batch=chain.delay,
+            )
+        except client_exception.BaseClientError as e:
+            logger.error(f"Client raise Error, {e}")
+            continue
+        except ValueError as e:
+            _logger.error(f"ValueError: {e}")
+            await asyncio.sleep(10)
+            continue
+        if len(accepted_deposits) > 0:
+            await insert_deposits_if_not_exists(accepted_deposits)
+        await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
+        last_observed_block = to_block
 
 
 async def main():

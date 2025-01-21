@@ -4,15 +4,14 @@ import logging
 from pymongo import DESCENDING
 from web3 import Web3
 
+from zexporta.clients.evm import compute_create2_address
 from zexporta.custom_types import (
+    Address,
     BTCConfig,
     ChainConfig,
-    ChecksumAddress,
     UserAddress,
     UserId,
 )
-from zexporta.utils.btc import compute_create_btc_address
-from zexporta.utils.web3 import compute_create2_address
 from zexporta.utils.zex_api import (
     ZexAPIError,
     get_async_client,
@@ -39,8 +38,8 @@ logger = logging.getLogger(__name__)
 
 
 async def get_active_address(
-    chain: BTCConfig | ChainConfig,
-) -> dict[ChecksumAddress, UserId]:
+    chain: ChainConfig,
+) -> dict[Address, UserId]:
     res = dict()
     async for address in _address_collection.find({"is_active": True}):
         match chain:
@@ -73,26 +72,19 @@ async def insert_many_user_address(users_address: list[UserAddress]):
     )
 
 
-ADDRESS_CREATOR_MAPPER = {
-    "BTC": compute_create_btc_address,
-    "EVM": compute_create2_address,
-}
-
-
 def get_users_address_to_insert(
     first_to_compute: UserId, last_to_compute: UserId
 ) -> list[UserAddress]:
     users_address_to_insert = []
-    for address_creator in ADDRESS_CREATOR_MAPPER.values():
-        for user_id in range(first_to_compute, last_to_compute + 1):
-            users_address_to_insert.append(
-                UserAddress(
-                    user_id=user_id,
-                    address=address_creator(
-                        salt=user_id,
-                    ),
-                )
+    for user_id in range(first_to_compute, last_to_compute + 1):
+        users_address_to_insert.append(
+            UserAddress(
+                user_id=user_id,
+                address=compute_create2_address(
+                    salt=user_id,
+                ),
             )
+        )
     return users_address_to_insert
 
 

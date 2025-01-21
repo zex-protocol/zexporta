@@ -7,16 +7,16 @@ import web3.exceptions
 from eth_account.signers.local import LocalAccount
 from web3 import AsyncWeb3
 
+from zexporta.clients.evm import get_evm_async_client
 from zexporta.custom_types import (
-    ChainConfig,
     ChecksumAddress,
     Deposit,
     DepositStatus,
+    EVMConfig,
 )
 from zexporta.db.deposit import find_deposit_by_status, upsert_deposit
 from zexporta.utils.abi import FACTORY_ABI, USER_DEPOSIT_ABI
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
-from zexporta.utils.web3 import async_web3_factory
 
 from .config import (
     CHAINS_CONFIG,
@@ -67,7 +67,7 @@ async def transfer_ERC20(
     deposit: Deposit,
     logger: logging.Logger | ChainLoggerAdapter = logger,
 ):
-    user_deposit = w3.eth.contract(address=deposit.to, abi=USER_DEPOSIT_ABI)
+    user_deposit = w3.eth.contract(address=deposit.to, abi=USER_DEPOSIT_ABI)  # type: ignore
     nonce = await w3.eth.get_transaction_count(account.address)
     tx = await user_deposit.functions.transferERC20(
         deposit.token, deposit.value
@@ -80,21 +80,21 @@ async def transfer_ERC20(
     await upsert_deposit(deposit)
 
 
-async def withdraw(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
+async def withdraw(chain: EVMConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
         try:
             deposits = await find_deposit_by_status(
-                status=DepositStatus.VERIFIED, chain_id=chain.chain_id
+                status=DepositStatus.VERIFIED, chain_symbol=chain.chain_symbol
             )
             if len(deposits) == 0:
                 _logger.debug("Deposit not found.")
                 continue
-            w3 = await async_web3_factory(chain)
+            w3 = get_evm_async_client(chain).client
             account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
 
             for deposit in deposits:
-                is_contract = (await w3.eth.get_code(deposit.to)) != b""
+                is_contract = (await w3.eth.get_code(deposit.to)) != b""  # type: ignore
                 if not is_contract:
                     _logger.info(
                         f"Contract: {deposit.to} not found! Deploying a new one ..."
@@ -122,7 +122,11 @@ async def withdraw(chain: ChainConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [loop.create_task(withdraw(chain)) for chain in CHAINS_CONFIG.values()]
+    tasks = [
+        loop.create_task(withdraw(chain))
+        for chain in CHAINS_CONFIG.values()
+        if isinstance(chain, EVMConfig)
+    ]
     await asyncio.gather(*tasks)
 
 

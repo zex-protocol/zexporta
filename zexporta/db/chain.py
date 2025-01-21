@@ -1,12 +1,12 @@
 import asyncio
 
-from zexporta.custom_types import BlockNumber, ChainId
+from zexporta.custom_types import BlockNumber, ChainSymbol
 
 from .collections import db
 
 
 async def __create_chain_index():
-    await _chain_collection.create_index("chain_id", unique=True)
+    await _chain_collection.create_index("chain_symbol", unique=True)
 
 
 _chain_collection = db["chain"]
@@ -14,9 +14,9 @@ asyncio.run(__create_chain_index())
 
 
 async def upsert_chain_last_observed_block(
-    chain_id: ChainId, block_number: BlockNumber | int
+    chain_symbol: ChainSymbol, block_number: BlockNumber
 ):
-    query = {"chain_id": chain_id.value}
+    query = {"chain_symbol": chain_symbol.value}
     update = {
         "$set": {
             "last_observed_block": block_number,
@@ -27,8 +27,8 @@ async def upsert_chain_last_observed_block(
     return result
 
 
-async def get_last_observed_block(chain_id: ChainId) -> BlockNumber | None:
-    query = {"chain_id": chain_id.value}
+async def get_last_observed_block(chain_symbol: ChainSymbol) -> BlockNumber | None:
+    query = {"chain_symbol": chain_symbol.value}
     result = await _chain_collection.find_one(query)
     if result:
         return result.get("last_observed_block")
@@ -36,8 +36,8 @@ async def get_last_observed_block(chain_id: ChainId) -> BlockNumber | None:
         return None
 
 
-async def upsert_chain_last_withdraw_nonce(chain_id: ChainId, nonce: int):
-    query = {"chain_id": chain_id.value}
+async def upsert_chain_last_withdraw_nonce(chain_symbol: ChainSymbol, nonce: int):
+    query = {"chain_symbol": chain_symbol.value}
     update = {
         "$set": {
             "last_withdraw_nonce": nonce,
@@ -47,8 +47,8 @@ async def upsert_chain_last_withdraw_nonce(chain_id: ChainId, nonce: int):
     await _chain_collection.update_one(query, update, upsert=True)
 
 
-async def get_last_withdraw_nonce(chain_id: ChainId) -> int:
-    query = {"chain_id": chain_id.value}
+async def get_last_withdraw_nonce(chain_symbol: ChainSymbol) -> int:
+    query = {"chain_symbol": chain_symbol.value}
     result = await _chain_collection.find_one(query)
     if result:
         return result.get("last_withdraw_nonce", -1)

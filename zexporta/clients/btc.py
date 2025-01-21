@@ -3,7 +3,7 @@ from typing import Any
 import httpx
 from pydantic import BaseModel
 
-from zexporta.custom_types import BTCConfig
+from zexporta.custom_types import URL, BlockNumber, BTCConfig, TxHash, Value
 
 
 # Model for Address Details
@@ -24,8 +24,8 @@ class AddressDetails(BaseModel):
 # Model for UTXO (Unspent Transaction Outputs)
 class UTXO(BaseModel):
     txid: str
-    vout: int
-    value: str | int
+    vout: Value
+    value: Value
     height: int
     confirmations: int
     coinbase: bool | None = None
@@ -33,7 +33,7 @@ class UTXO(BaseModel):
 
 # Common Model for all Transaction outputs (vout)
 class Vout(BaseModel):
-    value: int | float
+    value: Value
     n: int
     addresses: list[str] | None = None
     isAddress: bool
@@ -60,9 +60,9 @@ class Transaction(BaseModel):
     confirmations: int
     blockTime: int
     vsize: int
-    value: int | float
-    valueIn: int | float
-    fees: int | float
+    value: Value
+    valueIn: Value
+    fees: Value
 
 
 # Response for getting block by identifier (including multiple pages)
@@ -111,14 +111,16 @@ class BTCResponseError(BTCClientError):
 
 
 class BTCAsyncClient:
-    def __init__(
-        self,
-        base_url: str = "https://rpc.ankr.com/btc",
-        indexer_url: str = "https://rpc.ankr.com/http/btc_blockbook",
-    ):
+    def __init__(self, base_url: URL, indexer_url: URL):
         self.base_url = base_url
         self.block_book_base_url = indexer_url
-        self.client = httpx.AsyncClient()
+        self._client = httpx.AsyncClient()
+
+    @property
+    def client(self):
+        if self._client.is_closed:
+            self._client = httpx.AsyncClient()
+        return self._client
 
     async def _request(
         self,
@@ -126,9 +128,9 @@ class BTCAsyncClient:
         url: str = "",
         headers: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
-        data: Any | None = None,
-        json_data: Any | None = None,  # Add json_data parameter
-    ) -> dict:
+        data: Any = None,
+        json_data: Any = None,  # Add json_data parameter
+    ) -> dict[str, Any]:
         try:
             # Choose between data and json based on the request
             request_kwargs = {
@@ -175,7 +177,7 @@ class BTCAsyncClient:
                 f"Failed to parse JSON response: {json_err}"
             ) from json_err
 
-    async def get_tx_by_hash(self, tx_hash: str) -> Transaction:
+    async def get_tx_by_hash(self, tx_hash: TxHash) -> Transaction:
         url = f"{self.block_book_base_url}/api/v2/tx/{tx_hash}"
         data = await self._request("GET", url)
         return Transaction.model_validate(data)
@@ -194,11 +196,11 @@ class BTCAsyncClient:
         data = await self._request("GET", url, params=params)
         return [UTXO.model_validate(i) for i in data]
 
-    async def get_block_by_identifier(self, identifier) -> Block:
+    async def get_block_by_block_number(self, block_number: BlockNumber) -> Block:
         page = 1
         all_txs = []  # List to store all transactions across pages
         while True:
-            url = f"{self.block_book_base_url}/api/v2/block/{identifier}"
+            url = f"{self.block_book_base_url}/api/v2/block/{block_number}"
             params = {"page": page}
             response = await self._request("GET", url, params=params)
             data = response
@@ -216,20 +218,20 @@ class BTCAsyncClient:
     async def send_tx(self, hex_tx_data: str) -> str | None:
         url = f"{self.block_book_base_url}/api/v2/sendtx/{hex_tx_data}"
         resp = await self._request("GET", url)
-        return resp and resp["result"]
+        return resp and resp["result"]  # type: ignore
 
     async def get_latest_block(self) -> Block:
         number = await self.get_latest_block_number()
-        return await self.get_block_by_identifier(number)
+        return await self.get_block_by_block_number(number)
 
-    async def get_latest_block_number(self) -> int | None:
+    async def get_latest_block_number(self) -> BlockNumber | None:
         url = f"{self.base_url}"
         data = {"id": "test", "method": "getblockchaininfo", "params": []}
         headers = {
             "Content-Type": "application/json",
         }
         resp = await self._request("POST", url, headers=headers, json_data=data)
-        return resp and resp["result"]["blocks"]
+        return resp and resp["result"]["blocks"]  # type: ignore
 
 
 _btc = None

@@ -1,14 +1,22 @@
+from abc import ABC
 from enum import StrEnum
-from typing import Any
+from typing import Annotated, Any
 
-from eth_typing import URI, BlockNumber, ChainId, ChecksumAddress
-from pydantic import BaseModel, Field
+from eth_typing import BlockNumber as EvmBlockNumber
+from eth_typing import ChainId, ChecksumAddress
+from pydantic import BaseModel, Field, PlainSerializer
 
-type Value = int
+
+def convert_int_to_str(value: int) -> str:
+    return str(value)
+
+
+type Value = Annotated[int, PlainSerializer(convert_int_to_str, when_used="json")]
 type Timestamp = int | float
 type UserId = int
 type TxHash = str
-type Address = str
+type Address = str | ChecksumAddress
+type BlockNumber = EvmBlockNumber | int
 type URL = str
 
 
@@ -18,21 +26,31 @@ class EnvEnum(StrEnum):
     TEST = "test"
 
 
-class BasicChainConfig(BaseModel):
-    private_rpc: URI | str
-    chain_id: ChainId
-    symbol: str
-    finalize_block_count: int = Field(default=15)
+class ChainSymbol(StrEnum):
+    SEP = "SEP"
+    BST = "BST"
+    HOL = "HOL"
+    POL = "POL"
+    BSC = "BSC"
+    OPT = "OPT"
+    BTC = "BTC"
+
+
+class ChainConfig(BaseModel, ABC):
+    private_rpc: URL
+    chain_symbol: ChainSymbol
+    finalize_block_count: int | None = Field(default=15)
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
 
 
-class ChainConfig(BasicChainConfig):
+class EVMConfig(ChainConfig):
+    chain_id: ChainId
     poa: bool = Field(default=False)
     vault_address: ChecksumAddress
 
 
-class BTCConfig(BasicChainConfig):
+class BTCConfig(ChainConfig):
     private_indexer_rpc: URL
 
 
@@ -60,12 +78,12 @@ class Token(BaseModel):
 
 class Transfer(BaseModel):
     tx_hash: TxHash
-    chain_id: ChainId
     value: Value
-    token: ChecksumAddress | Address
-    to: ChecksumAddress | Address
-    block_timestamp: Timestamp
-    block_number: BlockNumber | int
+    chain_symbol: ChainSymbol
+    token: Address
+    to: Address
+    sa_timestamp: Timestamp | None = None
+    block_number: BlockNumber
 
     def __eq__(self, value: Any) -> bool:
         if isinstance(value, Transfer):
@@ -78,6 +96,34 @@ class Transfer(BaseModel):
         return NotImplemented
 
 
+class BTCTransfer(BaseModel):
+    tx_hash: TxHash
+    value: Value
+    chain_symbol: ChainSymbol
+    token: Address
+    to: Address
+    sa_timestamp: Timestamp | None = None
+    block_number: BlockNumber
+    index: int
+
+    def __eq__(self, value: Any) -> bool:
+        if isinstance(value, Transfer):
+            return self.tx_hash == value.tx_hash
+        return NotImplemented
+
+    def __gt__(self, value: Any) -> bool:
+        if isinstance(value, Transfer):
+            return self.tx_hash > value.tx_hash
+        return NotImplemented
+
+
+class SaDepositSchema(BaseModel):
+    txs_hash: list[TxHash]
+    timestamp: Timestamp
+    chain_symbol: ChainSymbol
+    finalized_block_number: BlockNumber
+
+
 class Deposit(Transfer):
     user_id: UserId
     decimals: int
@@ -86,15 +132,15 @@ class Deposit(Transfer):
 
 class UserAddress(BaseModel):
     user_id: UserId
-    address: ChecksumAddress | Address
+    address: Address
     is_active: bool = Field(default=True)
 
 
-class WithdrawRequest(BaseModel):
+class EVMWithdrawRequest(BaseModel):
     model_config = {"extra": "ignore"}
-    token_address: ChecksumAddress | Address
-    amount: int
-    recipient: ChecksumAddress | Address
+    token_address: ChecksumAddress
+    amount: Value
+    recipient: ChecksumAddress
     nonce: int
     chain_id: ChainId
     tx_hash: TxHash | None = None

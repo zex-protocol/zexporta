@@ -7,10 +7,10 @@ from zexporta.config import (
     CHAINS_CONFIG,
     USER_DEPOSIT_BYTECODE_HASH,
     USER_DEPOSIT_FACTORY_ADDRESS,
-    ChainId,
+    ChainSymbol,
 )
 
-from .custom_types import MonitoringToke
+from .custom_types import MonitoringToken
 
 LOGGER_PATH = "/var/log/monitoring_bot/"
 
@@ -19,25 +19,25 @@ TEST_USER_ID = int(os.environ["MONITORING_BOT_ZEX_USER_ID"])
 WITHDRAWER_PRIVATE_KEY = os.environ["MONITORING_BOT_WITHDRAWER_PRIVATE_KEY"]
 
 MONITORING_TOKENS = [
-    MonitoringToke(
-        symbol="USDT",
-        chain_id=ChainId(137),
+    MonitoringToken(
+        symbol="zUSDT",
+        chain_symbol=ChainSymbol.SEP,
         amount=10_000,
-        address=Web3.to_checksum_address("0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
+        address=Web3.to_checksum_address("0x325CCd77e71Ac296892ed5C63bA428700ec0f868"),
         decimal=6,
     ),
-    MonitoringToke(
-        symbol="USDT",
-        chain_id=ChainId(56),
+    MonitoringToken(
+        symbol="zUSDT",
+        chain_symbol=ChainSymbol.BST,
         amount=10_000,
-        address=Web3.to_checksum_address("0x55d398326f99059fF775485246999027B3197955"),
-        decimal=18,
+        address=Web3.to_checksum_address("0x325CCd77e71Ac296892ed5C63bA428700ec0f868"),
+        decimal=6,
     ),
-    MonitoringToke(
-        symbol="USDT",
-        chain_id=ChainId(10),
+    MonitoringToken(
+        symbol="zUSDT",
+        chain_symbol=ChainSymbol.HOL,
         amount=10_000,
-        address=Web3.to_checksum_address("0x94b008aA00579c1307B0EF2c499aD98a8ce58e58"),
+        address=Web3.to_checksum_address("0x325CCd77e71Ac296892ed5C63bA428700ec0f868"),
         decimal=6,
     ),
 ]

@@ -10,9 +10,10 @@ from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
 from web3 import AsyncWeb3, Web3
 
+from zexporta.clients.evm import get_evm_async_client, get_signed_data
 from zexporta.custom_types import (
-    ChainConfig,
-    WithdrawRequest,
+    EVMConfig,
+    EVMWithdrawRequest,
     WithdrawStatus,
 )
 from zexporta.db.withdraw import find_withdraws_by_status, upsert_withdraw
@@ -22,7 +23,6 @@ from zexporta.utils.dkg import parse_dkg_json
 from zexporta.utils.encoder import get_withdraw_hash
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
-from zexporta.utils.web3 import async_web3_factory, get_signed_data
 from zexporta.utils.zex_api import (
     ZexAPIError,
 )
@@ -57,7 +57,7 @@ dkg_key = dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
 
 
 async def check_validator_data(
-    zex_withdraw: WithdrawRequest,
+    zex_withdraw: EVMWithdrawRequest,
     validator_hash: str,
 ):
     withdraw_hash = get_withdraw_hash(zex_withdraw)
@@ -70,8 +70,8 @@ async def check_validator_data(
 async def process_withdraw_sa(
     w3: AsyncWeb3,
     account: LocalAccount,
-    chain: ChainConfig,
-    withdraw_request: WithdrawRequest,
+    chain: EVMConfig,
+    withdraw_request: EVMWithdrawRequest,
     dkg_party,
     logger: ChainLoggerAdapter,
 ):
@@ -83,7 +83,7 @@ async def process_withdraw_sa(
     data = {
         "method": "withdraw",
         "data": {
-            "chain_id": chain.chain_id,
+            "chain_symbol": chain.chain_symbol,
             "sa_withdraw_nonce": withdraw_request.nonce,
         },
     }
@@ -112,10 +112,10 @@ async def process_withdraw_sa(
 
 async def send_withdraw(
     w3: AsyncWeb3,
-    chain: ChainConfig,
+    chain: EVMConfig,
     account: LocalAccount,
     signature: str,
-    withdraw_request: WithdrawRequest,
+    withdraw_request: EVMWithdrawRequest,
     signature_nonce: ChecksumAddress,
     logger: logging.Logger | ChainLoggerAdapter = logger,
 ):
@@ -140,12 +140,12 @@ async def send_withdraw(
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
 
 
-async def withdraw(chain: ChainConfig):
-    _logger = ChainLoggerAdapter(logger, chain.chain_id.name)
+async def withdraw(chain: EVMConfig):
+    _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
 
     while True:
         try:
-            w3 = await async_web3_factory(chain)
+            w3 = get_evm_async_client(chain).client
             account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
 
             dkg_party = dkg_key["party"]
@@ -207,7 +207,11 @@ async def withdraw(chain: ChainConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [loop.create_task(withdraw(chain)) for chain in CHAINS_CONFIG.values()]
+    tasks = [
+        loop.create_task(withdraw(chain))
+        for chain in CHAINS_CONFIG.values()
+        if isinstance(chain, EVMConfig)
+    ]
     await asyncio.gather(*tasks)
 
 

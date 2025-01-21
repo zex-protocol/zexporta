@@ -6,13 +6,13 @@ from decimal import Decimal
 import httpx
 from web3 import Web3
 
-from zexporta.custom_types import ChainConfig, ChecksumAddress
-from zexporta.utils.logger import ChainLoggerAdapter
-from zexporta.utils.web3 import (
-    async_web3_factory,
+from zexporta.clients.evm import (
     get_ERC20_balance,
+    get_evm_async_client,
     get_signed_data,
 )
+from zexporta.custom_types import ChecksumAddress, EVMConfig
+from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.zex_api import get_user_withdraw_nonce, send_withdraw_request
 
 from .config import (
@@ -20,7 +20,7 @@ from .config import (
     TEST_USER_ID,
     WITHDRAWER_PRIVATE_KEY,
 )
-from .custom_types import MonitoringToke
+from .custom_types import MonitoringToken
 
 WITHDRAW_OPERATION = "w"
 
@@ -53,8 +53,8 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
 
 
 def create_tx(
-    chain: ChainConfig,
-    monitoring_token: MonitoringToke,
+    chain: EVMConfig,
+    monitoring_token: MonitoringToken,
     public_key: str,
     destination_address: ChecksumAddress,
     nonce: int,
@@ -62,7 +62,7 @@ def create_tx(
     # Prepare withdrawal data
     version = 1
 
-    token_chain = chain.symbol.encode()
+    token_chain = chain.chain_symbol.encode()
     token_name = monitoring_token.symbol.encode()
     destination = bytes.fromhex(destination_address[2:])
     t = int(time.time())
@@ -86,16 +86,16 @@ def create_tx(
 
 
 async def monitor_withdraw(
-    async_client: httpx.AsyncClient, chain: ChainConfig, logger: ChainLoggerAdapter
+    async_client: httpx.AsyncClient, chain: EVMConfig, logger: ChainLoggerAdapter
 ):
     monitoring_token = [
-        token for token in MONITORING_TOKENS if token.chain_id == chain.chain_id
+        token for token in MONITORING_TOKENS if token.chain_symbol == chain.chain_symbol
     ]
     if len(monitoring_token) == 0:
         raise WithdrawError("No token for monitoring found.")
 
     monitoring_token = monitoring_token[0]
-    w3 = await async_web3_factory(chain)
+    w3 = get_evm_async_client(chain).client
     withdrawer_account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
     destination_address = withdrawer_account.address
     public_key = withdrawer_account._key_obj.public_key.to_compressed_bytes().hex()
@@ -114,6 +114,7 @@ async def monitor_withdraw(
     signed_data = bytes.fromhex(
         get_signed_data(WITHDRAWER_PRIVATE_KEY, primitive=msg)[2:]
     )[1:]
+    logger.debug(tx + signed_data)
     send_data = (tx + signed_data).decode("latin-1")
     await send_withdraw_request(async_client, [send_data])
     await asyncio.sleep(120)
