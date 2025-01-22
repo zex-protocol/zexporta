@@ -4,13 +4,11 @@ from zexporta.clients import ChainAsyncClient, filter_blocks, get_async_client
 from zexporta.custom_types import (
     Address,
     BlockNumber,
-    BTCConfig,
-    BTCDeposit,
     ChainConfig,
     ChainSymbol,
     Deposit,
     DepositStatus,
-    EVMConfig,
+    Timestamp,
     Transfer,
     UserId,
 )
@@ -56,7 +54,11 @@ async def explorer(
             **kwargs,
         )
         accepted_deposits = await get_accepted_deposits(
-            client, chain, transfers, accepted_addresses, logger
+            client,
+            chain,
+            transfers,
+            accepted_addresses=accepted_addresses,
+            logger=logger,
         )
         result.extend(accepted_deposits)
     return result
@@ -78,17 +80,11 @@ async def get_accepted_deposits(
     transfers: list[Transfer],
     accepted_addresses: dict[Address, UserId],
     logger: ChainLoggerAdapter,
+    *,
+    sa_timestamp: Timestamp | None = None,
     deposit_status: DepositStatus = DepositStatus.PENDING,
 ) -> list[Deposit]:
     result = []
-    match chain:
-        case BTCConfig():
-            DepositDeserializer = BTCDeposit
-        case EVMConfig():
-            DepositDeserializer = Deposit
-        case _:
-            raise NotImplementedError
-
     for transfer in transfers:
         if (user_id := accepted_addresses.get(transfer.to)) is not None:
             decimals = await get_token_decimals(
@@ -96,11 +92,12 @@ async def get_accepted_deposits(
             )
             if await client.is_transaction_successful(transfer.tx_hash, logger):
                 result.append(
-                    DepositDeserializer(
+                    Deposit(
                         user_id=user_id,
                         decimals=decimals,
-                        **transfer.model_dump(mode="json"),
+                        transfer=chain.transfer_class.model_validate(transfer),
                         status=deposit_status,
+                        sa_timestamp=sa_timestamp,
                     )
                 )
 

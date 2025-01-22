@@ -41,7 +41,7 @@ async def observe_deposit(chain: ChainConfig):
                 f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}"
             )
             continue
-        await insert_new_address_to_db()
+        await insert_new_address_to_db(chain)
         accepted_addresses = await get_active_address(chain)
         try:
             accepted_deposits = await explorer(
@@ -62,7 +62,7 @@ async def observe_deposit(chain: ChainConfig):
             await asyncio.sleep(10)
             continue
         if len(accepted_deposits) > 0:
-            await insert_deposits_if_not_exists(accepted_deposits)
+            await insert_deposits_if_not_exists(chain, accepted_deposits)
         await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
         last_observed_block = to_block
 

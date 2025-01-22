@@ -12,8 +12,7 @@ from zexporta.custom_types import (
     BlockNumber,
     ChecksumAddress,
     EVMConfig,
-    Timestamp,
-    Transfer,
+    EVMTransfer,
     TxHash,
 )
 from zexporta.utils.abi import ERC20_ABI
@@ -58,16 +57,14 @@ class EVMAsyncClient(ChainAsyncClient):
         self._w3 = w3
         return self._w3
 
-    async def get_transfer_by_tx_hash(
-        self, tx_hash: TxHash, sa_timestamp: Timestamp
-    ) -> Transfer:
+    async def get_transfer_by_tx_hash(self, tx_hash: TxHash) -> EVMTransfer:
         try:
             tx = await self.client.eth.get_transaction(HexStr(tx_hash))
         except web3.exceptions.TransactionNotFound as e:
             raise EVMTransferNotFound(
                 f"Transfer with tx_hash: {tx_hash} not found"
             ) from e
-        return self._parse_transfer(tx, sa_timestamp)
+        return self._parse_transfer(tx)
 
     async def get_finalized_block_number(self) -> BlockNumber:
         if self.chain.finalize_block_count is None:
@@ -120,7 +117,7 @@ class EVMAsyncClient(ChainAsyncClient):
         block_number: BlockNumber,
         logger: ChainLoggerAdapter,
         **kwargs,
-    ) -> list[Transfer]:
+    ) -> list[EVMTransfer]:
         logger.debug(f"Observing block number {block_number} start")
         try:
             block = await self.client.eth.get_block(
@@ -144,19 +141,16 @@ class EVMAsyncClient(ChainAsyncClient):
         logger.debug(f"Observing block number {block_number} end")
         return result
 
-    def _parse_transfer(
-        self, tx: TxData, sa_timestamp: Timestamp | None = None
-    ) -> Transfer:
+    def _parse_transfer(self, tx: TxData) -> EVMTransfer:
         try:
             decoded_input = decode_transfer_tx(tx["input"].hex())  # type: ignore
-            return Transfer(
+            return EVMTransfer(
                 tx_hash=tx["hash"].hex(),  # type: ignore
                 block_number=tx["blockNumber"],  # type: ignore
                 chain_symbol=self.chain.chain_symbol,
                 to=decoded_input._to,
                 value=decoded_input._value,
                 token=tx["to"],  # type: ignore
-                sa_timestamp=sa_timestamp,
             )
         except (
             InvalidTxError,
@@ -179,7 +173,7 @@ def get_evm_async_client(chain: EVMConfig) -> EVMAsyncClient:
     return client
 
 
-def compute_create2_address(salt: int):
+def compute_create2_address(salt: int) -> ChecksumAddress:
     deployer_address = USER_DEPOSIT_FACTORY_ADDRESS
     bytecode_hash = HexStr(USER_DEPOSIT_BYTECODE_HASH)
 

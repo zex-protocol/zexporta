@@ -26,7 +26,7 @@ async def update_finalized_deposits(chain: ChainConfig):
         client = get_async_client(chain)
         finalized_block_number = await client.get_finalized_block_number()
         pending_blocks_number = await get_pending_deposits_block_number(
-            chain_symbol=chain.chain_symbol,
+            chain=chain,
             finalized_block_number=finalized_block_number,
         )
 
@@ -46,9 +46,9 @@ async def update_finalized_deposits(chain: ChainConfig):
                 client.get_block_tx_hash,
                 max_delay_per_block_batch=chain.delay,
             )
-            await to_finalized(chain.chain_symbol, finalized_block_number, results)
+            await to_finalized(chain, finalized_block_number, results)
             await to_reorg_block_number(
-                chain.chain_symbol, min(blocks_to_check), max(blocks_to_check)
+                chain, min(blocks_to_check), max(blocks_to_check)
             )
 
 

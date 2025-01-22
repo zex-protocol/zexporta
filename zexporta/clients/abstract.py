@@ -4,7 +4,6 @@ from zexporta.custom_types import (
     Address,
     BlockNumber,
     ChainConfig,
-    Timestamp,
     Transfer,
     TxHash,
 )
@@ -27,7 +26,7 @@ class ChainAsyncClient(ABC):
 
     @abstractmethod
     async def get_transfer_by_tx_hash(
-        self, tx_hash: TxHash, sa_timestamp: Timestamp
+        self, tx_hash: TxHash
     ) -> Transfer | list[Transfer]:
         """Retrieve transfer details by transaction hash"""
 

@@ -73,10 +73,10 @@ async def get_deposits(
             f"sa_finalized_block_number: {sa_finalized_block_number} \
             is not finalized in validator , finalized_block: {finalized_block_number}"
         )
-    await insert_new_address_to_db()
+    await insert_new_address_to_db(chain)
     accepted_addresses = await get_active_address(chain)
     transfers = await asyncio.gather(
-        *[client.get_transfer_by_tx_hash(tx_hash, sa_timestamp) for tx_hash in txs_hash]
+        *[client.get_transfer_by_tx_hash(tx_hash) for tx_hash in txs_hash]
     )
     flattened_transfers = []
     for item in transfers:
@@ -95,7 +95,8 @@ async def get_deposits(
             if transfer is not None and transfer.block_number <= finalized_block_number
         ],
         accepted_addresses,
-        deposit_status=DepositStatus.VERIFIED,
         logger=_logger,
+        deposit_status=DepositStatus.VERIFIED,
+        sa_timestamp=sa_timestamp,
     )
     return sorted(deposits)

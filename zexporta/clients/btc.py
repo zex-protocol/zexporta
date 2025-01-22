@@ -1,16 +1,19 @@
 from typing import Any
 
 import httpx
+from bitcoinutils.keys import PublicKey
 from pydantic import BaseModel
+from pyfrost.btc_utils import taproot_tweak_pubkey
+from pyfrost.crypto_utils import code_to_pub
 
 from zexporta.clients import ChainAsyncClient
+from zexporta.config import BTC_GROUP_KEY_PUB
 from zexporta.custom_types import (
     URL,
     Address,
     BlockNumber,
     BTCConfig,
     BTCTransfer,
-    Timestamp,
     TxHash,
     Value,
 )
@@ -235,14 +238,14 @@ class BTCAnkrAsyncClient:
         number = await self.get_latest_block_number()
         return await self.get_block_by_identifier(number)
 
-    async def get_latest_block_number(self) -> BlockNumber | None:
+    async def get_latest_block_number(self) -> BlockNumber:
         url = f"{self.base_url}"
         data = {"id": "test", "method": "getblockchaininfo", "params": []}
         headers = {
             "Content-Type": "application/json",
         }
         resp = await self._request("POST", url, headers=headers, json_data=data)
-        return resp and resp["result"]["blocks"]  # type: ignore
+        return resp["result"]["blocks"]  # type: ignore
 
 
 class BTCAsyncClient(ChainAsyncClient):
@@ -259,11 +262,9 @@ class BTCAsyncClient(ChainAsyncClient):
         )
         return self.btc
 
-    async def get_transfer_by_tx_hash(
-        self, tx_hash: TxHash, sa_timestamp: Timestamp
-    ) -> list[BTCTransfer]:
+    async def get_transfer_by_tx_hash(self, tx_hash: TxHash) -> list[BTCTransfer]:
         tx = await self.client.get_tx_by_hash(tx_hash)
-        return self._parse_transfer(tx, sa_timestamp)
+        return self._parse_transfer(tx)
 
     async def get_finalized_block_number(self) -> BlockNumber:
         finalize_block_count = self.chain.finalize_block_count or 0
@@ -307,9 +308,7 @@ class BTCAsyncClient(ChainAsyncClient):
         logger.debug(f"Observing block number {block_number} end")
         return result
 
-    def _parse_transfer(
-        self, tx: Transaction, sa_timestamp: Timestamp | None = None
-    ) -> list[BTCTransfer]:
+    def _parse_transfer(self, tx: Transaction) -> list[BTCTransfer]:
         transfers = []
         for output in tx.vout:
             if output.isAddress:
@@ -318,10 +317,9 @@ class BTCAsyncClient(ChainAsyncClient):
                         tx_hash=tx.txid,
                         block_number=tx.blockHeight,
                         chain_symbol=self.chain.chain_symbol,
-                        to=output.addresses[0],
+                        to=output.addresses[0],  # type: ignore
                         value=output.value,
-                        token="BTC",
-                        sa_timestamp=sa_timestamp,
+                        token="0x0000000000000000000000000000000000000000",
                         index=output.n,
                     )
                 )
@@ -337,3 +335,15 @@ def get_btc_async_client(chain: BTCConfig) -> BTCAsyncClient:
     client = BTCAsyncClient(chain)
     _async_clients[chain.chain_symbol.value] = client
     return client
+
+
+def compute_btc_address(salt: int) -> str:
+    _, public_key = taproot_tweak_pubkey(BTC_GROUP_KEY_PUB, str(salt).encode())
+    public_key = code_to_pub(int(public_key.hex(), 16))
+    x_hex = hex(public_key.x)[2:].zfill(64)
+    y_hex = hex(public_key.y)[2:].zfill(64)
+    prefix = "02" if int(y_hex, 16) % 2 == 0 else "03"
+    compressed_pubkey = prefix + x_hex
+    public_key = PublicKey(compressed_pubkey)
+    taproot_address = public_key.get_taproot_address()
+    return taproot_address.to_string()

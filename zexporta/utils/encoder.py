@@ -32,9 +32,9 @@ def encode_zex_deposit(
     for deposit in deposits:
         deposit_data += struct.pack(
             ">66s 42s 32s B I Q B",  # I for uint32, d for double, I for uint32, s for bytes
-            deposit.tx_hash.encode(),
-            deposit.token.encode(),  # must be token address
-            deposit.value.to_bytes(32, "big"),
+            deposit.transfer.tx_hash.encode(),
+            deposit.transfer.token.encode(),  # must be token address
+            deposit.transfer.value.to_bytes(32, "big"),
             deposit.decimals,
             deposit.sa_timestamp,
             deposit.user_id,
