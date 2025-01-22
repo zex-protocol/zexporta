@@ -3,7 +3,7 @@ import asyncio
 
 from .config import MONGO_URI
 
-from zexporta.custom_types import ChainSymbol
+from zexporta.custom_types import ChainSymbol, UserId
 
 client = AsyncMongoClient(MONGO_URI)
 db = client["test_token_transfer_database"]
@@ -17,7 +17,7 @@ _test_token_transfer_collection = db["test_token_transfer"]
 asyncio.run(__create_test_token_transfer())
 
 
-async def upsert_last_transferred_id(chain_symbol: ChainSymbol, user_id: int):
+async def upsert_last_transferred_id(chain_symbol: ChainSymbol, user_id: UserId):
     query = {"chain_symbol": chain_symbol.value}
     update = {
         "$set": {
@@ -31,7 +31,7 @@ async def upsert_last_transferred_id(chain_symbol: ChainSymbol, user_id: int):
     return result
 
 
-async def get_last_transferred_id(chain_symbol: ChainSymbol) -> int | None:
+async def get_last_transferred_id(chain_symbol: ChainSymbol) -> UserId | None:
     query = {"chain_symbol": chain_symbol.value}
     result = await _test_token_transfer_collection.find_one(query)
     if result:

@@ -11,10 +11,11 @@ from zexporta.config import (
     USER_DEPOSIT_FACTORY_ADDRESS,
     USER_DEPOSIT_BYTECODE_HASH,
 )
-from zexporta.custom_types import ChecksumAddress, EVMConfig
+from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
 from zexporta.transfer_test_token_bot.config import (
     HOLDER_PRIVATE_KEY,
-    TEST_TOKENS, LOGGER_PATH,
+    TEST_TOKENS,
+    LOGGER_PATH,
 )
 from zexporta.transfer_test_token_bot.custom_types import TestToken
 from zexporta.transfer_test_token_bot.database import (
@@ -32,7 +33,7 @@ logging.config.dictConfig(
 logger = logging.getLogger(__name__)
 
 
-async def _get_last_user_id() -> int | None:
+async def _get_last_user_id() -> UserId | None:
     async with get_async_client() as client:
         try:
             last_zex_user_id = await get_last_zex_user_id(client)
