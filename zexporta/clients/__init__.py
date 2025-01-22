@@ -12,7 +12,7 @@ from zexporta.custom_types import (
 )
 
 from .abstract import ChainAsyncClient
-from .btc import get_btc_async_client
+from .btc import BTCAsyncClient, get_btc_async_client
 from .evm import EVMAsyncClient, get_evm_async_client
 
 __all__ = ["get_async_client", "filter_blocks"]
@@ -22,6 +22,8 @@ def get_async_client(chain: ChainConfig) -> ChainAsyncClient:
     match chain:
         case EVMConfig():
             return get_evm_async_client(chain)
+        case BTCConfig():
+            return get_btc_async_client(chain)
         case _:
             raise NotImplementedError()
 

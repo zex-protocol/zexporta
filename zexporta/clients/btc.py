@@ -3,7 +3,18 @@ from typing import Any
 import httpx
 from pydantic import BaseModel
 
-from zexporta.custom_types import URL, BlockNumber, BTCConfig, TxHash, Value
+from zexporta.clients import ChainAsyncClient
+from zexporta.custom_types import (
+    URL,
+    Address,
+    BlockNumber,
+    BTCConfig,
+    Timestamp,
+    Transfer,
+    TxHash,
+    Value,
+)
+from zexporta.utils.logger import ChainLoggerAdapter
 
 
 # Model for Address Details
@@ -110,7 +121,7 @@ class BTCResponseError(BTCClientError):
     """Exception raised for invalid or unexpected responses."""
 
 
-class BTCAsyncClient:
+class BTCAnkrAsyncClient:
     def __init__(self, base_url: URL, indexer_url: URL):
         self.base_url = base_url
         self.block_book_base_url = indexer_url
@@ -196,11 +207,11 @@ class BTCAsyncClient:
         data = await self._request("GET", url, params=params)
         return [UTXO.model_validate(i) for i in data]
 
-    async def get_block_by_block_number(self, block_number: BlockNumber) -> Block:
+    async def get_block_by_identifier(self, identifier: str | int) -> Block:
         page = 1
         all_txs = []  # List to store all transactions across pages
         while True:
-            url = f"{self.block_book_base_url}/api/v2/block/{block_number}"
+            url = f"{self.block_book_base_url}/api/v2/block/{identifier}"
             params = {"page": page}
             response = await self._request("GET", url, params=params)
             data = response
@@ -222,7 +233,7 @@ class BTCAsyncClient:
 
     async def get_latest_block(self) -> Block:
         number = await self.get_latest_block_number()
-        return await self.get_block_by_block_number(number)
+        return await self.get_block_by_identifier(number)
 
     async def get_latest_block_number(self) -> BlockNumber | None:
         url = f"{self.base_url}"
@@ -234,13 +245,95 @@ class BTCAsyncClient:
         return resp and resp["result"]["blocks"]  # type: ignore
 
 
-_btc = None
+class BTCAsyncClient(ChainAsyncClient):
+    def __init__(self, chain: BTCConfig):
+        self.chain = chain
+        self.btc = None
+
+    @property
+    def client(self) -> BTCAnkrAsyncClient:
+        if self.btc is not None:
+            return self.btc
+        self.btc = BTCAnkrAsyncClient(
+            base_url=self.chain.private_rpc, indexer_url=self.chain.private_indexer_rpc
+        )
+        return self.btc
+
+    async def get_transfer_by_tx_hash(
+        self, tx_hash: TxHash, sa_timestamp: Timestamp
+    ) -> list[Transfer]:
+        tx = await self.client.get_tx_by_hash(tx_hash)
+        return self._parse_transfer(tx, sa_timestamp)
+
+    async def get_finalized_block_number(self) -> BlockNumber:
+        finalize_block_count = self.chain.finalize_block_count or 0
+        finalized_block_number = (
+            await self.get_latest_block_number()
+        ) - finalize_block_count
+        return finalized_block_number
+
+    async def get_token_decimals(self, token_address: Address) -> int:
+        return 8
+
+    async def is_transaction_successful(
+        self, tx_hash: TxHash, logger: ChainLoggerAdapter
+    ) -> bool:
+        try:
+            if await self.client.get_tx_by_hash(tx_hash):
+                return True
+        except Exception as e:
+            logger.error(f"TransactionNotSuccessful: {e}")
+        return False
+
+    async def get_block_tx_hash(
+        self, block_number: BlockNumber, **kwargs
+    ) -> list[TxHash]:
+        block = await self.client.get_block_by_identifier(block_number)
+        return [tx.txid for tx in block.txs]  # type: ignore
+
+    async def get_latest_block_number(self) -> BlockNumber:
+        return await self.client.get_latest_block_number()
+
+    async def extract_transfer_from_block(
+        self,
+        block_number: BlockNumber,
+        logger: ChainLoggerAdapter,
+        **kwargs,
+    ) -> list[Transfer]:
+        logger.debug(f"Observing block number {block_number} start")
+        block = await self.client.get_block_by_identifier(block_number)
+        result = []
+        for tx in block.txs:  # type: ignore
+            transfer = self._parse_transfer(tx)
+            if transfer:
+                result.extend(transfer)
+        logger.debug(f"Observing block number {block_number} end")
+        return result
+
+    def _parse_transfer(
+        self, tx: Transaction, sa_timestamp: Timestamp | None = None
+    ) -> list[Transfer]:
+        transfers = []
+        for output in tx.vout:
+            if output.isAddress:
+                return Transfer(
+                    tx_hash=tx.txid,
+                    block_number=tx.blockHeight,
+                    chain_symbol=self.chain.chain_symbol,
+                    to=output.addresses[0],
+                    value=output.value,
+                    token="BTC",
+                    sa_timestamp=sa_timestamp,
+                )
+        return transfers
+
+
+_async_clients: dict[str, BTCAsyncClient] = {}
 
 
 def get_btc_async_client(chain: BTCConfig) -> BTCAsyncClient:
-    global _btc
-    if _btc is None:
-        _btc = BTCAsyncClient(
-            base_url=chain.private_rpc, indexer_url=chain.private_indexer_rpc
-        )
-    return _btc
+    if client := _async_clients.get(chain.chain_symbol.value):
+        return client
+    client = BTCAsyncClient(chain)
+    _async_clients[chain.chain_symbol.value] = client
+    return client
