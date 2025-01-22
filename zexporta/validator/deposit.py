@@ -78,6 +78,14 @@ async def get_deposits(
     transfers = await asyncio.gather(
         *[client.get_transfer_by_tx_hash(tx_hash, sa_timestamp) for tx_hash in txs_hash]
     )
+    flattened_transfers = []
+    for item in transfers:
+        if isinstance(item, list):
+            flattened_transfers.extend(item)  # Add items of the list to the flat list
+        else:
+            flattened_transfers.append(item)
+    transfers = flattened_transfers
+
     deposits = await get_accepted_deposits(
         client,
         chain,

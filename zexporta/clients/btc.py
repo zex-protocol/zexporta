@@ -9,8 +9,8 @@ from zexporta.custom_types import (
     Address,
     BlockNumber,
     BTCConfig,
+    BTCTransfer,
     Timestamp,
-    Transfer,
     TxHash,
     Value,
 )
@@ -261,7 +261,7 @@ class BTCAsyncClient(ChainAsyncClient):
 
     async def get_transfer_by_tx_hash(
         self, tx_hash: TxHash, sa_timestamp: Timestamp
-    ) -> list[Transfer]:
+    ) -> list[BTCTransfer]:
         tx = await self.client.get_tx_by_hash(tx_hash)
         return self._parse_transfer(tx, sa_timestamp)
 
@@ -278,11 +278,8 @@ class BTCAsyncClient(ChainAsyncClient):
     async def is_transaction_successful(
         self, tx_hash: TxHash, logger: ChainLoggerAdapter
     ) -> bool:
-        try:
-            if await self.client.get_tx_by_hash(tx_hash):
-                return True
-        except Exception as e:
-            logger.error(f"TransactionNotSuccessful: {e}")
+        if await self.client.get_tx_by_hash(tx_hash):
+            return True
         return False
 
     async def get_block_tx_hash(
@@ -299,7 +296,7 @@ class BTCAsyncClient(ChainAsyncClient):
         block_number: BlockNumber,
         logger: ChainLoggerAdapter,
         **kwargs,
-    ) -> list[Transfer]:
+    ) -> list[BTCTransfer]:
         logger.debug(f"Observing block number {block_number} start")
         block = await self.client.get_block_by_identifier(block_number)
         result = []
@@ -312,18 +309,21 @@ class BTCAsyncClient(ChainAsyncClient):
 
     def _parse_transfer(
         self, tx: Transaction, sa_timestamp: Timestamp | None = None
-    ) -> list[Transfer]:
+    ) -> list[BTCTransfer]:
         transfers = []
         for output in tx.vout:
             if output.isAddress:
-                return Transfer(
-                    tx_hash=tx.txid,
-                    block_number=tx.blockHeight,
-                    chain_symbol=self.chain.chain_symbol,
-                    to=output.addresses[0],
-                    value=output.value,
-                    token="BTC",
-                    sa_timestamp=sa_timestamp,
+                transfers.append(
+                    BTCTransfer(
+                        tx_hash=tx.txid,
+                        block_number=tx.blockHeight,
+                        chain_symbol=self.chain.chain_symbol,
+                        to=output.addresses[0],
+                        value=output.value,
+                        token="BTC",
+                        sa_timestamp=sa_timestamp,
+                        index=output.n,
+                    )
                 )
         return transfers
 

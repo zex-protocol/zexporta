@@ -28,7 +28,7 @@ class ChainAsyncClient(ABC):
     @abstractmethod
     async def get_transfer_by_tx_hash(
         self, tx_hash: TxHash, sa_timestamp: Timestamp
-    ) -> Transfer:
+    ) -> Transfer | list[Transfer]:
         """Retrieve transfer details by transaction hash"""
 
     @abstractmethod
