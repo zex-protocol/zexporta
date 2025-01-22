@@ -130,6 +130,12 @@ class Deposit(Transfer):
     status: DepositStatus
 
 
+class BTCDeposit(BTCTransfer):
+    user_id: UserId
+    decimals: int
+    status: DepositStatus
+
+
 class UserAddress(BaseModel):
     user_id: UserId
     address: Address

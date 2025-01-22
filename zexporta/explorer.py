@@ -4,10 +4,13 @@ from zexporta.clients import ChainAsyncClient, filter_blocks, get_async_client
 from zexporta.custom_types import (
     Address,
     BlockNumber,
+    BTCConfig,
+    BTCDeposit,
     ChainConfig,
     ChainSymbol,
     Deposit,
     DepositStatus,
+    EVMConfig,
     Transfer,
     UserId,
 )
@@ -78,6 +81,14 @@ async def get_accepted_deposits(
     deposit_status: DepositStatus = DepositStatus.PENDING,
 ) -> list[Deposit]:
     result = []
+    match chain:
+        case BTCConfig():
+            DepositDeserializer = BTCDeposit
+        case EVMConfig():
+            DepositDeserializer = Deposit
+        case _:
+            raise NotImplementedError
+
     for transfer in transfers:
         if (user_id := accepted_addresses.get(transfer.to)) is not None:
             decimals = await get_token_decimals(
@@ -85,7 +96,7 @@ async def get_accepted_deposits(
             )
             if await client.is_transaction_successful(transfer.tx_hash, logger):
                 result.append(
-                    Deposit(
+                    DepositDeserializer(
                         user_id=user_id,
                         decimals=decimals,
                         **transfer.model_dump(mode="json"),
