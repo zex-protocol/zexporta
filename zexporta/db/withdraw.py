@@ -4,7 +4,6 @@ from typing import Iterable
 from pymongo import ASCENDING
 
 from zexporta.custom_types import (
-    BlockNumber,
     ChainId,
     EVMWithdrawRequest,
     WithdrawStatus,
@@ -54,7 +53,7 @@ async def upsert_withdraws(withdraws: list[EVMWithdrawRequest]):
 async def find_withdraws_by_status(
     status: WithdrawStatus,
     chain_id: ChainId,
-    nonce: BlockNumber | int = 0,
+    nonce: int = 0,
 ) -> list[EVMWithdrawRequest]:
     res = []
     query = {

@@ -14,7 +14,7 @@ asyncio.run(__create_chain_index())
 
 
 async def upsert_chain_last_observed_block(
-    chain_symbol: ChainSymbol, block_number: BlockNumber | int
+    chain_symbol: ChainSymbol, block_number: BlockNumber
 ):
     query = {"chain_symbol": chain_symbol.value}
     update = {

@@ -10,6 +10,7 @@ from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
 from web3 import AsyncWeb3, Web3
 
+from zexporta.clients.evm import get_evm_async_client, get_signed_data
 from zexporta.custom_types import (
     EVMConfig,
     EVMWithdrawRequest,
@@ -22,7 +23,6 @@ from zexporta.utils.dkg import parse_dkg_json
 from zexporta.utils.encoder import get_withdraw_hash
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
-from zexporta.utils.web3 import async_web3_factory, get_signed_data
 from zexporta.utils.zex_api import (
     ZexAPIError,
 )
@@ -145,7 +145,7 @@ async def withdraw(chain: EVMConfig):
 
     while True:
         try:
-            w3 = await async_web3_factory(chain)
+            w3 = get_evm_async_client(chain).client
             account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
 
             dkg_party = dkg_key["party"]
@@ -207,7 +207,11 @@ async def withdraw(chain: EVMConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [loop.create_task(withdraw(chain)) for chain in CHAINS_CONFIG.values()]
+    tasks = [
+        loop.create_task(withdraw(chain))
+        for chain in CHAINS_CONFIG.values()
+        if isinstance(chain, EVMConfig)
+    ]
     await asyncio.gather(*tasks)
 
 

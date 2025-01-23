@@ -9,11 +9,12 @@ import httpx
 import sentry_sdk
 from pyfrost.network.sa import SA
 
+from zexporta.clients.evm import get_signed_data
 from zexporta.custom_types import (
     BlockNumber,
+    ChainConfig,
     Deposit,
     DepositStatus,
-    EVMConfig,
     SaDepositSchema,
     TxHash,
 )
@@ -26,7 +27,6 @@ from zexporta.utils.dkg import parse_dkg_json
 from zexporta.utils.encoder import DEPOSIT_OPERATION, encode_zex_deposit
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
-from zexporta.utils.web3 import get_signed_data
 from zexporta.utils.zex_api import (
     ZexAPIError,
     send_deposits,
@@ -59,7 +59,7 @@ class DepositDifferentHashError(Exception):
 
 async def process_deposit(
     client: httpx.AsyncClient,
-    chain: EVMConfig,
+    chain: ChainConfig,
     txs_hash: list[TxHash],
     dkg_party: list[str],
     finalized_block_number: BlockNumber,
@@ -89,7 +89,7 @@ async def process_deposit(
         encoded_data = encode_zex_deposit(
             version=ZEX_ENCODE_VERSION,
             operation_type=DEPOSIT_OPERATION,
-            chain=chain,
+            chain_symbol=chain.chain_symbol,
             deposits=deposits,
         )
         hash_ = sha256(encoded_data).hexdigest()
@@ -103,9 +103,9 @@ async def process_deposit(
             result["signature"],
             logger=logger,
         )
-        await upsert_deposits(deposits)
+        await upsert_deposits(chain=chain, deposits=deposits)
         await to_reorg_with_tx_hash(
-            chain_symbol=chain.chain_symbol,
+            chain=chain,
             txs_hash=txs_hash,
             status=DepositStatus.FINALIZED,
         )
@@ -128,22 +128,22 @@ async def send_result_to_zex(
     return result
 
 
-async def deposit(chain: EVMConfig):
+async def deposit(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
         try:
             client = httpx.AsyncClient()
             dkg_party = dkg_key["party"]
             deposits = await find_deposit_by_status(
-                chain_symbol=chain.chain_symbol,
+                chain=chain,
                 status=DepositStatus.FINALIZED,
                 limit=SA_TRANSACTIONS_BATCH_SIZE,
             )
-            txs_hash = [deposit.tx_hash for deposit in (deposits)]
+            txs_hash = [deposit.transfer.tx_hash for deposit in (deposits)]
             if len(txs_hash) <= 0:
                 _logger.info("No finalized deposit found.")
                 continue
-            finalized_block_number = deposits[-1].block_number
+            finalized_block_number = deposits[-1].transfer.block_number
             try:
                 await process_deposit(
                     client,

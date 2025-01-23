@@ -78,7 +78,11 @@ async def monitor(chain: EVMConfig):
 def schedule_task(loop: asyncio.AbstractEventLoop):
     async def main():
         start_time = time.monotonic()
-        _ = [await loop.create_task(monitor(chain)) for chain in CHAINS_CONFIG.values()]
+        _ = [
+            await loop.create_task(monitor(chain))
+            for chain in CHAINS_CONFIG.values()
+            if isinstance(chain, EVMConfig)
+        ]
         # await asyncio.gather(*tasks)
         elapsed = time.monotonic() - start_time
         delay = max(DELAY - elapsed, 0)

@@ -1,8 +1,16 @@
 import os
 
+from bitcoinutils.setup import setup
 from web3 import Web3
 
-from .custom_types import ChainId, ChainSymbol, EnvEnum, EVMConfig
+from .custom_types import (
+    BTCConfig,
+    ChainConfig,
+    ChainId,
+    ChainSymbol,
+    EnvEnum,
+    EVMConfig,
+)
 
 ENVIRONMENT = EnvEnum(os.environ["ENV"])
 
@@ -46,14 +54,24 @@ if ENVIRONMENT == EnvEnum.PROD:
             ),
             chain_id=ChainId(56),
         ),
+        ChainSymbol.BTC.value: BTCConfig(
+            private_rpc=os.environ["BTC_RPC"],
+            private_indexer_rpc=os.environ["BTC_INDEXER"],
+            chain_symbol=ChainSymbol.BTC,
+            finalize_block_count=6,
+            delay=10,
+            batch_block_size=0,
+        ),
     }
+    setup("mainnet")
+
 else:
     ZEX_BASE_URL = "https://api-dev.zex.finance/v1"
-    CHAINS_CONFIG = {
+    CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.HOL.value: EVMConfig(
             private_rpc=os.environ["HOL_RPC"],
             chain_symbol=ChainSymbol.HOL,
-            finalize_block_count=20,
+            finalize_block_count=1,
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
@@ -64,7 +82,7 @@ else:
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
             chain_symbol=ChainSymbol.SEP,
-            finalize_block_count=10,
+            finalize_block_count=1,
             poa=True,
             delay=1,
             batch_block_size=20,
@@ -76,7 +94,7 @@ else:
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
             chain_symbol=ChainSymbol.BST,
-            finalize_block_count=10,
+            finalize_block_count=1,
             poa=True,
             delay=1,
             batch_block_size=30,
@@ -85,9 +103,21 @@ else:
             ),
             chain_id=ChainId(97),
         ),
+        ChainSymbol.BTC.value: BTCConfig(
+            private_rpc=os.environ["BTC_RPC"],
+            private_indexer_rpc=os.environ["BTC_INDEXER"],
+            chain_symbol=ChainSymbol.BTC,
+            finalize_block_count=6,
+            delay=10,
+            batch_block_size=0,
+        ),
     }
+    setup("testnet")
+
 
 ZEX_ENCODE_VERSION = 1
+
+BTC_GROUP_KEY_PUB = os.getenv("BTC_GROUP_KEY_PUB")
 
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]

@@ -74,7 +74,7 @@ def decode_transfer_tx(tx_input: str) -> TransferTX:
 
                 decoded_input_data[param_name] = param_value
         except ValueError as e:
-            raise InvalidTxError(e)
+            raise InvalidTxError(e) from e
         decoded_tx_input = TransferTX(**decoded_input_data)
         return decoded_tx_input
     else:
