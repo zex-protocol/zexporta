@@ -132,7 +132,7 @@ async def send_withdraw(
         signature,
         signature_nonce,
         signed_data,
-    ).build_transaction({"from": account.address, "nonce": nonce})
+    ).build_transaction({"from": account.address, "nonce": nonce, "gas": 120_000})
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
     withdraw_request.tx_hash = tx_hash.hex()

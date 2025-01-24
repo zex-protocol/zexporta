@@ -48,7 +48,7 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
     msg += f"nonce: {nonce}\n"
     msg += f"public: {public.hex()}\n"
     msg = "\x19Ethereum Signed Message:\n" + str(len(msg)) + msg
-    logger.debug("withdraw message: %s", msg)
+    logger.debug("withdraw message:\n %s", msg)
     return msg.encode()
 
 
