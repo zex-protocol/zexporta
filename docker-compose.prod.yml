@@ -48,6 +48,21 @@ services:
     env_file:
       - .env.prod
 
+  monitoring-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zexporta
+    container_name: monitoring-bot
+    entrypoint: poetry run python -m zexporta.monitoring_bot.main
+    networks:
+      zexporta_custom_network:
+        ipv4_address: 172.20.0.13
+    volumes:
+      - /var/log/zexporta/monitoring_bot/:/var/log/monitoring_bot/
+    env_file:
+      - .env.prod
+
   deposit-observer:
     build:
       context: .
@@ -158,7 +173,7 @@ services:
     environment:
       - NODE_ID=0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
     ports:
-      - "6002:6002"
+      - "6000:6002"
     restart: on-failure:5
     networks:
       zexporta_custom_network:

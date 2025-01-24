@@ -47,3 +47,4 @@ DELAY = 60 * 60
 TELEGRAM_BASE_URL = "https://api.telegram.org"
 TELEGRAM_BOT_INFO = os.environ["TELEGRAM_BOT_INFO"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+TELEGRAM_THREAD_ID = os.environ["TELEGRAM_THREAD_ID"]

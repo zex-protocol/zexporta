@@ -15,6 +15,7 @@ from .config import (
     TELEGRAM_BASE_URL,
     TELEGRAM_BOT_INFO,
     TELEGRAM_CHAT_ID,
+    TELEGRAM_THREAD_ID,
 )
 from .deposit import monitor_deposit
 from .withdraw import monitor_withdraw
@@ -29,7 +30,11 @@ logger = logging.getLogger(__name__)
 async def send_msg_to_telegram(async_client: httpx.AsyncClient, msg: str):
     await async_client.get(
         url=f"{TELEGRAM_BASE_URL}/{TELEGRAM_BOT_INFO}/sendMessage",
-        params={"text": msg, "chat_id": TELEGRAM_CHAT_ID},
+        params={
+            "text": msg,
+            "chat_id": TELEGRAM_CHAT_ID,
+            "message_thread_id": TELEGRAM_THREAD_ID,
+        },
     )
 
 
@@ -42,7 +47,7 @@ async def monitor(chain: EVMConfig):
                 client, f"🟩 Start deposit on chain {chain.chain_symbol} ..."
             )
             _logger.info("Start monitoring deposit.")
-            _ = await monitor_deposit(client, chain, _logger)
+            await monitor_deposit(client, chain, _logger)
             _logger.info("Deposit was successful.")
             await send_msg_to_telegram(
                 client, f"🟩 Deposit was successful on chain {chain.chain_symbol}."
