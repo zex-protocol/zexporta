@@ -19,6 +19,7 @@ if ENVIRONMENT == EnvEnum.PROD:
     CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.HOL.value: EVMConfig(
             private_rpc=os.environ["HOL_RPC"],
+            native_decimal=18,
             chain_symbol=ChainSymbol.HOL,
             finalize_block_count=1,
             delay=1,
@@ -30,6 +31,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         ),
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
+            native_decimal=18,
             chain_symbol=ChainSymbol.SEP,
             finalize_block_count=1,
             delay=1,
@@ -41,6 +43,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         ),
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
+            native_decimal=18,
             chain_symbol=ChainSymbol.BST,
             finalize_block_count=1,
             poa=True,
@@ -58,6 +61,7 @@ else:
     CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.HOL.value: EVMConfig(
             private_rpc=os.environ["HOL_RPC"],
+            native_decimal=18,
             chain_symbol=ChainSymbol.HOL,
             finalize_block_count=1,
             delay=1,
@@ -69,6 +73,7 @@ else:
         ),
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
+            native_decimal=18,
             chain_symbol=ChainSymbol.SEP,
             finalize_block_count=1,
             delay=1,
@@ -80,6 +85,7 @@ else:
         ),
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
+            native_decimal=18,
             chain_symbol=ChainSymbol.BST,
             finalize_block_count=1,
             poa=True,
@@ -92,6 +98,9 @@ else:
         ),
     }
 
+EVM_NATIVE_TOKEN_ADDRESS = Web3.to_checksum_address(
+    "0x0000000000000000000000000000000000000000"
+)
 
 ZEX_ENCODE_VERSION = 1
 

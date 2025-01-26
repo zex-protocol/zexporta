@@ -7,7 +7,11 @@ from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 from web3.middleware.geth_poa import async_geth_poa_middleware
 from web3.types import TxData
 
-from zexporta.config import USER_DEPOSIT_BYTECODE_HASH, USER_DEPOSIT_FACTORY_ADDRESS
+from zexporta.config import (
+    EVM_NATIVE_TOKEN_ADDRESS,
+    USER_DEPOSIT_BYTECODE_HASH,
+    USER_DEPOSIT_FACTORY_ADDRESS,
+)
 from zexporta.custom_types import (
     BlockNumber,
     ChecksumAddress,
@@ -77,6 +81,8 @@ class EVMAsyncClient(ChainAsyncClient):
         return finalized_block_number
 
     async def get_token_decimals(self, token_address: ChecksumAddress) -> int:
+        if token_address == EVM_NATIVE_TOKEN_ADDRESS:
+            return self.chain.native_decimal
         min_abi = [
             {
                 "constant": True,
@@ -143,7 +149,17 @@ class EVMAsyncClient(ChainAsyncClient):
 
     def _parse_transfer(self, tx: TxData) -> EVMTransfer:
         try:
-            decoded_input = decode_transfer_tx(tx["input"].hex())  # type: ignore
+            tx_input = tx["input"].hex()  # type: ignore
+            if tx_input == "0x":
+                return EVMTransfer(
+                    tx_hash=tx["hash"].hex(),  # type: ignore
+                    block_number=tx["blockNumber"],  # type: ignore
+                    chain_symbol=self.chain.chain_symbol,
+                    to=tx["to"],  # type: ignore
+                    value=tx["value"],  # type: ignore
+                    token=EVM_NATIVE_TOKEN_ADDRESS,  # type: ignore
+                )
+            decoded_input = decode_transfer_tx(tx_input)  # type: ignore
             return EVMTransfer(
                 tx_hash=tx["hash"].hex(),  # type: ignore
                 block_number=tx["blockNumber"],  # type: ignore
