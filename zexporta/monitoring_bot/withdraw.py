@@ -47,8 +47,7 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
     msg += f"t: {t}\n"
     msg += f"nonce: {nonce}\n"
     msg += f"public: {public.hex()}\n"
-    msg = "\x19Ethereum Signed Message:\n" + str(len(msg)) + msg
-    logger.debug("withdraw message:\n %s", msg)
+    logger.debug("withdraw message: %s", msg)
     return msg.encode()
 
 
@@ -113,7 +112,7 @@ async def monitor_withdraw(
     msg = withdraw_msg(tx, logger)
     signed_data = bytes.fromhex(
         get_signed_data(WITHDRAWER_PRIVATE_KEY, primitive=msg)[2:]
-    )[1:]
+    )[:-1]
     logger.debug(tx + signed_data)
     send_data = (tx + signed_data).decode("latin-1")
     await send_withdraw_request(async_client, [send_data])
