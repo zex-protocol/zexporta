@@ -20,6 +20,7 @@ from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 
 from .config import (
     CHAINS_CONFIG,
+    EVM_NATIVE_TOKEN_ADDRESS,
     LOGGER_PATH,
     SENTRY_DNS,
     USER_DEPOSIT_FACTORY_ADDRESS,
@@ -61,7 +62,7 @@ async def deploy_contract(
         raise ValueError("Deployed event not found in transaction logs")
 
 
-async def transfer_ERC20(
+async def transfer_token(
     w3: AsyncWeb3,
     account: LocalAccount,
     deposit: Deposit,
@@ -69,13 +70,22 @@ async def transfer_ERC20(
 ) -> Deposit:
     user_deposit = w3.eth.contract(address=deposit.transfer.to, abi=USER_DEPOSIT_ABI)  # type: ignore
     nonce = await w3.eth.get_transaction_count(account.address)
-    tx = await user_deposit.functions.transferERC20(
-        deposit.transfer.token, deposit.transfer.value
-    ).build_transaction({"from": account.address, "nonce": nonce})
+    logger.info(f"to: {deposit.transfer.token}")
+    if deposit.transfer.token == EVM_NATIVE_TOKEN_ADDRESS:
+        logger.info("Creating transferNativeToken tx.")
+        tx = await user_deposit.functions.transferNativeToken(
+            deposit.transfer.value
+        ).build_transaction({"from": account.address, "nonce": nonce})
+    else:
+        logger.info("Creating transferERC20 token tx.")
+        tx = await user_deposit.functions.transferERC20(
+            deposit.transfer.token, deposit.transfer.value
+        ).build_transaction({"from": account.address, "nonce": nonce})
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    logger.info(f"Transaction Hash: {tx_hash.hex()}")
     await w3.eth.wait_for_transaction_receipt(tx_hash)
-    logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
+    logger.info("Method called successfully.")
     deposit.status = DepositStatus.SUCCESSFUL
     return deposit
 
@@ -107,7 +117,7 @@ async def withdraw(chain: EVMConfig):
                         logger=_logger,
                     )
                 try:
-                    deposit = await transfer_ERC20(w3, account, deposit, logger=_logger)
+                    deposit = await transfer_token(w3, account, deposit, logger=_logger)
                 except web3.exceptions.ContractCustomError as e:
                     _logger.error(
                         f"Error while trying to transfer ERC20 to contract {deposit.transfer.to} , error: {e}"
