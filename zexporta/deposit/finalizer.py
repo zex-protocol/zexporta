@@ -46,6 +46,7 @@ async def update_finalized_deposits(chain: ChainConfig):
                 client.get_block_tx_hash,
                 max_delay_per_block_batch=chain.delay,
             )
+            # todo ;; add utxo finalizing for btc chain
             await to_finalized(chain, finalized_block_number, results)
             await to_reorg_block_number(
                 chain, min(blocks_to_check), max(blocks_to_check)

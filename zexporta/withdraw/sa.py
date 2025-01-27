@@ -8,10 +8,14 @@ import web3.exceptions
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
-from web3 import AsyncWeb3, Web3
+from web3 import Web3
 
-from zexporta.clients.evm import get_evm_async_client, get_signed_data
+from zexporta.clients import BTCAsyncClient, ChainAsyncClient, get_async_client
+from zexporta.clients.evm import EVMAsyncClient, get_signed_data
 from zexporta.custom_types import (
+    BTCConfig,
+    BTCWithdrawRequest,
+    ChainConfig,
     EVMConfig,
     EVMWithdrawRequest,
     WithdrawStatus,
@@ -36,7 +40,6 @@ from .config import (
     SA_SHIELD_PRIVATE_KEY,
     SA_TIMEOUT,
     SENTRY_DNS,
-    WITHDRAWER_PRIVATE_KEY,
 )
 
 
@@ -68,7 +71,33 @@ async def check_validator_data(
 
 
 async def process_withdraw_sa(
-    w3: AsyncWeb3,
+    account: LocalAccount,
+    chain: EVMConfig,
+    withdraw_request: EVMWithdrawRequest,
+    dkg_party,
+    logger: ChainLoggerAdapter,
+):
+    client = get_async_client(chain)
+    match chain:
+        case EVMConfig():
+            _process_sa = process_evm_withdraw_sa
+        case BTCConfig():
+            _process_sa = process_btc_withdraw_sa
+        case _:
+            raise NotImplementedError
+
+    await _process_sa(
+        client=client,
+        account=account,
+        chain=chain,
+        withdraw_request=withdraw_request,
+        dkg_party=dkg_party,
+        logger=logger,
+    )
+
+
+async def process_evm_withdraw_sa(
+    client: EVMAsyncClient,
     account: LocalAccount,
     chain: EVMConfig,
     withdraw_request: EVMWithdrawRequest,
@@ -97,8 +126,8 @@ async def process_withdraw_sa(
             zex_withdraw=withdraw_request, validator_hash=validator_hash
         )
         data = list(result["signature_data_from_node"].values())[0]
-        await send_withdraw(
-            w3,
+        await send_evm_withdraw(
+            client,
             chain,
             account,
             result["signature"],
@@ -110,8 +139,8 @@ async def process_withdraw_sa(
         raise ValidatorResultError(result)
 
 
-async def send_withdraw(
-    w3: AsyncWeb3,
+async def send_evm_withdraw(
+    client: EVMAsyncClient,
     chain: EVMConfig,
     account: LocalAccount,
     signature: str,
@@ -119,6 +148,7 @@ async def send_withdraw(
     signature_nonce: ChecksumAddress,
     logger: logging.Logger | ChainLoggerAdapter = logger,
 ):
+    w3 = client.client
     vault = w3.eth.contract(address=chain.vault_address, abi=VAULT_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
     withdraw_hash = get_withdraw_hash(withdraw_request)
@@ -140,13 +170,35 @@ async def send_withdraw(
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
 
 
-async def withdraw(chain: EVMConfig):
+async def process_btc_withdraw_sa(
+    client: BTCAsyncClient,
+    account: LocalAccount,
+    chain: BTCConfig,
+    withdraw_request: BTCWithdrawRequest,
+    dkg_party,
+    logger: ChainLoggerAdapter,
+):
+    pass
+
+
+async def send_btc_withdraw(
+    client: ChainAsyncClient,
+    chain: BTCConfig,
+    accounts: list[str],
+    signature: str,
+    withdraw_request: BTCWithdrawRequest,
+    signature_nonce: ChecksumAddress,
+    logger: logging.Logger | ChainLoggerAdapter = logger,
+):
+    pass
+
+
+async def withdraw(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
 
     while True:
         try:
-            w3 = get_evm_async_client(chain).client
-            account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
+            account = ""
 
             dkg_party = dkg_key["party"]
             withdraws_request = await find_withdraws_by_status(
@@ -160,7 +212,7 @@ async def withdraw(chain: EVMConfig):
             for withdraw_request in withdraws_request:
                 try:
                     await process_withdraw_sa(
-                        w3=w3,
+                        # w3=w3,
                         account=account,
                         chain=chain,
                         withdraw_request=withdraw_request,

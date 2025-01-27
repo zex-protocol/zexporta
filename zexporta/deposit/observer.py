@@ -44,6 +44,7 @@ async def observe_deposit(chain: ChainConfig):
         await insert_new_address_to_db(chain)
         accepted_addresses = await get_active_address(chain)
         try:
+            # todo ;; add utxo creation for btc chain
             accepted_deposits = await explorer(
                 chain,
                 last_observed_block + 1,

@@ -35,8 +35,8 @@ class AddressDetails(BaseModel):
     txids: list[str]
 
 
-# Model for UTXO (Unspent Transaction Outputs)
-class UTXO(BaseModel):
+# Model for Unspent (Unspent Transaction Outputs)
+class Unspent(BaseModel):
     txid: str
     vout: Value
     value: Value
@@ -204,11 +204,11 @@ class BTCAnkrAsyncClient:
         data = await self._request("GET", url, params=params)
         return AddressDetails.model_validate(data)
 
-    async def get_utxo(self, address: str, confirmed: bool = True) -> list[UTXO]:
+    async def get_utxo(self, address: str, confirmed: bool = True) -> list[Unspent]:
         url = f"{self.block_book_base_url}/api/v2/utxo/{address}"
         params = {"confirmed": str(confirmed).lower()}
         data = await self._request("GET", url, params=params)
-        return [UTXO.model_validate(i) for i in data]
+        return [Unspent.model_validate(i) for i in data]
 
     async def get_block_by_identifier(self, identifier: str | int) -> Block:
         page = 1

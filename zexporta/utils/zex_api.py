@@ -7,6 +7,7 @@ import httpx
 from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
+    ChainConfig,
     EVMConfig,
     EVMWithdrawRequest,
     UserId,
@@ -100,7 +101,7 @@ async def get_zex_last_withdraw_nonce(
 
 async def get_zex_withdraws(
     async_client: httpx.AsyncClient,
-    chain: EVMConfig,
+    chain: ChainConfig,
     offset: int,
     limit: int | None = None,
 ) -> list[EVMWithdrawRequest]:
@@ -120,12 +121,12 @@ async def get_zex_withdraws(
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
         return [
-            EVMWithdrawRequest(
+            chain.get_withdraw_request_type()(
                 amount=withdraw.get("amount"),
                 nonce=withdraw.get("nonce"),
                 recipient=Web3.to_checksum_address(withdraw.get("destination")),
                 token_address=Web3.to_checksum_address(withdraw.get("tokenContract")),
-                chain_id=chain.chain_id,
+                chain_symbol=chain.chain_symbol,
             )
             for withdraw in withdraws
         ]

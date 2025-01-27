@@ -1,6 +1,6 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Annotated, Any, ClassVar
+from typing import Annotated, Any, ClassVar, Type
 
 from eth_typing import BlockNumber as EvmBlockNumber
 from eth_typing import ChainId, ChecksumAddress
@@ -75,6 +75,48 @@ class BTCTransfer(BaseTransfer):
         return NotImplemented
 
 
+class WithdrawStatus(StrEnum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESSFUL = "successful"
+    REJECTED = "rejected"
+
+
+class UtxoStatus(StrEnum):
+    # deposit creation utxo created with status processing, deposit finalizing utxo status -> unspent, rejected
+    PROCESSING = "processing"
+    UNSPENT = "unspent"
+    SPENDING = "spending"
+    SPEND = "spend"
+    REJECTED = "rejected"
+
+
+class UTXO(BaseModel):
+    status: UtxoStatus = UtxoStatus.UNSPENT
+    tx_hash: TxHash
+    amount: Value
+    index: Value
+    script: str
+
+
+class WithdrawRequest(BaseModel):
+    model_config = {"extra": "ignore"}
+    amount: Value
+    recipient: ChecksumAddress
+    tx_hash: TxHash | None = None
+    status: WithdrawStatus = WithdrawStatus.PENDING
+    chain_symbol: str
+    nonce: int
+
+
+class EVMWithdrawRequest(WithdrawRequest):
+    token_address: ChecksumAddress
+
+
+class BTCWithdrawRequest(WithdrawRequest):
+    utxos: list[UTXO]
+
+
 class ChainConfig(BaseModel, ABC):
     private_rpc: URL
     chain_symbol: ChainSymbol
@@ -83,6 +125,11 @@ class ChainConfig(BaseModel, ABC):
     batch_block_size: int = Field(default=5)
     transfer_class: ClassVar[type[Transfer]]
 
+    @abstractmethod
+    def get_withdraw_request_type(self) -> Type[WithdrawRequest]:
+        """Abstract method to return the withdraw request type."""
+        pass
+
 
 class EVMConfig(ChainConfig):
     chain_id: ChainId
@@ -90,10 +137,16 @@ class EVMConfig(ChainConfig):
     vault_address: ChecksumAddress
     transfer_class: ClassVar[type[EVMTransfer]] = EVMTransfer
 
+    def get_withdraw_request_type(self) -> Type[EVMWithdrawRequest]:
+        return EVMWithdrawRequest
+
 
 class BTCConfig(ChainConfig):
     private_indexer_rpc: URL
     transfer_class: ClassVar[type[BTCTransfer]] = BTCTransfer
+
+    def get_withdraw_request_type(self) -> Type[BTCWithdrawRequest]:
+        return BTCWithdrawRequest
 
 
 class DepositStatus(StrEnum):
@@ -102,13 +155,6 @@ class DepositStatus(StrEnum):
     VERIFIED = "verified"
     SUCCESSFUL = "successful"
     REORG = "reorg"
-    REJECTED = "rejected"
-
-
-class WithdrawStatus(StrEnum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    SUCCESSFUL = "successful"
     REJECTED = "rejected"
 
 
@@ -147,17 +193,6 @@ class UserAddress(BaseModel):
     user_id: UserId
     address: Address
     is_active: bool = Field(default=True)
-
-
-class EVMWithdrawRequest(BaseModel):
-    model_config = {"extra": "ignore"}
-    token_address: ChecksumAddress
-    amount: Value
-    recipient: ChecksumAddress
-    nonce: int
-    chain_id: ChainId
-    tx_hash: TxHash | None = None
-    status: WithdrawStatus = WithdrawStatus.PENDING
 
 
 class ZexUserAsset(BaseModel):
