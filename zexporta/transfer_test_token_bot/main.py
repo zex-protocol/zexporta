@@ -60,7 +60,7 @@ async def _send_deposits(
         try:
             tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
             logger.info(f"Transaction sent. Hash: {tx_hash.hex()}")
-            receipt = await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
+            receipt = await w3.eth.wait_for_transaction_receipt(tx_hash)
             logger.info(
                 f"Transaction mined. Hash: {tx_hash.hex()}, Block: {receipt.blockNumber}"
             )

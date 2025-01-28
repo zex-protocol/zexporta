@@ -7,7 +7,7 @@ from zexporta.config import ChainId
 from .custom_types import TestToken
 
 LOGGER_PATH = "/var/log/transfer_test_token_bot/"
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")
 
 HOLDER_PRIVATE_KEY = os.environ["HOLDER_PRIVATE_KEY"]
 
