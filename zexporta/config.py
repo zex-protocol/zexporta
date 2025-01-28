@@ -2,58 +2,68 @@ import os
 
 from web3 import Web3
 
-from .custom_types import ChainId, ChainSymbol, EnvEnum, EVMConfig
+from .custom_types import (
+    BTCConfig,
+    ChainConfig,
+    ChainId,
+    ChainSymbol,
+    EnvEnum,
+    EVMConfig,
+)
 
 ENVIRONMENT = EnvEnum(os.environ["ENV"])
 
 if ENVIRONMENT == EnvEnum.PROD:
     ZEX_BASE_URL = "https://api.zex.finance/v1"
 
-    CHAINS_CONFIG = {
-        ChainSymbol.POL.value: EVMConfig(
-            private_rpc=os.environ["POL_RPC"],
-            chain_symbol=ChainSymbol.POL,
-            finalize_block_count=20,
-            poa=True,
+    CHAINS_CONFIG: dict[str, ChainConfig] = {
+        ChainSymbol.HOL.value: EVMConfig(
+            private_rpc=os.environ["HOL_RPC"],
+            native_decimal=18,
+            chain_symbol=ChainSymbol.HOL.value,
+            finalize_block_count=1,
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
-                "0xc3D07c4FDE03b8B1F9FeE3C19d906681b7b66B82"
+                "0x72E46E170342E4879b0Ea8126389111D4275173D"
             ),
-            chain_id=ChainId(137),
+            chain_id=ChainId(17000),
         ),
-        ChainSymbol.OPT.value: EVMConfig(
-            private_rpc=os.environ["OP_RPC"],
-            chain_symbol=ChainSymbol.OPT,
-            finalize_block_count=10,
-            poa=True,
+        ChainSymbol.SEP.value: EVMConfig(
+            private_rpc=os.environ["SEP_RPC"],
+            native_decimal=18,
+            chain_symbol=ChainSymbol.SEP.value,
+            finalize_block_count=1,
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
-                "0xBa4e58D407F2D304f4d4eb476DECe5D9304D9c0E"
+                "0x72E46E170342E4879b0Ea8126389111D4275173D"
             ),
-            chain_id=ChainId(10),
+            chain_id=ChainId(11155111),
         ),
-        ChainSymbol.BSC.value: EVMConfig(
-            private_rpc=os.environ["BSC_RPC"],
-            chain_symbol=ChainSymbol.BSC,
-            finalize_block_count=10,
+        ChainSymbol.BST.value: EVMConfig(
+            private_rpc=os.environ["BST_RPC"],
+            native_decimal=18,
+            chain_symbol=ChainSymbol.BST.value,
+            finalize_block_count=1,
             poa=True,
             delay=1,
             batch_block_size=30,
             vault_address=Web3.to_checksum_address(
-                "0xc3D07c4FDE03b8B1F9FeE3C19d906681b7b66B82"
+                "0x72E46E170342E4879b0Ea8126389111D4275173D"
             ),
-            chain_id=ChainId(56),
+            chain_id=ChainId(97),
         ),
     }
+
 else:
     ZEX_BASE_URL = "https://api-dev.zex.finance/v1"
-    CHAINS_CONFIG = {
+    CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.HOL.value: EVMConfig(
             private_rpc=os.environ["HOL_RPC"],
-            chain_symbol=ChainSymbol.HOL,
-            finalize_block_count=20,
+            native_decimal=18,
+            chain_symbol=ChainSymbol.HOL.value,
+            finalize_block_count=1,
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
@@ -63,9 +73,9 @@ else:
         ),
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
-            chain_symbol=ChainSymbol.SEP,
-            finalize_block_count=10,
-            poa=True,
+            native_decimal=18,
+            chain_symbol=ChainSymbol.SEP.value,
+            finalize_block_count=1,
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
@@ -75,8 +85,9 @@ else:
         ),
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
-            chain_symbol=ChainSymbol.BST,
-            finalize_block_count=10,
+            native_decimal=18,
+            chain_symbol=ChainSymbol.BST.value,
+            finalize_block_count=1,
             poa=True,
             delay=1,
             batch_block_size=30,
@@ -87,7 +98,13 @@ else:
         ),
     }
 
+EVM_NATIVE_TOKEN_ADDRESS = Web3.to_checksum_address(
+    "0x0000000000000000000000000000000000000000"
+)
+
 ZEX_ENCODE_VERSION = 1
+
+BTC_GROUP_KEY_PUB = os.getenv("BTC_GROUP_KEY_PUB")
 
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]

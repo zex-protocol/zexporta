@@ -7,6 +7,7 @@ from hashlib import sha256
 
 import httpx
 import sentry_sdk
+from clients.evm import get_signed_data
 from pyfrost.network.sa import SA
 
 from zexporta.custom_types import (
@@ -26,7 +27,6 @@ from zexporta.utils.dkg import parse_dkg_json
 from zexporta.utils.encoder import DEPOSIT_OPERATION, encode_zex_deposit
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
-from zexporta.utils.web3 import get_signed_data
 from zexporta.utils.zex_api import (
     ZexAPIError,
     send_deposits,
@@ -85,7 +85,17 @@ async def process_deposit(
 
     if result.get("result") == "SUCCESSFUL":
         data = list(result["signature_data_from_node"].values())[0]["deposits"]
-        deposits = [Deposit(**deposit) for deposit in data]
+
+        deposits = [
+            Deposit(
+                transfer=chain.transfer_class(**deposit["transfer"]),
+                user_id=deposit["user_id"],
+                decimals=deposit["decimals"],
+                sa_timestamp=deposit["sa_timestamp"],
+                status=deposit["status"],
+            )
+            for deposit in data
+        ]
         encoded_data = encode_zex_deposit(
             version=ZEX_ENCODE_VERSION,
             operation_type=DEPOSIT_OPERATION,

@@ -1,18 +1,18 @@
 from enum import StrEnum
-from typing import Annotated, Any
+from typing import Any
 
-from eth_typing import URI, BlockNumber, ChainId, ChecksumAddress
-from pydantic import BaseModel, Field, PlainSerializer
+from clients import BTCConfig, ChainConfig, EVMConfig, Transfer
+from clients.custom_types import Address, BlockNumber, TxHash, Value
+from clients.evm.custom_types import ChainId, ChecksumAddress
+from pydantic import BaseModel, Field
 
 
 def convert_int_to_str(value: int) -> str:
     return str(value)
 
 
-type Value = Annotated[int, PlainSerializer(convert_int_to_str, when_used="json")]
-type Timestamp = int | float
+type Timestamp = int
 type UserId = int
-type TxHash = str
 
 
 class EnvEnum(StrEnum):
@@ -28,20 +28,7 @@ class ChainSymbol(StrEnum):
     POL = "POL"
     BSC = "BSC"
     OPT = "OPT"
-
-
-class ChainConfig(BaseModel):
-    chain_symbol: ChainSymbol
-    finalize_block_count: int = Field(default=15)
-    delay: int | float = Field(default=3)
-    batch_block_size: int = Field(default=5)
-
-
-class EVMConfig(ChainConfig):
-    chain_id: ChainId
-    private_rpc: URI | str
-    poa: bool = Field(default=False)
-    vault_address: ChecksumAddress
+    BTC = "BTC"
 
 
 class DepositStatus(StrEnum):
@@ -66,42 +53,34 @@ class Token(BaseModel):
     decimals: int
 
 
-class Transfer(BaseModel):
-    tx_hash: TxHash
-    value: Value
-    chain_symbol: ChainSymbol
-    token: ChecksumAddress
-    to: ChecksumAddress
-    sa_timestamp: Timestamp | None = None
-    block_number: BlockNumber
-
-    def __eq__(self, value: Any) -> bool:
-        if isinstance(value, Transfer):
-            return self.tx_hash == value.tx_hash
-        return NotImplemented
-
-    def __gt__(self, value: Any) -> bool:
-        if isinstance(value, Transfer):
-            return self.tx_hash > value.tx_hash
-        return NotImplemented
-
-
 class SaDepositSchema(BaseModel):
     txs_hash: list[TxHash]
     timestamp: Timestamp
-    chain_symbol: ChainSymbol
+    chain_symbol: str
     finalized_block_number: BlockNumber
 
 
-class Deposit(Transfer):
+class Deposit(BaseModel):
     user_id: UserId
     decimals: int
     status: DepositStatus
+    sa_timestamp: Timestamp | None = None
+    transfer: Transfer
+
+    def __eq__(self, value: Any) -> bool:
+        if isinstance(value, Deposit):
+            return self.transfer == value.transfer
+        return NotImplemented
+
+    def __gt__(self, value: Any) -> bool:
+        if isinstance(value, Deposit):
+            return self.transfer > value.transfer
+        return NotImplemented
 
 
 class UserAddress(BaseModel):
     user_id: UserId
-    address: ChecksumAddress
+    address: Address
     is_active: bool = Field(default=True)
 
 
@@ -122,3 +101,27 @@ class ZexUserAsset(BaseModel):
     locked: str
     freeze: str
     withdrawing: str
+
+
+__all__ = [
+    "ZexUserAsset",
+    "EVMWithdrawRequest",
+    "UserAddress",
+    "Deposit",
+    "SaDepositSchema",
+    "Token",
+    "WithdrawStatus",
+    "DepositStatus",
+    "ChainSymbol",
+    "EnvEnum",
+    "BTCConfig",
+    "EVMConfig",
+    "ChainConfig",
+    "TxHash",
+    "Value",
+    "ChecksumAddress",
+    "Timestamp",
+    "UserId",
+    "BlockNumber",
+    "Address",
+]

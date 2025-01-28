@@ -2,15 +2,16 @@ import asyncio
 from decimal import Decimal
 
 import httpx
+from clients import get_evm_async_client
+from clients.evm import compute_create2_address
 
-from zexporta.clients.evm import compute_create2_address
-from zexporta.bots.utils.deposit import send_deposit, wait_for_transaction_receipt
-from zexporta.custom_types import EVMConfig, UserId
 from zexporta.bots.monitoring_bot.config import (
     MONITORING_TOKENS,
     TEST_USER_ID,
     WITHDRAWER_PRIVATE_KEY,
 )
+from zexporta.bots.utils.deposit import send_deposit, wait_for_transaction_receipt
+from zexporta.custom_types import EVMConfig, UserId
 from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.zex_api import get_user_asset
 

@@ -5,6 +5,7 @@ import logging.config
 
 import sentry_sdk
 import web3.exceptions
+from clients.evm import get_signed_data
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
@@ -22,7 +23,7 @@ from zexporta.utils.dkg import parse_dkg_json
 from zexporta.utils.encoder import get_withdraw_hash
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
-from zexporta.utils.web3 import async_web3_factory, get_signed_data
+from zexporta.utils.web3 import async_web3_factory
 from zexporta.utils.zex_api import (
     ZexAPIError,
 )

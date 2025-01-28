@@ -4,20 +4,15 @@ import logging.config
 import math
 
 import sentry_sdk
+from clients import filter_blocks, get_async_client
 
-from zexporta.custom_types import EVMConfig
+from zexporta.custom_types import ChainConfig
 from zexporta.db.deposit import (
     get_pending_deposits_block_number,
     to_finalized,
     to_reorg_block_number,
 )
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
-from zexporta.utils.web3 import (
-    async_web3_factory,
-    filter_blocks,
-    get_block_tx_hash,
-    get_finalized_block_number,
-)
 
 from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS
 
@@ -25,13 +20,13 @@ logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/finalize
 logger = logging.getLogger(__name__)
 
 
-async def update_finalized_deposits(chain: EVMConfig):
+async def update_finalized_deposits(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
-        w3 = await async_web3_factory(chain)
-        finalized_block_number = await get_finalized_block_number(w3, chain)
+        client = get_async_client(chain)
+        finalized_block_number = await client.get_finalized_block_number()
         pending_blocks_number = await get_pending_deposits_block_number(
-            chain_symbol=chain.chain_symbol,
+            chain=chain,
             finalized_block_number=finalized_block_number,
         )
 
@@ -47,14 +42,13 @@ async def update_finalized_deposits(chain: EVMConfig):
                 (i * chain.batch_block_size) : ((i + 1) * chain.batch_block_size)
             ]
             results = await filter_blocks(
-                w3,
                 blocks_to_check,
-                get_block_tx_hash,
+                client.get_block_tx_hash,
                 max_delay_per_block_batch=chain.delay,
             )
-            await to_finalized(chain.chain_symbol, finalized_block_number, results)
+            await to_finalized(chain, finalized_block_number, results)
             await to_reorg_block_number(
-                chain.chain_symbol, min(blocks_to_check), max(blocks_to_check)
+                chain, min(blocks_to_check), max(blocks_to_check)
             )
 
 

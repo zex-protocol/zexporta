@@ -4,23 +4,22 @@ import time
 from decimal import Decimal
 
 import httpx
-from web3 import Web3
-
-from zexporta.clients.evm import (
+from clients.evm import (
     get_ERC20_balance,
     get_evm_async_client,
     get_signed_data,
 )
+
 from zexporta.custom_types import ChecksumAddress, EVMConfig
 from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.zex_api import get_user_withdraw_nonce, send_withdraw_request
 
+from ..custom_types import BotToken
 from .config import (
     MONITORING_TOKENS,
     TEST_USER_ID,
     WITHDRAWER_PRIVATE_KEY,
 )
-from ..custom_types import BotToken
 
 WITHDRAW_OPERATION = "w"
 
@@ -101,7 +100,7 @@ async def monitor_withdraw(
     balance_before = await get_ERC20_balance(
         w3,
         contract_address=monitoring_token.address,
-        wallet_address=Web3.to_checksum_address(destination_address),
+        wallet_address=w3.to_checksum_address(destination_address),
     )
     user_withdraw_nonce = await get_user_withdraw_nonce(
         async_client, chain, TEST_USER_ID
@@ -120,7 +119,7 @@ async def monitor_withdraw(
     balance_after = await get_ERC20_balance(
         w3,
         contract_address=monitoring_token.address,
-        wallet_address=Web3.to_checksum_address(destination_address),
+        wallet_address=w3.to_checksum_address(destination_address),
     )
     if balance_after == balance_before + monitoring_token.amount:
         return
