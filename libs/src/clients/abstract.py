@@ -1,13 +1,13 @@
+import logging
 from abc import ABC, abstractmethod
 
-from zexporta.custom_types import (
+from clients.custom_types import (
     Address,
     BlockNumber,
     ChainConfig,
     Transfer,
     TxHash,
 )
-from zexporta.utils.logger import ChainLoggerAdapter
 
 
 class BaseClientError(Exception):
@@ -40,7 +40,7 @@ class ChainAsyncClient(ABC):
 
     @abstractmethod
     async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: ChainLoggerAdapter
+        self, tx_hash: TxHash, logger: logging.Logger | logging.LoggerAdapter
     ) -> bool:
         """Check if transaction was successful"""
 
@@ -58,7 +58,7 @@ class ChainAsyncClient(ABC):
     async def extract_transfer_from_block(
         self,
         block_number: BlockNumber,
-        logger: ChainLoggerAdapter,
+        logger: logging.Logger | logging.LoggerAdapter,
         **kwargs,
     ) -> list[Transfer]:
         """Get block transfers"""

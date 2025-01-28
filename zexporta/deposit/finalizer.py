@@ -4,8 +4,8 @@ import logging.config
 import math
 
 import sentry_sdk
+from clients import filter_blocks, get_async_client
 
-from zexporta.clients import filter_blocks, get_async_client
 from zexporta.custom_types import ChainConfig
 from zexporta.db.deposit import (
     get_pending_deposits_block_number,

@@ -2,12 +2,12 @@ import asyncio
 import logging
 import logging.config
 
+import clients.exceptions as client_exception
 import sentry_sdk
-
-import zexporta.clients.exceptions as client_exception
-from zexporta.clients import (
+from clients import (
     get_async_client,
 )
+
 from zexporta.custom_types import ChainConfig
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.db.chain import (

@@ -4,10 +4,10 @@ import logging.config
 
 import sentry_sdk
 import web3.exceptions
+from clients.evm import get_evm_async_client
 from eth_account.signers.local import LocalAccount
 from web3 import AsyncWeb3
 
-from zexporta.clients.evm import get_evm_async_client
 from zexporta.custom_types import (
     ChecksumAddress,
     Deposit,

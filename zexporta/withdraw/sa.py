@@ -5,12 +5,12 @@ import logging.config
 
 import sentry_sdk
 import web3.exceptions
+from clients.evm import get_evm_async_client, get_signed_data
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
 from web3 import AsyncWeb3, Web3
 
-from zexporta.clients.evm import get_evm_async_client, get_signed_data
 from zexporta.custom_types import (
     EVMConfig,
     EVMWithdrawRequest,

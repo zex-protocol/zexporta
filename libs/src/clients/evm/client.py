@@ -1,3 +1,6 @@
+import logging
+import os
+
 import web3.exceptions
 from eth_account import Account
 from eth_account.messages import encode_defunct
@@ -7,43 +10,20 @@ from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 from web3.middleware.geth_poa import async_geth_poa_middleware
 from web3.types import TxData
 
-from zexporta.config import (
-    EVM_NATIVE_TOKEN_ADDRESS,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
-)
-from zexporta.custom_types import (
+from clients.abstract import ChainAsyncClient
+from clients.custom_types import (
     BlockNumber,
-    ChecksumAddress,
-    EVMConfig,
-    EVMTransfer,
     TxHash,
 )
-from zexporta.utils.abi import ERC20_ABI
-from zexporta.utils.logger import ChainLoggerAdapter
-from zexporta.utils.transfer_decoder import (
+
+from .abi import ERC20_ABI
+from .custom_types import ChecksumAddress, EVMConfig, EVMTransfer
+from .exceptions import EVMBlockNotFound, EVMTransferNotFound, EVMTransferNotValid
+from .transfer_decoder import (
     InvalidTxError,
     NotRecognizedSolidityFuncError,
     decode_transfer_tx,
 )
-
-from .abstract import BaseClientError, ChainAsyncClient
-
-
-class EVMClientError(BaseClientError):
-    """Base exception for EVMAsyncClient errors."""
-
-
-class EVMTransferNotFound(EVMClientError):
-    """Exception raised for transfer not found"""
-
-
-class EVMTransferNotValid(EVMClientError):
-    """Exception raised for transfer not found"""
-
-
-class EVMBlockNotFound(EVMClientError):
-    """Exception raised for transfer not found"""
 
 
 class EVMAsyncClient(ChainAsyncClient):
@@ -81,7 +61,7 @@ class EVMAsyncClient(ChainAsyncClient):
         return finalized_block_number
 
     async def get_token_decimals(self, token_address: ChecksumAddress) -> int:
-        if token_address == EVM_NATIVE_TOKEN_ADDRESS:
+        if token_address == "0x0000000000000000000000000000000000000000":
             return self.chain.native_decimal
         min_abi = [
             {
@@ -100,7 +80,7 @@ class EVMAsyncClient(ChainAsyncClient):
         return decimals
 
     async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: ChainLoggerAdapter
+        self, tx_hash: TxHash, logger: logging.Logger | logging.LoggerAdapter
     ) -> bool:
         try:
             receipt = await self.client.eth.get_transaction_receipt(HexStr(tx_hash))
@@ -121,7 +101,7 @@ class EVMAsyncClient(ChainAsyncClient):
     async def extract_transfer_from_block(
         self,
         block_number: BlockNumber,
-        logger: ChainLoggerAdapter,
+        logger: logging.Logger | logging.LoggerAdapter,
         **kwargs,
     ) -> list[EVMTransfer]:
         logger.debug(f"Observing block number {block_number} start")
@@ -157,7 +137,7 @@ class EVMAsyncClient(ChainAsyncClient):
                     chain_symbol=self.chain.chain_symbol,
                     to=tx["to"],  # type: ignore
                     value=tx["value"],  # type: ignore
-                    token=EVM_NATIVE_TOKEN_ADDRESS,  # type: ignore
+                    token="0x0000000000000000000000000000000000000000",  # type: ignore
                 )
             decoded_input = decode_transfer_tx(tx_input)  # type: ignore
             return EVMTransfer(
@@ -182,18 +162,18 @@ _async_clients: dict[str, EVMAsyncClient] = {}
 
 
 def get_evm_async_client(chain: EVMConfig) -> EVMAsyncClient:
-    if client := _async_clients.get(chain.chain_symbol.value):
+    if client := _async_clients.get(chain.chain_symbol):
         return client
     client = EVMAsyncClient(chain)
-    _async_clients[chain.chain_symbol.value] = client
+    _async_clients[chain.chain_symbol] = client
     return client
 
 
 def compute_create2_address(salt: int) -> ChecksumAddress:
-    deployer_address = USER_DEPOSIT_FACTORY_ADDRESS
-    bytecode_hash = HexStr(USER_DEPOSIT_BYTECODE_HASH)
-
-    deployer_address = Web3.to_checksum_address(deployer_address)
+    deployer_address = Web3.to_checksum_address(
+        os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
+    )
+    bytecode_hash = HexStr(os.environ["USER_DEPOSIT_BYTECODE_HASH"])
     contract_address = Web3.keccak(
         b"\xff"
         + Web3.to_bytes(hexstr=deployer_address)
@@ -212,7 +192,9 @@ def get_signed_data(
 
 
 async def get_ERC20_balance(
-    w3: AsyncWeb3, contract_address: ChecksumAddress, wallet_address: ChecksumAddress
+    w3: AsyncWeb3,
+    contract_address: ChecksumAddress,
+    wallet_address: ChecksumAddress,
 ):
     contract = w3.eth.contract(address=contract_address, abi=ERC20_ABI)
 

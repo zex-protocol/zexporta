@@ -1,103 +1,24 @@
+import logging
+import os
 from typing import Any
 
 import httpx
 from bitcoinutils.keys import PublicKey
-from pydantic import BaseModel
 from pyfrost.btc_utils import taproot_tweak_pubkey
 from pyfrost.crypto_utils import code_to_pub
 
-from zexporta.clients import ChainAsyncClient
-from zexporta.config import BTC_GROUP_KEY_PUB
-from zexporta.custom_types import (
-    URL,
+from clients.abstract import ChainAsyncClient
+from clients.custom_types import URL, BlockNumber, TxHash
+
+from .custom_types import (
+    UTXO,
     Address,
-    BlockNumber,
+    AddressDetails,
+    Block,
     BTCConfig,
     BTCTransfer,
-    TxHash,
-    Value,
+    Transaction,
 )
-from zexporta.utils.logger import ChainLoggerAdapter
-
-
-# Model for Address Details
-class AddressDetails(BaseModel):
-    page: int
-    totalPages: int
-    itemsOnPage: int
-    address: str
-    balance: int
-    totalReceived: int
-    totalSent: int
-    unconfirmedBalance: int
-    unconfirmedTxs: int
-    txs: int
-    txids: list[str]
-
-
-# Model for UTXO (Unspent Transaction Outputs)
-class UTXO(BaseModel):
-    txid: str
-    vout: Value
-    value: Value
-    height: int
-    confirmations: int
-    coinbase: bool | None = None
-
-
-# Common Model for all Transaction outputs (vout)
-class Vout(BaseModel):
-    value: Value
-    n: int
-    addresses: list[str] | None = None
-    isAddress: bool
-    hex: str | None = None
-    scriptPubKey: dict | None = None
-
-
-# Common Model for all Transaction inputs (vin)
-class Vin(BaseModel):
-    sequence: int | None = None
-    n: int | None = None
-    isAddress: bool | None = None
-    coinbase: str | None = None
-    txinwitness: list[str] | None = None
-
-
-# Model for Transaction Details
-class Transaction(BaseModel):
-    txid: str
-    vin: list[Vin]
-    vout: list[Vout]
-    blockHash: str
-    blockHeight: int
-    confirmations: int
-    blockTime: int
-    vsize: int
-    value: Value
-    valueIn: Value
-    fees: Value
-
-
-# Response for getting block by identifier (including multiple pages)
-class Block(BaseModel):
-    page: int
-    totalPages: int
-    itemsOnPage: int
-    hash: str
-    previousBlockHash: str
-    nextBlockHash: str | None = None
-    height: int
-    confirmations: int
-    size: int
-    time: int
-    version: int
-    merkleRoot: str
-    nonce: str
-    difficulty: str
-    bits: str
-    txCount: int
-    txs: list[Transaction] | None = None
 
 
 class BTCClientError(Exception):
@@ -125,7 +46,11 @@ class BTCResponseError(BTCClientError):
 
 
 class BTCAnkrAsyncClient:
-    def __init__(self, base_url: URL, indexer_url: URL):
+    def __init__(
+        self,
+        base_url: URL,
+        indexer_url: URL,
+    ):
         self.base_url = base_url
         self.block_book_base_url = indexer_url
         self._client = httpx.AsyncClient()
@@ -277,7 +202,7 @@ class BTCAsyncClient(ChainAsyncClient):
         return 8
 
     async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: ChainLoggerAdapter
+        self, tx_hash: TxHash, logger: logging.Logger | logging.LoggerAdapter
     ) -> bool:
         if await self.client.get_tx_by_hash(tx_hash):
             return True
@@ -295,7 +220,7 @@ class BTCAsyncClient(ChainAsyncClient):
     async def extract_transfer_from_block(
         self,
         block_number: BlockNumber,
-        logger: ChainLoggerAdapter,
+        logger: logging.Logger | logging.LoggerAdapter,
         **kwargs,
     ) -> list[BTCTransfer]:
         logger.debug(f"Observing block number {block_number} start")
@@ -330,15 +255,16 @@ _async_clients: dict[str, BTCAsyncClient] = {}
 
 
 def get_btc_async_client(chain: BTCConfig) -> BTCAsyncClient:
-    if client := _async_clients.get(chain.chain_symbol.value):
+    if client := _async_clients.get(chain.chain_symbol):
         return client
     client = BTCAsyncClient(chain)
-    _async_clients[chain.chain_symbol.value] = client
+    _async_clients[chain.chain_symbol] = client
     return client
 
 
-def compute_btc_address(salt: int) -> str:
-    _, public_key = taproot_tweak_pubkey(BTC_GROUP_KEY_PUB, str(salt).encode())
+def compute_btc_address(salt: int) -> Address:
+    btc_group_key_pub = os.environ["BTC_GROUP_KEY_PUB"]
+    _, public_key = taproot_tweak_pubkey(btc_group_key_pub, str(salt).encode())
     public_key = code_to_pub(int(public_key.hex(), 16))
     x_hex = hex(public_key.x)[2:].zfill(64)
     y_hex = hex(public_key.y)[2:].zfill(64)

@@ -3,7 +3,6 @@ import struct
 from web3 import Web3
 
 from zexporta.custom_types import (
-    ChainSymbol,
     Deposit,
     EVMWithdrawRequest,
 )
@@ -16,7 +15,7 @@ def encode_zex_deposit(
     version: int,
     operation_type: str,
     deposits: list[Deposit],
-    chain_symbol: ChainSymbol,
+    chain_symbol: str,
 ) -> bytes:
     # Encode the header
     header = struct.pack(

@@ -20,7 +20,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         ChainSymbol.HOL.value: EVMConfig(
             private_rpc=os.environ["HOL_RPC"],
             native_decimal=18,
-            chain_symbol=ChainSymbol.HOL,
+            chain_symbol=ChainSymbol.HOL.value,
             finalize_block_count=1,
             delay=1,
             batch_block_size=20,
@@ -32,7 +32,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
             native_decimal=18,
-            chain_symbol=ChainSymbol.SEP,
+            chain_symbol=ChainSymbol.SEP.value,
             finalize_block_count=1,
             delay=1,
             batch_block_size=20,
@@ -44,7 +44,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
             native_decimal=18,
-            chain_symbol=ChainSymbol.BST,
+            chain_symbol=ChainSymbol.BST.value,
             finalize_block_count=1,
             poa=True,
             delay=1,
@@ -62,7 +62,7 @@ else:
         ChainSymbol.HOL.value: EVMConfig(
             private_rpc=os.environ["HOL_RPC"],
             native_decimal=18,
-            chain_symbol=ChainSymbol.HOL,
+            chain_symbol=ChainSymbol.HOL.value,
             finalize_block_count=1,
             delay=1,
             batch_block_size=20,
@@ -74,7 +74,7 @@ else:
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
             native_decimal=18,
-            chain_symbol=ChainSymbol.SEP,
+            chain_symbol=ChainSymbol.SEP.value,
             finalize_block_count=1,
             delay=1,
             batch_block_size=20,
@@ -86,7 +86,7 @@ else:
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
             native_decimal=18,
-            chain_symbol=ChainSymbol.BST,
+            chain_symbol=ChainSymbol.BST.value,
             finalize_block_count=1,
             poa=True,
             delay=1,
