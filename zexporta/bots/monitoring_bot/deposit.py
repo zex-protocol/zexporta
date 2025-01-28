@@ -2,19 +2,16 @@ import asyncio
 from decimal import Decimal
 
 import httpx
-from eth_typing import HexStr
 
+from zexporta.clients.evm import compute_create2_address
 from zexporta.bots.utils.deposit import send_deposit, wait_for_transaction_receipt
 from zexporta.custom_types import EVMConfig, UserId
 from zexporta.bots.monitoring_bot.config import (
     MONITORING_TOKENS,
     TEST_USER_ID,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
     WITHDRAWER_PRIVATE_KEY,
 )
 from zexporta.utils.logger import ChainLoggerAdapter
-from zexporta.utils.web3 import async_web3_factory, compute_create2_address
 from zexporta.utils.zex_api import get_user_asset
 
 
@@ -45,12 +42,10 @@ async def monitor_deposit(
         raise DepositError("No token for monitoring found")
     monitoring_token = monitoring_token[0]
     test_user_address = compute_create2_address(
-        USER_DEPOSIT_FACTORY_ADDRESS,
         TEST_USER_ID,
-        HexStr(USER_DEPOSIT_BYTECODE_HASH),
     )
 
-    w3 = await async_web3_factory(chain)
+    w3 = get_evm_async_client(chain).client
     account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
     balance_before = await get_user_balance(
         async_client, TEST_USER_ID, monitoring_token.symbol

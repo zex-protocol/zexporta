@@ -6,13 +6,13 @@ from decimal import Decimal
 import httpx
 from web3 import Web3
 
-from zexporta.custom_types import ChecksumAddress, EVMConfig
-from zexporta.utils.logger import ChainLoggerAdapter
-from zexporta.utils.web3 import (
-    async_web3_factory,
+from zexporta.clients.evm import (
     get_ERC20_balance,
+    get_evm_async_client,
     get_signed_data,
 )
+from zexporta.custom_types import ChecksumAddress, EVMConfig
+from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.zex_api import get_user_withdraw_nonce, send_withdraw_request
 
 from .config import (
@@ -47,7 +47,6 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
     msg += f"t: {t}\n"
     msg += f"nonce: {nonce}\n"
     msg += f"public: {public.hex()}\n"
-    msg = "\x19Ethereum Signed Message:\n" + str(len(msg)) + msg
     logger.debug("withdraw message: %s", msg)
     return msg.encode()
 
@@ -95,7 +94,7 @@ async def monitor_withdraw(
         raise WithdrawError("No token for monitoring found.")
 
     monitoring_token = monitoring_token[0]
-    w3 = await async_web3_factory(chain)
+    w3 = get_evm_async_client(chain).client
     withdrawer_account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
     destination_address = withdrawer_account.address
     public_key = withdrawer_account._key_obj.public_key.to_compressed_bytes().hex()
@@ -113,7 +112,7 @@ async def monitor_withdraw(
     msg = withdraw_msg(tx, logger)
     signed_data = bytes.fromhex(
         get_signed_data(WITHDRAWER_PRIVATE_KEY, primitive=msg)[2:]
-    )[1:]
+    )[:-1]
     logger.debug(tx + signed_data)
     send_data = (tx + signed_data).decode("latin-1")
     await send_withdraw_request(async_client, [send_data])
