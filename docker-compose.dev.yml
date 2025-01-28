@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: monitoring-bot
-    entrypoint: poetry run python -m zexporta.monitoring_bot.main
+    entrypoint: poetry run python -m zexporta.bots.monitoring_bot.main
     networks:
       zexporta_custom_network:
         ipv4_address: 172.20.0.13
@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: transfer-test-token-bot
-    entrypoint: poetry run python -m zexporta.transfer_test_token_bot.main
+    entrypoint: poetry run python -m zexporta.bots.transfer_test_token_bot.main
     networks:
       zexporta_custom_network:
         ipv4_address: 172.20.0.14

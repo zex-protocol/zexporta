@@ -6,23 +6,23 @@ from eth_account.signers.local import LocalAccount
 from eth_typing import HexStr
 from web3 import AsyncWeb3
 
+from zexporta.bots.custom_types import BotToken
+from zexporta.bots.utils.deposit import send_deposit
 from zexporta.config import (
     CHAINS_CONFIG,
     USER_DEPOSIT_FACTORY_ADDRESS,
     USER_DEPOSIT_BYTECODE_HASH,
 )
 from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
-from zexporta.transfer_test_token_bot.config import (
+from zexporta.bots.transfer_test_token_bot.config import (
     HOLDER_PRIVATE_KEY,
     TEST_TOKENS,
     LOGGER_PATH,
 )
-from zexporta.transfer_test_token_bot.custom_types import TestToken
-from zexporta.transfer_test_token_bot.database import (
+from zexporta.bots.transfer_test_token_bot.database import (
     get_last_transferred_id,
     upsert_last_transferred_id,
 )
-from zexporta.utils.abi import ERC20_ABI
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.web3 import async_web3_factory, compute_create2_address
 from zexporta.utils.zex_api import get_async_client, get_last_zex_user_id, ZexAPIError
@@ -45,35 +45,22 @@ async def _get_last_user_id() -> UserId | None:
 
 async def _send_deposits(
     w3: AsyncWeb3,
-    test_tokens: list[TestToken],
+    test_tokens: list[BotToken],
     account: LocalAccount,
     user_address: ChecksumAddress,
     logger: logging.Logger | ChainLoggerAdapter,
 ):
-    nonce = await w3.eth.get_transaction_count(account.address)
     for test_token in test_tokens:
-        ERC20_token = w3.eth.contract(address=test_token.address, abi=ERC20_ABI)
-        tx = await ERC20_token.functions.transfer(
-            user_address, test_token.amount
-        ).build_transaction({"from": account.address, "nonce": nonce})
-        signed_tx = account.sign_transaction(tx)
-        try:
-            tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-            logger.info(f"Transaction sent. Hash: {tx_hash.hex()}")
-            receipt = await w3.eth.wait_for_transaction_receipt(tx_hash)
-            logger.info(
-                f"Transaction mined. Hash: {tx_hash.hex()}, Block: {receipt.blockNumber}"
-            )
-            nonce += 1
-        except asyncio.TimeoutError:
-            logger.error(f"Transaction timed out. Deposit address: {user_address}")
+        await send_deposit(w3, test_token, account, user_address, logger)
 
 
 async def transfer_test_tokens(chain: EVMConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     w3 = await async_web3_factory(chain)
     account = w3.eth.account.from_key(HOLDER_PRIVATE_KEY)
-    test_tokens = [token for token in TEST_TOKENS if token.chain_id == chain.chain_id]
+    test_tokens = [
+        token for token in TEST_TOKENS if token.chain_symbol == chain.chain_symbol
+    ]
     if len(test_tokens) == 0:
         _logger.error("No token for transfer found")
 

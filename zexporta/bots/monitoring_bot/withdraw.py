@@ -20,7 +20,7 @@ from .config import (
     TEST_USER_ID,
     WITHDRAWER_PRIVATE_KEY,
 )
-from .custom_types import MonitoringToken
+from ..custom_types import BotToken
 
 WITHDRAW_OPERATION = "w"
 
@@ -54,7 +54,7 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
 
 def create_tx(
     chain: EVMConfig,
-    monitoring_token: MonitoringToken,
+    monitoring_token: BotToken,
     public_key: str,
     destination_address: ChecksumAddress,
     nonce: int,
