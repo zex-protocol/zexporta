@@ -2,7 +2,8 @@ import asyncio
 import logging
 from hashlib import sha256
 
-from zexporta.clients import get_async_client
+from clients import get_async_client
+
 from zexporta.custom_types import (
     BlockNumber,
     ChainConfig,

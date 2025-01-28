@@ -4,13 +4,13 @@ import time
 from decimal import Decimal
 
 import httpx
-from web3 import Web3
-
-from zexporta.clients.evm import (
+from clients.evm import (
     get_ERC20_balance,
     get_evm_async_client,
     get_signed_data,
 )
+from web3 import Web3
+
 from zexporta.custom_types import ChecksumAddress, EVMConfig
 from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.zex_api import get_user_withdraw_nonce, send_withdraw_request

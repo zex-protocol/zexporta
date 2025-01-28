@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
+from clients import get_compute_address_function
 from pymongo import DESCENDING
 from web3 import Web3
 
-from zexporta.clients import get_compute_address_function
 from zexporta.custom_types import (
     Address,
     BTCConfig,

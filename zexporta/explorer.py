@@ -1,11 +1,11 @@
 from typing import Any, Callable, Coroutine
 
-from zexporta.clients import ChainAsyncClient, filter_blocks, get_async_client
+from clients import ChainAsyncClient, filter_blocks, get_async_client
+
 from zexporta.custom_types import (
     Address,
     BlockNumber,
     ChainConfig,
-    ChainSymbol,
     Deposit,
     DepositStatus,
     Timestamp,
@@ -65,7 +65,7 @@ async def explorer(
 
 
 async def get_token_decimals(
-    client: ChainAsyncClient, chain_symbol: ChainSymbol, token_address: Address
+    client: ChainAsyncClient, chain_symbol: str, token_address: Address
 ) -> int:
     decimals = await get_decimals(chain_symbol, token_address)
     if decimals is None:

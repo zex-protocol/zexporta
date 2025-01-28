@@ -3,10 +3,10 @@ import logging.config
 from decimal import Decimal
 
 import httpx
+from clients.evm import compute_create2_address, get_evm_async_client
 from eth_account.signers.local import LocalAccount
 from web3 import AsyncWeb3
 
-from zexporta.clients.evm import compute_create2_address, get_evm_async_client
 from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
 from zexporta.monitoring_bot.config import (
     MONITORING_TOKENS,

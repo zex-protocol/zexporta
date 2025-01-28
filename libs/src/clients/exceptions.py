@@ -1,5 +1,5 @@
 from .abstract import BaseClientError
-from .evm import (
+from .evm.exceptions import (
     EVMBlockNotFound,
     EVMClientError,
     EVMTransferNotFound,
