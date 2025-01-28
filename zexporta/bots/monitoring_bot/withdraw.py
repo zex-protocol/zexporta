@@ -10,11 +10,11 @@ from clients.evm import (
     get_signed_data,
 )
 
+from zexporta.bots.custom_types import BotToken
 from zexporta.custom_types import ChecksumAddress, EVMConfig
 from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.zex_api import get_user_withdraw_nonce, send_withdraw_request
 
-from ..custom_types import BotToken
 from .config import (
     MONITORING_TOKENS,
     TEST_USER_ID,
