@@ -124,6 +124,7 @@ class ChainConfig(BaseModel, ABC):
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
     transfer_class: ClassVar[type[Transfer]]
+    vault_address: Address
 
     @abstractmethod
     def get_withdraw_request_type(self) -> Type[WithdrawRequest]:
@@ -134,7 +135,6 @@ class ChainConfig(BaseModel, ABC):
 class EVMConfig(ChainConfig):
     chain_id: ChainId
     poa: bool = Field(default=False)
-    vault_address: ChecksumAddress
     transfer_class: ClassVar[type[EVMTransfer]] = EVMTransfer
 
     def get_withdraw_request_type(self) -> Type[EVMWithdrawRequest]:

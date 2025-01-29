@@ -16,6 +16,8 @@ ENVIRONMENT = EnvEnum(os.environ["ENV"])
 
 if ENVIRONMENT == EnvEnum.PROD:
     ZEX_BASE_URL = "https://api.zex.finance/v1"
+    SEQUENCER_BASE_URL = ""
+    SEQUENCER_APP_NAME = ""
 
     CHAINS_CONFIG = {
         ChainSymbol.POL.value: EVMConfig(
@@ -61,12 +63,16 @@ if ENVIRONMENT == EnvEnum.PROD:
             finalize_block_count=6,
             delay=10,
             batch_block_size=0,
+            vault_address="",
         ),
     }
     setup("mainnet")
 
 else:
     ZEX_BASE_URL = "https://api-dev.zex.finance/v1"
+    SEQUENCER_BASE_URL = ""
+    SEQUENCER_APP_NAME = ""
+
     CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.HOL.value: EVMConfig(
             private_rpc=os.environ["HOL_RPC"],
@@ -110,6 +116,7 @@ else:
             finalize_block_count=6,
             delay=10,
             batch_block_size=0,
+            vault_address="",
         ),
     }
     setup("testnet")
@@ -128,6 +135,6 @@ SA_SHIELD_PRIVATE_KEY = os.environ["SA_SHIELD_PRIVATE_KEY"]
 DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./zexporta/dkgs/dkgs.json")
 DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 
-WITHDRAWER_PRIVATE_KEY = os.environ["WITHDRAWER_PRIVATE_KEY"]
+EVM_WITHDRAWER_PRIVATE_KEY = os.environ["EVM_WITHDRAWER_PRIVATE_KEY"]
 
 SENTRY_DNS = os.getenv("SENTRY_DNS")
