@@ -27,13 +27,13 @@ services:
     networks:
       zexporta_custom_network:
 
-  monitoring-bot:
+  bot-monitoring:
     build:
       context: .
       dockerfile: Dockerfile
     image: zexporta
     container_name: monitoring-bot
-    entrypoint: python -m zexporta.bots.monitoring_bot.main
+    entrypoint: python -m zexporta.bots.monitoring.main
     networks:
       zexporta_custom_network:
         ipv4_address: 172.20.0.13
@@ -42,13 +42,13 @@ services:
     env_file:
       - .env.dev
 
-  transfer-test-token-bot:
+  bot-transfer-test-token:
     build:
       context: .
       dockerfile: Dockerfile
     image: zexporta
     container_name: transfer-test-token-bot
-    entrypoint: python -m zexporta.bots.transfer_test_token_bot.main
+    entrypoint: python -m zexporta.bots.transfer_test_token.main
     networks:
       zexporta_custom_network:
         ipv4_address: 172.20.0.14

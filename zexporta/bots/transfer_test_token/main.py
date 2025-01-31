@@ -7,25 +7,25 @@ from eth_typing import HexStr
 from web3 import AsyncWeb3
 
 from zexporta.bots.custom_types import BotToken
-from zexporta.bots.utils.deposit import send_deposit
-from zexporta.config import (
-    CHAINS_CONFIG,
-    USER_DEPOSIT_FACTORY_ADDRESS,
-    USER_DEPOSIT_BYTECODE_HASH,
-)
-from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
 from zexporta.bots.transfer_test_token_bot.config import (
     HOLDER_PRIVATE_KEY,
-    TEST_TOKENS,
     LOGGER_PATH,
+    TEST_TOKENS,
 )
 from zexporta.bots.transfer_test_token_bot.database import (
     get_last_transferred_id,
     upsert_last_transferred_id,
 )
+from zexporta.bots.utils.deposit import send_deposit
+from zexporta.config import (
+    CHAINS_CONFIG,
+    USER_DEPOSIT_BYTECODE_HASH,
+    USER_DEPOSIT_FACTORY_ADDRESS,
+)
+from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.web3 import async_web3_factory, compute_create2_address
-from zexporta.utils.zex_api import get_async_client, get_last_zex_user_id, ZexAPIError
+from zexporta.utils.zex_api import ZexAPIError, get_async_client, get_last_zex_user_id
 
 logging.config.dictConfig(
     get_logger_config(logger_path=f"{LOGGER_PATH}/transfer_test_token_bot.log")
