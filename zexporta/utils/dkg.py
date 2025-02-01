@@ -7,7 +7,7 @@ import sys
 import time
 import timeit
 
-from pyfrost.crypto_utils import Half_N, code_to_pub
+from pyfrost.crypto_utils import Half_N, code_to_pub, is_y_even
 from pyfrost.network.dkg import Dkg
 
 from .node_info import NodesInfo
@@ -35,7 +35,12 @@ async def initiate_dkg(
     # Requesting DKG:
     now = timeit.default_timer()
     dkg_key = await dkg.request_dkg(threshold, party, dkg_type)
-    if dkg_type == "ETH":
+    if dkg_type == "BTC":
+        is_even = is_y_even(code_to_pub(dkg_key["public_key"]))
+        while not is_even:
+            dkg_key = await dkg.request_dkg(threshold, party, dkg_type)
+            is_even = is_y_even(code_to_pub(dkg_key["public_key"]))
+    elif dkg_type == "ETH":
         is_gt_halfq = code_to_pub(dkg_key["public_key"]).x < Half_N
         while not is_gt_halfq:
             dkg_key = await dkg.request_dkg(threshold, party, dkg_type)

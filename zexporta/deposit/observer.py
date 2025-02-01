@@ -34,7 +34,7 @@ async def observe_deposit(chain: ChainConfig):
             _logger.info(f"Block {last_observed_block} already observed continue")
             await asyncio.sleep(chain.delay)
             continue
-        last_observed_block = last_observed_block or latest_block
+        last_observed_block = last_observed_block or (latest_block - 1)
         to_block = min(latest_block, last_observed_block + chain.batch_block_size)
         if last_observed_block >= to_block:
             _logger.warning(
@@ -60,9 +60,10 @@ async def observe_deposit(chain: ChainConfig):
         except ValueError as e:
             _logger.error(f"ValueError: {e}")
             await asyncio.sleep(10)
-            continue
+
         if len(accepted_deposits) > 0:
             await insert_deposits_if_not_exists(chain, accepted_deposits)
+
         await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
         last_observed_block = to_block
 

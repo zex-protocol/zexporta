@@ -1,9 +1,16 @@
 from enum import StrEnum
 from typing import Any
 
-from clients import BTCConfig, ChainConfig, EVMConfig, Transfer
-from clients.custom_types import Address, BlockNumber, TxHash, Value
-from clients.evm.custom_types import ChainId, ChecksumAddress
+from clients.btc.custom_types import BTCConfig, BTCTransfer
+from clients.custom_types import (
+    Address,
+    BlockNumber,
+    ChainConfig,
+    Transfer,
+    TxHash,
+    Value,
+)
+from clients.evm.custom_types import ChainId, ChecksumAddress, EVMConfig, EVMTransfer
 from pydantic import BaseModel, Field
 
 
@@ -60,12 +67,12 @@ class SaDepositSchema(BaseModel):
     finalized_block_number: BlockNumber
 
 
-class Deposit(BaseModel):
+class Deposit[T: (Transfer, EVMTransfer, BTCTransfer)](BaseModel):
     user_id: UserId
     decimals: int
     status: DepositStatus
     sa_timestamp: Timestamp | None = None
-    transfer: Transfer
+    transfer: T
 
     def __eq__(self, value: Any) -> bool:
         if isinstance(value, Deposit):
@@ -124,4 +131,7 @@ __all__ = [
     "UserId",
     "BlockNumber",
     "Address",
+    "EVMTransfer",
+    "BTCTransfer",
+    "Transfer",
 ]

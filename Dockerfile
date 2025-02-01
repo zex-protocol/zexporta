@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=libs,target=libs \
-    uv sync --frozen --no-install-project --no-editable
+    uv sync --frozen --refresh --no-editable
 
 # Copy the project into the intermediate image
 ENV PATH="/app/.venv/bin:$PATH"

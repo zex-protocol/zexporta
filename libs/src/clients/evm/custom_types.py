@@ -7,6 +7,8 @@ from clients.custom_types import ChainConfig, Transfer
 
 
 class EVMTransfer(Transfer):
+    to: ChecksumAddress
+
     def __eq__(self, value: Any) -> bool:
         if isinstance(value, EVMTransfer):
             return self.tx_hash == value.tx_hash
@@ -24,3 +26,6 @@ class EVMConfig(ChainConfig):
     vault_address: ChecksumAddress
     native_decimal: int
     transfer_class: ClassVar[type[EVMTransfer]] = EVMTransfer
+
+
+__all__ = ["ChecksumAddress", "ChainId", "EVMConfig", "EVMTransfer"]
