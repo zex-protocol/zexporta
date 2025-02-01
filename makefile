@@ -4,7 +4,7 @@
 PROJECT_NAME := zexporta
 VENV_DIR := .venv
 UV := uv
-PRE_COMMIT := pre-commit
+PRE_COMMIT := $(UV) run pre-commit
 
 # Default target
 all: init
