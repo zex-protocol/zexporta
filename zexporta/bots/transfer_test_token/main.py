@@ -7,12 +7,12 @@ from eth_typing import HexStr
 from web3 import AsyncWeb3
 
 from zexporta.bots.custom_types import BotToken
-from zexporta.bots.transfer_test_token_bot.config import (
+from zexporta.bots.transfer_test_token.config import (
     HOLDER_PRIVATE_KEY,
     LOGGER_PATH,
     TEST_TOKENS,
 )
-from zexporta.bots.transfer_test_token_bot.database import (
+from zexporta.bots.transfer_test_token.database import (
     get_last_transferred_id,
     upsert_last_transferred_id,
 )

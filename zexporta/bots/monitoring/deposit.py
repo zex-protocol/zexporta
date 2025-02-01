@@ -5,7 +5,7 @@ import httpx
 from clients import get_evm_async_client
 from clients.evm import compute_create2_address
 
-from zexporta.bots.monitoring_bot.config import (
+from zexporta.bots.monitoring.config import (
     MONITORING_TOKENS,
     TEST_USER_ID,
     WITHDRAWER_PRIVATE_KEY,
