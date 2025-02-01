@@ -1,14 +1,11 @@
 [project]
 name = "libs"
-version = "0.1.0"
+version = "0.1.1"
 description = "Zexporta libraries"
 readme = "README.md"
 authors = [{ name = "Pooya Fekri", email = "pooyafekri79@gmail.com" }]
 requires-python = ">=3.12"
-dependencies = [
-    "httpx>=0.28.1,<1.0.0",
-    "web3~=6.19",
-]
+dependencies = ["httpx>=0.28.1,<1.0.0", "web3~=6.19"]
 
 [build-system]
 requires = ["hatchling"]

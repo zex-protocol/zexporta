@@ -65,7 +65,7 @@ async def get_active_address(
     collection = get_collection(chain=chain)
     async for address in collection.find({"is_active": True}):
         match chain:
-            case ChainConfig():
+            case EVMConfig():
                 key = Web3.to_checksum_address(address["address"])
             case BTCConfig():
                 key = address["address"]

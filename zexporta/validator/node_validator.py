@@ -2,7 +2,7 @@ import logging
 
 from pyfrost.network.abstract import Validators
 
-from zexporta.custom_types import ChainSymbol, SaDepositSchema
+from zexporta.custom_types import ChainSymbol, EVMConfig, SaDepositSchema
 from zexporta.utils.logger import ChainLoggerAdapter
 
 from .config import CHAINS_CONFIG, VALIDATED_IPS
@@ -31,8 +31,9 @@ class NodeValidators(Validators):
         if method == "deposit":
             return deposit(chain, SaDepositSchema(**data), _logger)
 
-        if method == "withdraw":
-            sa_withdraw_nonce = data["sa_withdraw_nonce"]
-            return withdraw(chain, sa_withdraw_nonce, logger=_logger)
+        if isinstance(chain, EVMConfig):
+            if method == "withdraw":
+                sa_withdraw_nonce = data["sa_withdraw_nonce"]
+                return withdraw(chain, sa_withdraw_nonce, logger=_logger)
 
         raise NotImplementedError()

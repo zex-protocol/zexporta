@@ -1,5 +1,6 @@
 import os
 
+from bitcoinutils.setup import setup
 from web3 import Web3
 
 from .custom_types import (
@@ -54,7 +55,17 @@ if ENVIRONMENT == EnvEnum.PROD:
             ),
             chain_id=ChainId(97),
         ),
+        # ChainSymbol.BTC.value: BTCConfig(
+        #     private_rpc=os.environ["BTC_RPC"],
+        #     private_indexer_rpc=os.environ["BTC_INDEXER"],
+        #     chain_symbol=ChainSymbol.BTC.value,
+        #     finalize_block_count=6,
+        #     delay=10,
+        #     batch_block_size=5,
+        # ),
     }
+    # setup("mainnet")
+
 
 else:
     ZEX_BASE_URL = "https://api-dev.zex.finance/v1"
@@ -96,7 +107,17 @@ else:
             ),
             chain_id=ChainId(97),
         ),
+        ChainSymbol.BTC.value: BTCConfig(
+            private_rpc=os.environ["BTC_RPC"],
+            private_indexer_rpc=os.environ["BTC_INDEXER"],
+            chain_symbol=ChainSymbol.BTC.value,
+            finalize_block_count=6,
+            delay=60,
+            batch_block_size=5,
+        ),
     }
+    setup("testnet")
+
 
 EVM_NATIVE_TOKEN_ADDRESS = Web3.to_checksum_address(
     "0x0000000000000000000000000000000000000000"

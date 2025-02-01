@@ -1,15 +1,18 @@
 import asyncio
-from typing import Iterable
+from typing import Iterable, overload
 
 from pymongo import ASCENDING
 
 from zexporta.custom_types import (
     BlockNumber,
     BTCConfig,
+    BTCTransfer,
     ChainConfig,
     Deposit,
     DepositStatus,
     EVMConfig,
+    EVMTransfer,
+    Transfer,
     TxHash,
 )
 
@@ -58,13 +61,43 @@ async def insert_deposits_if_not_exists(
     )
 
 
+@overload
+async def find_deposit_by_status(
+    chain: BTCConfig,
+    status: DepositStatus,
+    from_block: BlockNumber | None = None,
+    to_block: BlockNumber | None = None,
+    limit: int | None = None,
+) -> list[Deposit[BTCTransfer]]: ...
+
+
+@overload
+async def find_deposit_by_status(
+    chain: EVMConfig,
+    status: DepositStatus,
+    from_block: BlockNumber | None = None,
+    to_block: BlockNumber | None = None,
+    limit: int | None = None,
+) -> list[Deposit[EVMTransfer]]: ...
+
+
+@overload
 async def find_deposit_by_status(
     chain: ChainConfig,
     status: DepositStatus,
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
-) -> list[Deposit]:
+) -> list[Deposit[Transfer]]: ...
+
+
+async def find_deposit_by_status(
+    chain,
+    status,
+    from_block=None,
+    to_block=None,
+    limit=None,
+):
     collection = get_collection(chain)
     res = []
     block_number_query = {"$gte": from_block or 0}
