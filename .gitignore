@@ -12,5 +12,3 @@ temp/
 dkg_keys.json
 nonces.json
 data/
-.idea/
-*.DS_store
