@@ -3,20 +3,19 @@
 # Variables
 PROJECT_NAME := zexporta
 VENV_DIR := .venv
-POETRY := poetry
-PRE_COMMIT := pre-commit
+UV := uv
+PRE_COMMIT := $(UV) run pre-commit
 
 # Default target
 all: init
 
 # Initialize the project
-init: poetry-install pre-commit-install
+init: uv-sync pre-commit-install
 
-# Install dependencies with Poetry and create virtual environment in the project folder
-poetry-install:
-	@echo "Setting up Poetry and installing dependencies..."
-	$(POETRY) config virtualenvs.in-project true
-	$(POETRY) install
+# Install dependencies with uv and create virtual environment in the project folder
+uv-sync:
+	@echo "Setting up uv and installing dependencies..."
+	$(UV) sync
 
 # Install pre-commit hooks
 pre-commit-install:
@@ -38,10 +37,10 @@ clean:
 help:
 	@echo "Available commands:"
 	@echo "  make init         - Initialize the project (install dependencies and pre-commit hooks)"
-	@echo "  make poetry-install - Install dependencies with Poetry"
+	@echo "  make uv-sync - Install dependencies with uv"
 	@echo "  make pre-commit-install - Install pre-commit hooks"
 	@echo "  make pre-commit-run - Run pre-commit hooks on all files"
 	@echo "  make clean        - Clean up the project (remove virtual environment and pre-commit hooks)"
 	@echo "  make help         - Display this help message"
 
-.PHONY: all init poetry-install pre-commit-install pre-commit-run clean help
+.PHONY: all init uv-sync pre-commit-install pre-commit-run clean help

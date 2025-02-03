@@ -7,25 +7,28 @@ from pydantic import BaseModel
 from pyfrost.btc_utils import taproot_tweak_pubkey
 from pyfrost.crypto_utils import code_to_pub
 
-from zexporta.clients import ChainAsyncClient
+from clients import ChainAsyncClient
+from clients.btc.exceptions import (
+    BTCClientError,
+    BTCConnectionError,
+    BTCRequestError,
+    BTCResponseError,
+    BTCTimeoutError,
+)
+from clients.custom_types import URL, BlockNumber, TxHash, Value
 from zexporta.config import BTC_GROUP_KEY_PUB
 from zexporta.custom_types import (
-    URL,
     UTXO,
     Address,
-    BlockNumber,
     BTCConfig,
     BTCTransfer,
     Deposit,
-    TxHash,
     UtxoStatus,
-    Value,
 )
 from zexporta.db.utxo import insert_utxos_if_not_exists
 from zexporta.utils.logger import ChainLoggerAdapter
 
 
-# Model for Address Details
 class AddressDetails(BaseModel):
     page: int
     totalPages: int
@@ -78,7 +81,6 @@ class Transaction(BaseModel):
     blockHeight: int
     confirmations: int
     blockTime: int
-    vsize: int
     value: Value
     valueIn: Value
     fees: Value
@@ -105,32 +107,12 @@ class Block(BaseModel):
     txs: list[Transaction] | None = None
 
 
-class BTCClientError(Exception):
-    """Base exception for BTCAsyncClient errors."""
-
-
-class BTCRequestError(BTCClientError):
-    """Exception raised for errors during HTTP requests."""
-
-    def __init__(self, message: str, status_code: int | None = None):
-        super().__init__(message)
-        self.status_code = status_code
-
-
-class BTCConnectionError(BTCClientError):
-    """Exception raised for connection-related errors."""
-
-
-class BTCTimeoutError(BTCClientError):
-    """Exception raised when a request times out."""
-
-
-class BTCResponseError(BTCClientError):
-    """Exception raised for invalid or unexpected responses."""
-
-
 class BTCAnkrAsyncClient:
-    def __init__(self, base_url: URL, indexer_url: URL):
+    def __init__(
+        self,
+        base_url: URL,
+        indexer_url: URL,
+    ):
         self.base_url = base_url
         self.block_book_base_url = indexer_url
         self._client = httpx.AsyncClient()

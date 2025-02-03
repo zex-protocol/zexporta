@@ -1,10 +1,13 @@
 import asyncio
 from typing import Iterable
 
+from clients import BTCConfig, EVMConfig
 from pymongo import ASCENDING
 
 from zexporta.custom_types import (
+    BTCWithdrawRequest,
     ChainConfig,
+    EVMWithdrawRequest,
     WithdrawRequest,
     WithdrawStatus,
 )
@@ -63,8 +66,16 @@ async def find_withdraws_by_status(
         "chain_symbol": chain.chain_symbol,
         "nonce": {"$gte": nonce},
     }
+    match chain:
+        case EVMConfig():
+            mapper = EVMWithdrawRequest
+        case BTCConfig():
+            mapper = BTCWithdrawRequest
+        case _:
+            raise NotImplementedError
+
     async for record in _withdraw_collection.find(query, sort={"nonce": ASCENDING}):
-        res.append(chain.get_withdraw_request_type()(**record))
+        res.append(mapper(**record))
     return res
 
 
@@ -79,5 +90,12 @@ async def find_withdraw_by_nonce(
     record = await _withdraw_collection.find_one(query)
 
     if record is not None:
-        return chain.get_withdraw_request_type()(**record)
+        match chain:
+            case EVMConfig():
+                mapper = EVMWithdrawRequest
+            case BTCConfig():
+                mapper = BTCWithdrawRequest
+            case _:
+                raise NotImplementedError
+        return mapper(**record)
     return None

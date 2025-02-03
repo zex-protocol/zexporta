@@ -4,10 +4,10 @@ import logging.config
 
 import sentry_sdk
 import web3.exceptions
+from clients import get_evm_async_client
 from eth_account.signers.local import LocalAccount
 from web3 import AsyncWeb3
 
-from zexporta.clients.evm import get_evm_async_client
 from zexporta.custom_types import (
     ChecksumAddress,
     Deposit,
@@ -63,11 +63,12 @@ async def deploy_contract(
 
 async def transfer_ERC20(
     w3: AsyncWeb3,
+    chain: EVMConfig,
     account: LocalAccount,
     deposit: Deposit,
     logger: logging.Logger | ChainLoggerAdapter = logger,
-) -> Deposit:
-    user_deposit = w3.eth.contract(address=deposit.transfer.to, abi=USER_DEPOSIT_ABI)  # type: ignore
+):
+    user_deposit = w3.eth.contract(address=deposit.transfer.to, abi=USER_DEPOSIT_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
     tx = await user_deposit.functions.transferERC20(
         deposit.transfer.token, deposit.transfer.value
@@ -77,7 +78,7 @@ async def transfer_ERC20(
     await w3.eth.wait_for_transaction_receipt(tx_hash)
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
     deposit.status = DepositStatus.SUCCESSFUL
-    return deposit
+    await upsert_deposit(chain, deposit)
 
 
 async def withdraw(chain: EVMConfig):
@@ -85,7 +86,7 @@ async def withdraw(chain: EVMConfig):
     while True:
         try:
             deposits = await find_deposit_by_status(
-                chain, status=DepositStatus.VERIFIED
+                chain=chain, status=DepositStatus.VERIFIED
             )
             if len(deposits) == 0:
                 _logger.debug("Deposit not found.")
@@ -94,7 +95,7 @@ async def withdraw(chain: EVMConfig):
             account = w3.eth.account.from_key(EVM_WITHDRAWER_PRIVATE_KEY)
 
             for deposit in deposits:
-                is_contract = (await w3.eth.get_code(deposit.transfer.to)) != b""  # type: ignore
+                is_contract = (await w3.eth.get_code(deposit.transfer.to)) != b""
                 if not is_contract:
                     _logger.info(
                         f"Contract: {deposit.transfer.to} not found! Deploying a new one ..."
@@ -107,13 +108,11 @@ async def withdraw(chain: EVMConfig):
                         logger=_logger,
                     )
                 try:
-                    deposit = await transfer_ERC20(w3, account, deposit, logger=_logger)
+                    await transfer_ERC20(w3, chain, account, deposit, logger=_logger)
                 except web3.exceptions.ContractCustomError as e:
                     _logger.error(
                         f"Error while trying to transfer ERC20 to contract {deposit.transfer.to} , error: {e}"
                     )
-
-                await upsert_deposit(chain=chain, deposit=deposit)
 
         except ValueError as e:
             _logger.error(

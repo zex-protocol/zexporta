@@ -1,21 +1,25 @@
 FROM python:3.12-slim
 
-RUN apt update -y && apt install gcc libgmp-dev -y
+RUN apt update -y && apt install gcc libgmp-dev curl git -y
 
-RUN pip install poetry==1.8.3
+ADD https://astral.sh/uv/0.5.24/install.sh /uv-installer.sh
 
-ENV POETRY_VIRTUALENVS_IN_PROJECT=true \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
 
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
 
 WORKDIR /app
 
-COPY pyproject.toml poetry.lock ./
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=libs,target=libs \
+    uv sync --frozen --refresh --no-editable
 
-RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
+# Copy the project into the intermediate image
+ENV PATH="/app/.venv/bin:$PATH"
 
-
-COPY ./zexporta/ ./zexporta
+COPY ./zexporta/ /app/zexporta

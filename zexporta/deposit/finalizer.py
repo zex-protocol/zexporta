@@ -1,12 +1,11 @@
 import asyncio
-import logging
 import logging.config
 import math
 
 import sentry_sdk
+from clients import filter_blocks, get_async_client
+from clients.btc.rpc.ankr import populate_deposits_utxos
 
-from zexporta.clients import filter_blocks, get_async_client
-from zexporta.clients.btc import populate_deposits_utxos
 from zexporta.custom_types import BTCConfig, ChainConfig, DepositStatus, UtxoStatus
 from zexporta.db.deposit import (
     find_deposit_by_status,

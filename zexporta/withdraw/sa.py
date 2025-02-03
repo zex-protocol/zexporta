@@ -8,13 +8,13 @@ import web3.exceptions
 from bitcoinutils.keys import PrivateKey
 from bitcoinutils.transactions import TxWitnessInput
 from bitcoinutils.utils import to_satoshis
+from clients import BTCAsyncClient, ChainAsyncClient, get_async_client
+from clients.evm import EVMAsyncClient, get_signed_data
 from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
 from web3 import Web3
 from zellular import Zellular
 
-from zexporta.clients import BTCAsyncClient, ChainAsyncClient, get_async_client
-from zexporta.clients.evm import EVMAsyncClient, get_signed_data
 from zexporta.config import (
     BTC_WITHDRAWER_PRIVATE_KEY,
     EVM_WITHDRAWER_PRIVATE_KEY,
@@ -374,11 +374,7 @@ async def withdraw(chain: ChainConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [
-        loop.create_task(withdraw(chain))
-        for chain in CHAINS_CONFIG.values()
-        if isinstance(chain, EVMConfig)
-    ]
+    tasks = [loop.create_task(withdraw(chain)) for chain in CHAINS_CONFIG.values()]
     await asyncio.gather(*tasks)
 
 

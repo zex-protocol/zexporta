@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 from web3 import Web3
 
-from zexporta.custom_types import ChecksumAddress
-from zexporta.utils.abi import ERC20_ABI
+from .abi import ERC20_ABI
+from .custom_types import ChecksumAddress
 
 type FunctionHash = str
 
@@ -74,7 +74,7 @@ def decode_transfer_tx(tx_input: str) -> TransferTX:
 
                 decoded_input_data[param_name] = param_value
         except ValueError as e:
-            raise InvalidTxError(e)
+            raise InvalidTxError(e) from e
         decoded_tx_input = TransferTX(**decoded_input_data)
         return decoded_tx_input
     else:

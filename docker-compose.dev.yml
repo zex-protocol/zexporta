@@ -27,18 +27,36 @@ services:
     networks:
       zexporta_custom_network:
 
-  monitoring-bot:
+  bot-monitoring:
     build:
       context: .
       dockerfile: Dockerfile
     image: zexporta
     container_name: monitoring-bot
-    entrypoint: poetry run python -m zexporta.monitoring_bot.main
+    entrypoint: python -m zexporta.bots.monitoring.main
     networks:
       zexporta_custom_network:
         ipv4_address: 172.20.0.13
     volumes:
       - /var/log/zexporta/monitoring_bot/:/var/log/monitoring_bot/
+    env_file:
+      - .env.dev
+
+  bot-transfer-test-token:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: zexporta
+    container_name: transfer-test-token-bot
+    entrypoint: python -m zexporta.bots.transfer_test_token.main
+    networks:
+      zexporta_custom_network:
+        ipv4_address: 172.20.0.14
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - /var/log/zexporta/transfer_test_token_bot/:/var/log/monitoring_bot/
     env_file:
       - .env.dev
 
@@ -48,7 +66,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: deposit-sa
-    entrypoint: poetry run python -m zexporta.deposit.sa
+    entrypoint: python -m zexporta.deposit.sa
     restart: always
     networks:
       zexporta_custom_network:
@@ -69,7 +87,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: deposit-observer
-    entrypoint: poetry run python -m zexporta.deposit.observer
+    entrypoint: python -m zexporta.deposit.observer
     restart: always
     depends_on:
       mongodb:
@@ -91,7 +109,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: deposit-finalizer
-    entrypoint: poetry run python -m zexporta.deposit.finalizer
+    entrypoint: python -m zexporta.deposit.finalizer
     restart: on-failure:5
     depends_on:
       mongodb:
@@ -114,7 +132,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: deposit-vault-depositor
-    entrypoint: poetry run python -m zexporta.deposit.vault_depositor
+    entrypoint: python -m zexporta.deposit.vault_depositor
     restart: always
     networks:
       zexporta_custom_network:
@@ -135,7 +153,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: withdraw-sa
-    entrypoint: poetry run python -m zexporta.withdraw.sa
+    entrypoint: python -m zexporta.withdraw.sa
     restart: always
     depends_on:
       mongodb:
@@ -155,7 +173,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: withdraw-observer
-    entrypoint: poetry run python -m zexporta.withdraw.observer
+    entrypoint: python -m zexporta.withdraw.observer
     restart: always
     depends_on:
       mongodb:
@@ -174,7 +192,7 @@ services:
       context: .
     image: zexporta
     container_name: validator-1
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --access-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
+    entrypoint: gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --access-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
     environment:
       - NODE_ID=0xfd17e3847a110c89925baf6daed35c6f1ddf8bc9c8b38a9bb41096535b5f97fd
     restart: on-failure:5
@@ -197,7 +215,7 @@ services:
       context: .
     image: zexporta
     container_name: validator-2
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
+    entrypoint: gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
     environment:
       - NODE_ID=0x0d67cd10c7b7b113b067d42c84a40dee850474892d5647955fdcb7a108b642ed
     restart: on-failure:5
@@ -220,7 +238,7 @@ services:
       context: .
     image: zexporta
     container_name: validator-3
-    entrypoint: poetry run gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
+    entrypoint: gunicorn --bind 0.0.0.0:6002 --error-logfile - --capture-output --log-level debug  --workers=5 zexporta.validator.node:app
     environment:
       - NODE_ID=0xfe6ec3f9e9ad332de8fcdf8d630ccdc209d54e71fcd9cc866785cebe2db5197b
     restart: on-failure:5

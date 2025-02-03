@@ -4,13 +4,13 @@ import time
 from decimal import Decimal
 
 import httpx
-from web3 import Web3
-
-from zexporta.clients.evm import (
+from clients.evm import (
     get_ERC20_balance,
     get_evm_async_client,
     get_signed_data,
 )
+
+from zexporta.bots.custom_types import BotToken
 from zexporta.custom_types import ChecksumAddress, EVMConfig
 from zexporta.utils.logger import ChainLoggerAdapter
 from zexporta.utils.zex_api import get_user_withdraw_nonce, send_withdraw_request
@@ -20,7 +20,6 @@ from .config import (
     TEST_USER_ID,
     WITHDRAWER_PRIVATE_KEY,
 )
-from .custom_types import MonitoringToken
 
 WITHDRAW_OPERATION = "w"
 
@@ -47,14 +46,13 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
     msg += f"t: {t}\n"
     msg += f"nonce: {nonce}\n"
     msg += f"public: {public.hex()}\n"
-    msg = "\x19Ethereum Signed Message:\n" + str(len(msg)) + msg
     logger.debug("withdraw message: %s", msg)
     return msg.encode()
 
 
 def create_tx(
     chain: EVMConfig,
-    monitoring_token: MonitoringToken,
+    monitoring_token: BotToken,
     public_key: str,
     destination_address: ChecksumAddress,
     nonce: int,
@@ -102,7 +100,7 @@ async def monitor_withdraw(
     balance_before = await get_ERC20_balance(
         w3,
         contract_address=monitoring_token.address,
-        wallet_address=Web3.to_checksum_address(destination_address),
+        wallet_address=w3.to_checksum_address(destination_address),
     )
     user_withdraw_nonce = await get_user_withdraw_nonce(
         async_client, chain, TEST_USER_ID
@@ -113,7 +111,7 @@ async def monitor_withdraw(
     msg = withdraw_msg(tx, logger)
     signed_data = bytes.fromhex(
         get_signed_data(WITHDRAWER_PRIVATE_KEY, primitive=msg)[2:]
-    )[1:]
+    )[:-1]
     logger.debug(tx + signed_data)
     send_data = (tx + signed_data).decode("latin-1")
     await send_withdraw_request(async_client, [send_data])
@@ -121,7 +119,7 @@ async def monitor_withdraw(
     balance_after = await get_ERC20_balance(
         w3,
         contract_address=monitoring_token.address,
-        wallet_address=Web3.to_checksum_address(destination_address),
+        wallet_address=w3.to_checksum_address(destination_address),
     )
     if balance_after == balance_before + monitoring_token.amount:
         return

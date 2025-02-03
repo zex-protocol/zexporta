@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
+from clients import get_compute_address_function
 from pymongo import DESCENDING
 from web3 import Web3
 
-from zexporta.clients import get_compute_address_function
 from zexporta.custom_types import (
     Address,
     BTCConfig,
@@ -65,7 +65,7 @@ async def get_active_address(
     collection = get_collection(chain=chain)
     async for address in collection.find({"is_active": True}):
         match chain:
-            case ChainConfig():
+            case EVMConfig():
                 key = Web3.to_checksum_address(address["address"])
             case BTCConfig():
                 key = address["address"]

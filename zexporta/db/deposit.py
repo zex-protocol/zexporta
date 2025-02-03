@@ -1,15 +1,17 @@
 import asyncio
-from typing import Iterable
+from typing import Iterable, overload
 
 from pymongo import ASCENDING
 
 from zexporta.custom_types import (
     BlockNumber,
     BTCConfig,
+    BTCTransfer,
     ChainConfig,
     Deposit,
     DepositStatus,
     EVMConfig,
+    EVMTransfer,
     TxHash,
 )
 
@@ -58,6 +60,27 @@ async def insert_deposits_if_not_exists(
     )
 
 
+@overload
+async def find_deposit_by_status(
+    chain: BTCConfig,
+    status: DepositStatus,
+    from_block: BlockNumber | None = None,
+    to_block: BlockNumber | None = None,
+    limit: int | None = None,
+) -> list[Deposit[BTCTransfer]]: ...
+
+
+@overload
+async def find_deposit_by_status(
+    chain: EVMConfig,
+    status: DepositStatus,
+    from_block: BlockNumber | None = None,
+    to_block: BlockNumber | None = None,
+    limit: int | None = None,
+) -> list[Deposit[EVMTransfer]]: ...
+
+
+@overload
 async def find_deposit_by_status(
     chain: ChainConfig,
     status: DepositStatus,
@@ -75,7 +98,7 @@ async def find_deposit_by_status(
     query = {
         "status": status.value,
         "transfer.block_number": block_number_query,
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
     }
     if txs_hash:
         query["transfer.tx_hash"] = ({"$in": txs_hash},)
@@ -83,7 +106,9 @@ async def find_deposit_by_status(
     async for record in collection.find(
         query, sort={"transfer.block_number": ASCENDING}
     ):
-        res.append(Deposit(**record))
+        transfer = chain.transfer_class(**record["transfer"])
+        del record["transfer"]
+        res.append(Deposit(transfer=transfer, **record))
         if limit and len(record) >= limit:
             break
     return res
@@ -113,7 +138,7 @@ async def to_finalized(
         "status": DepositStatus.PENDING.value,
         "transfer.block_number": {"$lte": finalized_block_number},
         "transfer.tx_hash": {"$in": txs_hash},
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
     }
 
     update = {"$set": {"status": DepositStatus.FINALIZED.value}}
@@ -131,7 +156,7 @@ async def to_reorg_block_number(
     query = {
         "status": status.value,
         "transfer.block_number": {"$lte": to_block, "$gte": from_block},
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
     }
     update = {"$set": {"status": DepositStatus.REORG.value}}
     await collection.update_many(query, update)
@@ -145,7 +170,7 @@ async def to_reorg_with_tx_hash(
     collection = get_collection(chain)
     query = {
         "status": status.value,
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
         "transfer.tx_hash": {"$in": txs_hash},
     }
     update = {"$set": {"status": DepositStatus.REORG.value}}
@@ -158,7 +183,7 @@ async def get_pending_deposits_block_number(
     collection = get_collection(chain)
     query = {
         "status": DepositStatus.PENDING.value,
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
         "transfer.block_number": {"$lte": finalized_block_number},
     }
     block_numbers = set()
@@ -174,7 +199,7 @@ async def get_block_numbers_by_status(
     chain: ChainConfig, status: DepositStatus
 ) -> list[BlockNumber]:
     collection = get_collection(chain)
-    query = {"transfer.chain_symbol": chain.chain_symbol.value, "status": status.value}
+    query = {"transfer.chain_symbol": chain.chain_symbol, "status": status.value}
     block_numbers = set()
     async for record in collection.find(
         query,
@@ -191,7 +216,7 @@ async def upsert_deposit(chain: ChainConfig, deposit: Deposit):
     }
     filter_ = {
         "transfer.tx_hash": deposit.transfer.tx_hash,
-        "transfer.chain_symbol": deposit.transfer.chain_symbol.value,
+        "transfer.chain_symbol": deposit.transfer.chain_symbol,
     }
     await collection.update_one(filter=filter_, update=update, upsert=True)
 
