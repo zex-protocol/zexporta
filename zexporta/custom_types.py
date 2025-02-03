@@ -86,17 +86,16 @@ class UtxoStatus(StrEnum):
     # deposit creation utxo created with status processing, deposit finalizing utxo status -> unspent, rejected
     PROCESSING = "processing"
     UNSPENT = "unspent"
-    SPENDING = "spending"
     SPEND = "spend"
     REJECTED = "rejected"
 
 
 class UTXO(BaseModel):
-    status: UtxoStatus = UtxoStatus.UNSPENT
+    status: UtxoStatus = UtxoStatus.PROCESSING
     tx_hash: TxHash
     amount: Value
     index: Value
-    script: str
+    address: Address
 
 
 class WithdrawRequest(BaseModel):
@@ -115,6 +114,8 @@ class EVMWithdrawRequest(WithdrawRequest):
 
 class BTCWithdrawRequest(WithdrawRequest):
     utxos: list[UTXO]
+    zellular_index: str
+    sat_per_byte: int
 
 
 class ChainConfig(BaseModel, ABC):

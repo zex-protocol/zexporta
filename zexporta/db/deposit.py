@@ -64,6 +64,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit]:
     collection = get_collection(chain)
     res = []
@@ -76,6 +77,8 @@ async def find_deposit_by_status(
         "transfer.block_number": block_number_query,
         "transfer.chain_symbol": chain.chain_symbol.value,
     }
+    if txs_hash:
+        query["transfer.tx_hash"] = ({"$in": txs_hash},)
 
     async for record in collection.find(
         query, sort={"transfer.block_number": ASCENDING}

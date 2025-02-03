@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -10,13 +11,17 @@ from zexporta.clients import ChainAsyncClient
 from zexporta.config import BTC_GROUP_KEY_PUB
 from zexporta.custom_types import (
     URL,
+    UTXO,
     Address,
     BlockNumber,
     BTCConfig,
     BTCTransfer,
+    Deposit,
     TxHash,
+    UtxoStatus,
     Value,
 )
+from zexporta.db.utxo import insert_utxos_if_not_exists
 from zexporta.utils.logger import ChainLoggerAdapter
 
 
@@ -247,6 +252,15 @@ class BTCAnkrAsyncClient:
         resp = await self._request("POST", url, headers=headers, json_data=data)
         return resp["result"]["blocks"]  # type: ignore
 
+    async def get_fee_per_byte(self) -> int | None:
+        url = f"{self.base_url}"
+        data = {"id": "test", "method": "estimatesmartfee", "params": [6]}
+        headers = {
+            "Content-Type": "application/json",
+        }
+        resp = await self._request("POST", url, headers=headers, json_data=data)
+        return resp["result"] and Decimal(resp["result"]["feerate"]) * (10 ^ 8)
+
 
 class BTCAsyncClient(ChainAsyncClient):
     def __init__(self, chain: BTCConfig):
@@ -347,3 +361,21 @@ def compute_btc_address(salt: int) -> str:
     public_key = PublicKey(compressed_pubkey)
     taproot_address = public_key.get_taproot_address()
     return taproot_address.to_string()
+
+
+async def populate_deposits_utxos(
+    deposits: list[Deposit], status: UtxoStatus = UtxoStatus.PROCESSING
+):
+    utxos = []
+    for deposit in deposits:
+        transfer = deposit.transfer
+        utxos.append(
+            UTXO(
+                status=status,
+                tx_hash=transfer.tx_hash,
+                amount=transfer.value,
+                index=transfer.index,
+                address=transfer.to,
+            )
+        )
+    await insert_utxos_if_not_exists(utxos)

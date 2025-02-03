@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from pyfrost.network.abstract import Validators
@@ -37,6 +38,10 @@ class NodeValidators(Validators):
                 case EVMConfig():
                     return evm_withdraw(chain, sa_withdraw_nonce, logger=_logger)
                 case BTCConfig():
-                    return btc_withdraw(chain, sa_withdraw_nonce, logger=_logger)
+                    return asyncio.run(
+                        btc_withdraw(
+                            chain, sa_withdraw_nonce, data=data, logger=_logger
+                        )
+                    )
 
         raise NotImplementedError()

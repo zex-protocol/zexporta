@@ -81,7 +81,7 @@ async def get_zex_latest_block(
 
 
 async def get_zex_last_withdraw_nonce(
-    async_client: httpx.AsyncClient, chain: EVMConfig
+    async_client: httpx.AsyncClient, chain: ChainConfig
 ) -> int:
     try:
         res = await async_client.get(

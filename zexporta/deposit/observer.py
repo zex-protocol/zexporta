@@ -8,7 +8,8 @@ import zexporta.clients.exceptions as client_exception
 from zexporta.clients import (
     get_async_client,
 )
-from zexporta.custom_types import ChainConfig
+from zexporta.clients.btc import populate_deposits_utxos
+from zexporta.custom_types import BTCConfig, ChainConfig, UtxoStatus
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.db.chain import (
     get_last_observed_block,
@@ -64,6 +65,11 @@ async def observe_deposit(chain: ChainConfig):
             continue
         if len(accepted_deposits) > 0:
             await insert_deposits_if_not_exists(chain, accepted_deposits)
+            if isinstance(chain, BTCConfig):
+                await populate_deposits_utxos(
+                    accepted_deposits, status=UtxoStatus.PROCESSING
+                )
+
         await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
         last_observed_block = to_block
 

@@ -6,8 +6,10 @@ import math
 import sentry_sdk
 
 from zexporta.clients import filter_blocks, get_async_client
-from zexporta.custom_types import ChainConfig
+from zexporta.clients.btc import populate_deposits_utxos
+from zexporta.custom_types import BTCConfig, ChainConfig, DepositStatus, UtxoStatus
 from zexporta.db.deposit import (
+    find_deposit_by_status,
     get_pending_deposits_block_number,
     to_finalized,
     to_reorg_block_number,
@@ -46,8 +48,28 @@ async def update_finalized_deposits(chain: ChainConfig):
                 client.get_block_tx_hash,
                 max_delay_per_block_batch=chain.delay,
             )
-            # todo ;; add utxo finalizing for btc chain
+            if isinstance(chain, BTCConfig):
+                finalized_deposits = await find_deposit_by_status(
+                    chain=chain,
+                    status=DepositStatus.PENDING,
+                    to_block=finalized_block_number,
+                    txs_hash=results,
+                )
+                await populate_deposits_utxos(
+                    finalized_deposits, status=UtxoStatus.UNSPENT
+                )
             await to_finalized(chain, finalized_block_number, results)
+
+            if isinstance(chain, BTCConfig):
+                reorged_deposits = await find_deposit_by_status(
+                    chain=chain,
+                    status=DepositStatus.PENDING,
+                    to_block=max(blocks_to_check),
+                    from_block=min(blocks_to_check),
+                )
+                await populate_deposits_utxos(
+                    reorged_deposits, status=UtxoStatus.REJECTED
+                )
             await to_reorg_block_number(
                 chain, min(blocks_to_check), max(blocks_to_check)
             )

@@ -19,7 +19,7 @@ if ENVIRONMENT == EnvEnum.PROD:
     SEQUENCER_BASE_URL = ""
     SEQUENCER_APP_NAME = ""
 
-    CHAINS_CONFIG = {
+    CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.POL.value: EVMConfig(
             private_rpc=os.environ["POL_RPC"],
             chain_symbol=ChainSymbol.POL,
@@ -136,5 +136,6 @@ DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./zexporta/dkgs/dkgs.json")
 DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 
 EVM_WITHDRAWER_PRIVATE_KEY = os.environ["EVM_WITHDRAWER_PRIVATE_KEY"]
+BTC_WITHDRAWER_PRIVATE_KEY = os.environ["BTC_WITHDRAWER_PRIVATE_KEY"]
 
 SENTRY_DNS = os.getenv("SENTRY_DNS")
