@@ -6,6 +6,7 @@ import logging.config
 import sentry_sdk
 import web3.exceptions
 from clients.evm import get_signed_data
+from clients.evm.client import get_evm_async_client
 from eth_account.signers.local import LocalAccount
 from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
@@ -23,7 +24,6 @@ from zexporta.utils.dkg import parse_dkg_json
 from zexporta.utils.encoder import get_withdraw_hash
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
-from zexporta.utils.web3 import async_web3_factory
 from zexporta.utils.zex_api import (
     ZexAPIError,
 )
@@ -146,7 +146,7 @@ async def withdraw(chain: EVMConfig):
 
     while True:
         try:
-            w3 = await async_web3_factory(chain)
+            w3 = get_evm_async_client(chain).client
             account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
 
             dkg_party = dkg_key["party"]
@@ -208,7 +208,11 @@ async def withdraw(chain: EVMConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [loop.create_task(withdraw(chain)) for chain in CHAINS_CONFIG.values()]
+    tasks = [
+        loop.create_task(withdraw(chain))
+        for chain in CHAINS_CONFIG.values()
+        if isinstance(chain, EVMConfig)
+    ]
     await asyncio.gather(*tasks)
 
 

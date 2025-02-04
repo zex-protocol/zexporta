@@ -2,8 +2,8 @@ import asyncio
 import logging
 import logging.config
 
+from clients.evm.client import compute_create2_address, get_evm_async_client
 from eth_account.signers.local import LocalAccount
-from eth_typing import HexStr
 from web3 import AsyncWeb3
 
 from zexporta.bots.custom_types import BotToken
@@ -19,12 +19,9 @@ from zexporta.bots.transfer_test_token.database import (
 from zexporta.bots.utils.deposit import send_deposit
 from zexporta.config import (
     CHAINS_CONFIG,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
 )
 from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
-from zexporta.utils.web3 import async_web3_factory, compute_create2_address
 from zexporta.utils.zex_api import ZexAPIError, get_async_client, get_last_zex_user_id
 
 logging.config.dictConfig(
@@ -56,7 +53,7 @@ async def _send_deposits(
 
 async def transfer_test_tokens(chain: EVMConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
-    w3 = await async_web3_factory(chain)
+    w3 = get_evm_async_client(chain).client
     account = w3.eth.account.from_key(HOLDER_PRIVATE_KEY)
     test_tokens = [
         token for token in TEST_TOKENS if token.chain_symbol == chain.chain_symbol
@@ -65,14 +62,13 @@ async def transfer_test_tokens(chain: EVMConfig):
         _logger.error("No token for transfer found")
 
     while True:
-        last_transferred_user_id = await get_last_transferred_id(chain.chain_symbol)
+        last_transferred_user_id = (
+            await get_last_transferred_id(chain.chain_symbol) or 0
+        )
 
-        if last_transferred_user_id is None:
-            last_transferred_user_id = 0
+        last_user_id = await _get_last_user_id() or 0
 
-        last_user_id = await _get_last_user_id()
-
-        if last_user_id is not None and last_transferred_user_id == last_user_id:
+        if last_transferred_user_id == last_user_id:
             _logger.info("There is no new user to transfer to")
             await asyncio.sleep(chain.delay)
 
@@ -80,9 +76,7 @@ async def transfer_test_tokens(chain: EVMConfig):
             _logger.info(f"Initiate transferring to user with id: {id}")
 
             user_address = compute_create2_address(
-                deployer_address=USER_DEPOSIT_FACTORY_ADDRESS,
                 salt=id,
-                bytecode_hash=HexStr(USER_DEPOSIT_BYTECODE_HASH),
             )
 
             _logger.info(f"Deposit address for user with id: {id} is {user_address}")
@@ -103,6 +97,7 @@ async def main():
     tasks = [
         loop.create_task(transfer_test_tokens(chain))
         for chain in CHAINS_CONFIG.values()
+        if isinstance(chain, EVMConfig)
     ]
     await asyncio.gather(*tasks)
 
