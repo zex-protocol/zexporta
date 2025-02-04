@@ -68,7 +68,9 @@ async def observe_withdraw(chain: EVMConfig):
 async def main():
     loop = asyncio.get_running_loop()
     tasks = [
-        loop.create_task(observe_withdraw(chain)) for chain in CHAINS_CONFIG.values()
+        loop.create_task(observe_withdraw(chain))
+        for chain in CHAINS_CONFIG.values()
+        if isinstance(chain, EVMConfig)
     ]
     await asyncio.gather(*tasks)
 
