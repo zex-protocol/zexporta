@@ -6,9 +6,7 @@ import sentry_sdk
 from clients import (
     get_async_client,
 )
-from clients.btc.rpc.ankr import populate_deposits_utxos
 
-# from clients.btc import populate_deposits_utxos
 from zexporta.custom_types import BTCConfig, ChainConfig, UtxoStatus
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.db.chain import (
@@ -16,6 +14,7 @@ from zexporta.db.chain import (
     upsert_chain_last_observed_block,
 )
 from zexporta.db.deposit import insert_deposits_if_not_exists
+from zexporta.db.utxo import populate_deposits_utxos
 from zexporta.explorer import explorer
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 
@@ -45,7 +44,6 @@ async def observe_deposit(chain: ChainConfig):
         await insert_new_address_to_db(chain)
         accepted_addresses = await get_active_address(chain)
         try:
-            # todo ;; add utxo creation for btc chain
             accepted_deposits = await explorer(
                 chain,
                 last_observed_block + 1,

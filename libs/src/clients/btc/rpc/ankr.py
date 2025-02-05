@@ -2,12 +2,8 @@ from decimal import Decimal
 from typing import Any
 
 import httpx
-from bitcoinutils.keys import PublicKey
 from pydantic import BaseModel
-from pyfrost.btc_utils import taproot_tweak_pubkey
-from pyfrost.crypto_utils import code_to_pub
 
-from clients import ChainAsyncClient
 from clients.btc.exceptions import (
     BTCClientError,
     BTCConnectionError,
@@ -16,31 +12,20 @@ from clients.btc.exceptions import (
     BTCTimeoutError,
 )
 from clients.custom_types import URL, BlockNumber, TxHash, Value
-from zexporta.config import BTC_GROUP_KEY_PUB
-from zexporta.custom_types import (
-    UTXO,
-    Address,
-    BTCConfig,
-    BTCTransfer,
-    Deposit,
-    UtxoStatus,
-)
-from zexporta.db.utxo import insert_utxos_if_not_exists
-from zexporta.utils.logger import ChainLoggerAdapter
 
 
 class AddressDetails(BaseModel):
-    page: int
-    totalPages: int
-    itemsOnPage: int
+    page: int | None = None
+    totalPages: int | None = None
+    itemsOnPage: int | None = None
     address: str
     balance: int
     totalReceived: int
     totalSent: int
-    unconfirmedBalance: int
-    unconfirmedTxs: int
-    txs: int
-    txids: list[str]
+    unconfirmedBalance: int | None = None
+    unconfirmedTxs: int | None = None
+    txs: int | None = None
+    txids: list[str] | None = None
 
 
 # Model for Unspent (Unspent Transaction Outputs)
@@ -65,6 +50,7 @@ class Vout(BaseModel):
 
 # Common Model for all Transaction inputs (vin)
 class Vin(BaseModel):
+    value: Value | None = None
     sequence: int | None = None
     n: int | None = None
     isAddress: bool | None = None
@@ -77,10 +63,10 @@ class Transaction(BaseModel):
     txid: str
     vin: list[Vin]
     vout: list[Vout]
-    blockHash: str
-    blockHeight: int
+    blockHash: str | None
+    blockHeight: int | None
     confirmations: int
-    blockTime: int
+    blockTime: int | None
     value: Value
     valueIn: Value
     fees: Value
@@ -88,9 +74,9 @@ class Transaction(BaseModel):
 
 # Response for getting block by identifier (including multiple pages)
 class Block(BaseModel):
-    page: int
-    totalPages: int
-    itemsOnPage: int
+    page: int | None = None
+    totalPages: int | None = None
+    itemsOnPage: int | None = None
     hash: str
     previousBlockHash: str
     nextBlockHash: str | None = None
@@ -242,122 +228,3 @@ class BTCAnkrAsyncClient:
         }
         resp = await self._request("POST", url, headers=headers, json_data=data)
         return resp["result"] and Decimal(resp["result"]["feerate"]) * (10 ^ 8)
-
-
-class BTCAsyncClient(ChainAsyncClient):
-    def __init__(self, chain: BTCConfig):
-        self.chain = chain
-        self.btc = None
-
-    @property
-    def client(self) -> BTCAnkrAsyncClient:
-        if self.btc is not None:
-            return self.btc
-        self.btc = BTCAnkrAsyncClient(
-            base_url=self.chain.private_rpc, indexer_url=self.chain.private_indexer_rpc
-        )
-        return self.btc
-
-    async def get_transfer_by_tx_hash(self, tx_hash: TxHash) -> list[BTCTransfer]:
-        tx = await self.client.get_tx_by_hash(tx_hash)
-        return self._parse_transfer(tx)
-
-    async def get_finalized_block_number(self) -> BlockNumber:
-        finalize_block_count = self.chain.finalize_block_count or 0
-        finalized_block_number = (
-            await self.get_latest_block_number()
-        ) - finalize_block_count
-        return finalized_block_number
-
-    async def get_token_decimals(self, token_address: Address) -> int:
-        return 8
-
-    async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: ChainLoggerAdapter
-    ) -> bool:
-        if await self.client.get_tx_by_hash(tx_hash):
-            return True
-        return False
-
-    async def get_block_tx_hash(
-        self, block_number: BlockNumber, **kwargs
-    ) -> list[TxHash]:
-        block = await self.client.get_block_by_identifier(block_number)
-        return [tx.txid for tx in block.txs]  # type: ignore
-
-    async def get_latest_block_number(self) -> BlockNumber:
-        return await self.client.get_latest_block_number()
-
-    async def extract_transfer_from_block(
-        self,
-        block_number: BlockNumber,
-        logger: ChainLoggerAdapter,
-        **kwargs,
-    ) -> list[BTCTransfer]:
-        logger.debug(f"Observing block number {block_number} start")
-        block = await self.client.get_block_by_identifier(block_number)
-        result = []
-        for tx in block.txs:  # type: ignore
-            transfer = self._parse_transfer(tx)
-            if transfer:
-                result.extend(transfer)
-        logger.debug(f"Observing block number {block_number} end")
-        return result
-
-    def _parse_transfer(self, tx: Transaction) -> list[BTCTransfer]:
-        transfers = []
-        for output in tx.vout:
-            if output.isAddress:
-                transfers.append(
-                    BTCTransfer(
-                        tx_hash=tx.txid,
-                        block_number=tx.blockHeight,
-                        chain_symbol=self.chain.chain_symbol,
-                        to=output.addresses[0],  # type: ignore
-                        value=output.value,
-                        token="0x0000000000000000000000000000000000000000",
-                        index=output.n,
-                    )
-                )
-        return transfers
-
-
-_async_clients: dict[str, BTCAsyncClient] = {}
-
-
-def get_btc_async_client(chain: BTCConfig) -> BTCAsyncClient:
-    if client := _async_clients.get(chain.chain_symbol.value):
-        return client
-    client = BTCAsyncClient(chain)
-    _async_clients[chain.chain_symbol.value] = client
-    return client
-
-
-def compute_btc_address(salt: int) -> str:
-    _, public_key = taproot_tweak_pubkey(BTC_GROUP_KEY_PUB, str(salt).encode())
-    public_key = code_to_pub(int(public_key.hex(), 16))
-    x_hex = hex(public_key.x)[2:].zfill(64)
-    y_hex = hex(public_key.y)[2:].zfill(64)
-    prefix = "02" if int(y_hex, 16) % 2 == 0 else "03"
-    compressed_pubkey = prefix + x_hex
-    public_key = PublicKey(compressed_pubkey)
-    taproot_address = public_key.get_taproot_address()
-    return taproot_address.to_string()
-
-
-async def populate_deposits_utxos(
-    deposits: list[Deposit], status: UtxoStatus = UtxoStatus.PROCESSING
-):
-    utxos = []
-    for deposit in deposits:
-        transfer = deposit.transfer
-        utxos.append(
-            UTXO(
-                status=status,
-                tx_hash=transfer.tx_hash,
-                amount=transfer.value,
-                index=transfer.index,
-                address=transfer.to,
-            )
-        )
-    await insert_utxos_if_not_exists(utxos)

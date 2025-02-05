@@ -4,7 +4,6 @@ import math
 
 import sentry_sdk
 from clients import filter_blocks, get_async_client
-from clients.btc.rpc.ankr import populate_deposits_utxos
 
 from zexporta.custom_types import BTCConfig, ChainConfig, DepositStatus, UtxoStatus
 from zexporta.db.deposit import (
@@ -13,6 +12,7 @@ from zexporta.db.deposit import (
     to_finalized,
     to_reorg_block_number,
 )
+from zexporta.db.utxo import populate_deposits_utxos
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 
 from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS

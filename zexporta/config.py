@@ -64,6 +64,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         #     finalize_block_count=6,
         #     delay=10,
         #     batch_block_size=5,
+        #     vault_address = "",
         # ),
     }
     # setup("mainnet")
@@ -117,8 +118,8 @@ else:
             private_indexer_rpc=os.environ["BTC_INDEXER"],
             chain_symbol=ChainSymbol.BTC.value,
             finalize_block_count=6,
-            delay=10,
-            batch_block_size=0,
+            delay=60,
+            batch_block_size=5,
             vault_address="",
         ),
     }

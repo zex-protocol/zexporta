@@ -5,6 +5,7 @@ from pymongo import DESCENDING
 
 from zexporta.custom_types import (
     UTXO,
+    Deposit,
     TxHash,
     UtxoStatus,
 )
@@ -73,3 +74,21 @@ async def upsert_utxo(utxo: UTXO):
 
 async def upsert_utxos(utxos: list[UTXO]):
     await asyncio.gather(*[upsert_utxo(utxo) for utxo in utxos])
+
+
+async def populate_deposits_utxos(
+    deposits: list[Deposit], status: UtxoStatus = UtxoStatus.PROCESSING
+):
+    utxos = []
+    for deposit in deposits:
+        transfer = deposit.transfer
+        utxos.append(
+            UTXO(
+                status=status,
+                tx_hash=transfer.tx_hash,
+                amount=transfer.value,
+                index=transfer.index,
+                address=transfer.to,
+            )
+        )
+    await insert_utxos_if_not_exists(utxos)
