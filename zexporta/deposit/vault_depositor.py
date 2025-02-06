@@ -4,7 +4,7 @@ import logging.config
 
 import sentry_sdk
 import web3.exceptions
-from clients import get_evm_async_client
+from clients.evm import get_evm_async_client
 from eth_account.signers.local import LocalAccount
 from web3 import AsyncWeb3
 
@@ -20,6 +20,7 @@ from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 
 from .config import (
     CHAINS_CONFIG,
+    EVM_NATIVE_TOKEN_ADDRESS,
     EVM_WITHDRAWER_PRIVATE_KEY,
     LOGGER_PATH,
     SENTRY_DNS,
@@ -61,24 +62,32 @@ async def deploy_contract(
         raise ValueError("Deployed event not found in transaction logs")
 
 
-async def transfer_ERC20(
+async def transfer_token(
     w3: AsyncWeb3,
-    chain: EVMConfig,
     account: LocalAccount,
     deposit: Deposit,
     logger: logging.Logger | ChainLoggerAdapter = logger,
-):
-    user_deposit = w3.eth.contract(address=deposit.transfer.to, abi=USER_DEPOSIT_ABI)
+) -> Deposit:
+    user_deposit = w3.eth.contract(address=deposit.transfer.to, abi=USER_DEPOSIT_ABI)  # type: ignore
     nonce = await w3.eth.get_transaction_count(account.address)
-    tx = await user_deposit.functions.transferERC20(
-        deposit.transfer.token, deposit.transfer.value
-    ).build_transaction({"from": account.address, "nonce": nonce})
+    logger.info(f"to: {deposit.transfer.token}")
+    if deposit.transfer.token == EVM_NATIVE_TOKEN_ADDRESS:
+        logger.info("Creating transferNativeToken tx.")
+        tx = await user_deposit.functions.transferNativeToken(
+            deposit.transfer.value
+        ).build_transaction({"from": account.address, "nonce": nonce})
+    else:
+        logger.info("Creating transferERC20 token tx.")
+        tx = await user_deposit.functions.transferERC20(
+            deposit.transfer.token, deposit.transfer.value
+        ).build_transaction({"from": account.address, "nonce": nonce})
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    logger.info(f"Transaction Hash: {tx_hash.hex()}")
     await w3.eth.wait_for_transaction_receipt(tx_hash)
-    logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
+    logger.info("Method called successfully.")
     deposit.status = DepositStatus.SUCCESSFUL
-    await upsert_deposit(chain, deposit)
+    return deposit
 
 
 async def withdraw(chain: EVMConfig):
@@ -86,7 +95,7 @@ async def withdraw(chain: EVMConfig):
     while True:
         try:
             deposits = await find_deposit_by_status(
-                chain=chain, status=DepositStatus.VERIFIED
+                chain, status=DepositStatus.VERIFIED
             )
             if len(deposits) == 0:
                 _logger.debug("Deposit not found.")
@@ -95,7 +104,7 @@ async def withdraw(chain: EVMConfig):
             account = w3.eth.account.from_key(EVM_WITHDRAWER_PRIVATE_KEY)
 
             for deposit in deposits:
-                is_contract = (await w3.eth.get_code(deposit.transfer.to)) != b""
+                is_contract = (await w3.eth.get_code(deposit.transfer.to)) != b""  # type: ignore
                 if not is_contract:
                     _logger.info(
                         f"Contract: {deposit.transfer.to} not found! Deploying a new one ..."
@@ -108,11 +117,16 @@ async def withdraw(chain: EVMConfig):
                         logger=_logger,
                     )
                 try:
-                    await transfer_ERC20(w3, chain, account, deposit, logger=_logger)
-                except web3.exceptions.ContractCustomError as e:
+                    deposit = await transfer_token(w3, account, deposit, logger=_logger)
+                except (
+                    web3.exceptions.ContractCustomError,
+                    web3.exceptions.ContractLogicError,
+                ) as e:
                     _logger.error(
                         f"Error while trying to transfer ERC20 to contract {deposit.transfer.to} , error: {e}"
                     )
+
+                await upsert_deposit(chain=chain, deposit=deposit)
 
         except ValueError as e:
             _logger.error(

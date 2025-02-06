@@ -374,7 +374,11 @@ async def withdraw(chain: ChainConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [loop.create_task(withdraw(chain)) for chain in CHAINS_CONFIG.values()]
+    tasks = [
+        loop.create_task(withdraw(chain))
+        for chain in CHAINS_CONFIG.values()
+        if isinstance(chain, EVMConfig)
+    ]
     await asyncio.gather(*tasks)
 
 

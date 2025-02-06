@@ -10,7 +10,7 @@ from clients.custom_types import (
     TxHash,
     Value,
 )
-from clients.evm.custom_types import ChecksumAddress, EVMConfig, EVMTransfer
+from clients.evm.custom_types import ChainId, ChecksumAddress, EVMConfig, EVMTransfer
 from pydantic import BaseModel, Field
 
 
@@ -161,4 +161,5 @@ __all__ = [
     "EVMTransfer",
     "BTCTransfer",
     "Transfer",
+    "ChainId",
 ]

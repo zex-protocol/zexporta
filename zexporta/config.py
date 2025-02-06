@@ -117,7 +117,7 @@ else:
             private_rpc=os.environ["BTC_RPC"],
             private_indexer_rpc=os.environ["BTC_INDEXER"],
             chain_symbol=ChainSymbol.BTC.value,
-            finalize_block_count=6,
+            finalize_block_count=1,
             delay=60,
             batch_block_size=5,
             vault_address="",

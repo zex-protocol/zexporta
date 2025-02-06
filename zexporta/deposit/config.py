@@ -8,6 +8,7 @@ from zexporta.config import (
     CHAINS_CONFIG,
     DKG_JSON_PATH,
     DKG_NAME,
+    EVM_NATIVE_TOKEN_ADDRESS,
     EVM_WITHDRAWER_PRIVATE_KEY,
     MONGO_URI,
     SA_SHIELD_PRIVATE_KEY,

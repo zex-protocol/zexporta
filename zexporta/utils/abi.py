@@ -54,6 +54,7 @@ FACTORY_ABI = [
     },
 ]
 
+
 USER_DEPOSIT_ABI = [
     {
         "inputs": [
@@ -64,8 +65,16 @@ USER_DEPOSIT_ABI = [
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function",
-    }
+    },
+    {
+        "inputs": [{"internalType": "uint256", "name": "_amount", "type": "uint256"}],
+        "name": "transferNativeToken",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
 ]
+
 
 VAULT_ABI = [
     {
