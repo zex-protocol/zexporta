@@ -61,6 +61,10 @@ async def observe_deposit(chain: ChainConfig):
             _logger.error(f"ValueError: {e}")
             await asyncio.sleep(10)
 
+        except Exception as e:
+            _logger.exception(f"Exception: {e}")
+            await asyncio.sleep(5)
+
         if len(accepted_deposits) > 0:
             await insert_deposits_if_not_exists(chain, accepted_deposits)
 

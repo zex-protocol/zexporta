@@ -23,33 +23,38 @@ logger = logging.getLogger(__name__)
 async def update_finalized_deposits(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
-        client = get_async_client(chain)
-        finalized_block_number = await client.get_finalized_block_number()
-        pending_blocks_number = await get_pending_deposits_block_number(
-            chain=chain,
-            finalized_block_number=finalized_block_number,
-        )
+        try:
+            client = get_async_client(chain)
+            finalized_block_number = await client.get_finalized_block_number()
+            pending_blocks_number = await get_pending_deposits_block_number(
+                chain=chain,
+                finalized_block_number=finalized_block_number,
+            )
 
-        if len(pending_blocks_number) == 0:
-            _logger.info(
-                f"No pending tx has been found. finalized_block_number: {finalized_block_number}"
-            )
-            await asyncio.sleep(chain.delay)
-            continue
+            if len(pending_blocks_number) == 0:
+                _logger.info(
+                    f"No pending tx has been found. finalized_block_number: {finalized_block_number}"
+                )
+                await asyncio.sleep(chain.delay)
+                continue
 
-        for i in range(math.ceil(len(pending_blocks_number) / chain.batch_block_size)):
-            blocks_to_check = pending_blocks_number[
-                (i * chain.batch_block_size) : ((i + 1) * chain.batch_block_size)
-            ]
-            results = await filter_blocks(
-                blocks_to_check,
-                client.get_block_tx_hash,
-                max_delay_per_block_batch=chain.delay,
-            )
-            await to_finalized(chain, finalized_block_number, results)
-            await to_reorg_block_number(
-                chain, min(blocks_to_check), max(blocks_to_check)
-            )
+            for i in range(
+                math.ceil(len(pending_blocks_number) / chain.batch_block_size)
+            ):
+                blocks_to_check = pending_blocks_number[
+                    (i * chain.batch_block_size) : ((i + 1) * chain.batch_block_size)
+                ]
+                results = await filter_blocks(
+                    blocks_to_check,
+                    client.get_block_tx_hash,
+                    max_delay_per_block_batch=chain.delay,
+                )
+                await to_finalized(chain, finalized_block_number, results)
+                await to_reorg_block_number(
+                    chain, min(blocks_to_check), max(blocks_to_check)
+                )
+        except Exception as e:
+            _logger.exception(f"An error occurred: {e}")
 
 
 async def main():
