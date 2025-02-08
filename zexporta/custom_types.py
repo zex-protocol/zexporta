@@ -38,19 +38,53 @@ class ChainSymbol(StrEnum):
     BTC = "BTC"
 
 
+class WithdrawStatus(StrEnum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESSFUL = "successful"
+    REJECTED = "rejected"
+
+
+class UtxoStatus(StrEnum):
+    UNSPENT = "unspent"
+    SPEND = "spend"
+
+
+class UTXO(BaseModel):
+    status: UtxoStatus = UtxoStatus.UNSPENT
+    tx_hash: TxHash
+    amount: Value
+    index: Value
+    address: Address
+    user_id: UserId
+
+
+class WithdrawRequest(BaseModel):
+    model_config = {"extra": "ignore"}
+    amount: Value
+    recipient: Address
+    tx_hash: TxHash | None = None
+    status: WithdrawStatus = WithdrawStatus.PENDING
+    chain_symbol: str
+    nonce: int
+
+
+class EVMWithdrawRequest(WithdrawRequest):
+    token_address: ChecksumAddress
+
+
+class BTCWithdrawRequest(WithdrawRequest):
+    utxos: list[UTXO]
+    zellular_index: str
+    sat_per_byte: int
+
+
 class DepositStatus(StrEnum):
     PENDING = "pending"
     FINALIZED = "finalized"
     VERIFIED = "verified"
     SUCCESSFUL = "successful"
     REORG = "reorg"
-    REJECTED = "rejected"
-
-
-class WithdrawStatus(StrEnum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    SUCCESSFUL = "successful"
     REJECTED = "rejected"
 
 
@@ -91,17 +125,6 @@ class UserAddress(BaseModel):
     is_active: bool = Field(default=True)
 
 
-class EVMWithdrawRequest(BaseModel):
-    model_config = {"extra": "ignore"}
-    token_address: ChecksumAddress
-    amount: Value
-    recipient: ChecksumAddress
-    nonce: int
-    chain_id: ChainId
-    tx_hash: TxHash | None = None
-    status: WithdrawStatus = WithdrawStatus.PENDING
-
-
 class ZexUserAsset(BaseModel):
     asset: str
     free: str
@@ -112,7 +135,9 @@ class ZexUserAsset(BaseModel):
 
 __all__ = [
     "ZexUserAsset",
+    "WithdrawRequest",
     "EVMWithdrawRequest",
+    "BTCWithdrawRequest",
     "UserAddress",
     "Deposit",
     "SaDepositSchema",
@@ -134,4 +159,6 @@ __all__ = [
     "EVMTransfer",
     "BTCTransfer",
     "Transfer",
+    "ChainId",
+    "UtxoStatus",
 ]

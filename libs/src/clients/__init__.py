@@ -20,6 +20,7 @@ __all__ = [
     "EVMAsyncClient",
     "BTCConfig",
     "EVMConfig",
+    "compute_btc_address",
 ]
 
 

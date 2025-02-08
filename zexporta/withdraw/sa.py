@@ -5,27 +5,48 @@ import logging.config
 
 import sentry_sdk
 import web3.exceptions
-from clients.evm import get_signed_data
-from clients.evm.client import get_evm_async_client
-from eth_account.signers.local import LocalAccount
+from bitcoinutils.keys import PrivateKey
+from bitcoinutils.transactions import TxWitnessInput
+from bitcoinutils.utils import to_satoshis, tweak_taproot_privkey
+from clients import BTCAsyncClient, ChainAsyncClient, get_async_client
+from clients.evm import EVMAsyncClient, get_signed_data
 from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
-from web3 import AsyncWeb3, Web3
+from web3 import Web3
+from zellular import Zellular
 
+from zexporta.config import (
+    BTC_WITHDRAWER_PRIVATE_KEY,
+    EVM_WITHDRAWER_PRIVATE_KEY,
+    SEQUENCER_APP_NAME,
+    SEQUENCER_BASE_URL,
+)
 from zexporta.custom_types import (
+    UTXO,
+    BTCConfig,
+    BTCWithdrawRequest,
+    ChainConfig,
     EVMConfig,
     EVMWithdrawRequest,
+    UtxoStatus,
+    WithdrawRequest,
     WithdrawStatus,
 )
+from zexporta.db.utxo import find_utxo_by_status, upsert_utxo
 from zexporta.db.withdraw import find_withdraws_by_status, upsert_withdraw
 from zexporta.utils.abi import VAULT_ABI
 from zexporta.utils.decode_error import decode_custom_error_data
 from zexporta.utils.dkg import parse_dkg_json
-from zexporta.utils.encoder import get_withdraw_hash
+from zexporta.utils.encoder import get_evm_withdraw_hash
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
 from zexporta.utils.zex_api import (
     ZexAPIError,
+)
+from zexporta.withdraw.btc_utils import (
+    NotEnoughInputs,
+    calculate_fee,
+    get_simple_withdraw_tx,
 )
 
 from .config import (
@@ -37,7 +58,6 @@ from .config import (
     SA_SHIELD_PRIVATE_KEY,
     SA_TIMEOUT,
     SENTRY_DNS,
-    WITHDRAWER_PRIVATE_KEY,
 )
 
 
@@ -54,14 +74,22 @@ logger = logging.getLogger(__name__)
 
 nodes_info = NodesInfo()
 sa = SA(nodes_info, default_timeout=SA_TIMEOUT)
-dkg_key = dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
+dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
 
 
 async def check_validator_data(
-    zex_withdraw: EVMWithdrawRequest,
+    chain: ChainConfig,
+    zex_withdraw: WithdrawRequest,
     validator_hash: str,
 ):
-    withdraw_hash = get_withdraw_hash(zex_withdraw)
+    match chain:
+        case EVMConfig():
+            withdraw_hash = get_evm_withdraw_hash(zex_withdraw)
+        case BTCConfig():
+            tx, _ = get_simple_withdraw_tx(zex_withdraw, chain.vault_address)
+            withdraw_hash = tx.to_hex()
+        case _:
+            raise NotImplementedError
     if withdraw_hash != validator_hash:
         raise WithdrawDifferentHashError(
             f"validator_hash: {validator_hash}, withdraw_hash: {withdraw_hash}"
@@ -69,8 +97,31 @@ async def check_validator_data(
 
 
 async def process_withdraw_sa(
-    w3: AsyncWeb3,
-    account: LocalAccount,
+    chain: EVMConfig,
+    withdraw_request: WithdrawRequest,
+    dkg_party,
+    logger: ChainLoggerAdapter,
+):
+    client = get_async_client(chain)
+    match chain:
+        case EVMConfig():
+            _process_sa = process_evm_withdraw_sa
+        case BTCConfig():
+            _process_sa = process_btc_withdraw_sa
+        case _:
+            raise NotImplementedError
+
+    await _process_sa(
+        client=client,
+        chain=chain,
+        withdraw_request=withdraw_request,
+        dkg_party=dkg_party,
+        logger=logger,
+    )
+
+
+async def process_evm_withdraw_sa(
+    client: EVMAsyncClient,
     chain: EVMConfig,
     withdraw_request: EVMWithdrawRequest,
     dkg_party,
@@ -95,13 +146,12 @@ async def process_withdraw_sa(
     if result.get("result") == "SUCCESSFUL":
         validator_hash = result["message_hash"]
         await check_validator_data(
-            zex_withdraw=withdraw_request, validator_hash=validator_hash
+            chain=chain, zex_withdraw=withdraw_request, validator_hash=validator_hash
         )
         data = list(result["signature_data_from_node"].values())[0]
-        await send_withdraw(
-            w3,
+        await send_evm_withdraw(
+            client,
             chain,
-            account,
             result["signature"],
             withdraw_request,
             Web3.to_checksum_address(result["nonce"]),
@@ -111,18 +161,19 @@ async def process_withdraw_sa(
         raise ValidatorResultError(result)
 
 
-async def send_withdraw(
-    w3: AsyncWeb3,
+async def send_evm_withdraw(
+    client: EVMAsyncClient,
     chain: EVMConfig,
-    account: LocalAccount,
     signature: str,
     withdraw_request: EVMWithdrawRequest,
     signature_nonce: ChecksumAddress,
     logger: logging.Logger | ChainLoggerAdapter = logger,
 ):
+    w3 = client.client
+    account = w3.eth.account.from_key(EVM_WITHDRAWER_PRIVATE_KEY)
     vault = w3.eth.contract(address=chain.vault_address, abi=VAULT_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
-    withdraw_hash = get_withdraw_hash(withdraw_request)
+    withdraw_hash = get_evm_withdraw_hash(withdraw_request)
     signed_data = get_signed_data(SA_SHIELD_PRIVATE_KEY, hexstr=withdraw_hash)
     logger.debug(f"Signed Withdraw data is: {signed_data}")
     tx = await vault.functions.withdraw(
@@ -141,17 +192,138 @@ async def send_withdraw(
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
 
 
-async def withdraw(chain: EVMConfig):
+async def get_utxos_for_withdraw(
+    withdraw_request: BTCWithdrawRequest, change_address: str
+) -> list[UTXO]:
+    inputs = []
+    amount = 0
+    withdraw_amount = to_satoshis(withdraw_request.amount)
+    utxos = await find_utxo_by_status(status=UtxoStatus.UNSPENT)
+    for utxo in utxos:
+        inputs.append(utxo)
+        amount += utxo.amount
+        fee = calculate_fee(
+            recipient=withdraw_request.recipient,
+            change_address=change_address,
+            amount=withdraw_amount,
+            sat_per_byte=withdraw_request.sat_per_byte,
+            utxos=inputs,
+        )
+        if amount >= fee + withdraw_amount:
+            return inputs
+    else:
+        raise NotEnoughInputs
+
+
+async def process_btc_withdraw_sa(
+    client: BTCAsyncClient,
+    chain: BTCConfig,
+    withdraw_request: BTCWithdrawRequest,
+    dkg_party,
+    logger: ChainLoggerAdapter,
+):
+    if withdraw_request.status == WithdrawStatus.PROCESSING:
+        if withdraw_request.utxos is None:
+            withdraw_request.sat_per_byte = client.client.get_fee_per_byte()
+            utxos = get_utxos_for_withdraw(
+                withdraw_request, change_address=chain.vault_address
+            )
+            for utxo in utxos:
+                utxo.status = UtxoStatus.SPEND
+                await upsert_utxo(utxo)
+            withdraw_request.utxos = utxos
+            await upsert_withdraw(withdraw_request)
+
+        data = {
+            "operation": "withdraw_tx_data",
+            "data": withdraw_request.json(),
+        }
+
+        zellular = Zellular(SEQUENCER_APP_NAME, SEQUENCER_BASE_URL)
+        index = zellular.send([data], blocking=True)
+        withdraw_request.status = WithdrawStatus.PENDING
+        withdraw_request.zellular_index = index  # todo in validator get from sequencer
+        await upsert_withdraw(withdraw_request)
+        logger.info(f"sequencer updated with index:{index}, data:{data}")
+
+    else:
+        nonces_response = await sa.request_nonces(dkg_party, number_of_nonces=1)
+        nonces_for_sig = {}
+        for id, nonce in nonces_response.items():
+            nonces_for_sig[id] = nonce["data"][0]
+
+        data = {
+            "method": "withdraw",
+            "data": withdraw_request.json(),
+        }
+        logger.debug(f"Zex withdraw request is: {withdraw_request}")
+        result = await sa.request_signature(dkg_key, nonces_for_sig, data, dkg_party)
+        logger.debug(f"Validator results is: {result}")
+
+        if result.get("result") == "SUCCESSFUL":
+            validator_hash = result["message_hash"]
+            await check_validator_data(
+                chain=chain,
+                zex_withdraw=withdraw_request,
+                validator_hash=validator_hash,
+            )
+            await send_btc_withdraw(
+                client,
+                chain,
+                withdraw_request,
+                result,
+                logger,
+            )
+        else:
+            raise ValidatorResultError(result)
+
+
+async def send_btc_withdraw(
+    client: ChainAsyncClient,
+    chain: BTCConfig,
+    withdraw_request: BTCWithdrawRequest,
+    group_sign: dict,
+    logger: logging.Logger | ChainLoggerAdapter = logger,
+):
+    assert group_sign is not None
+    btc = client.client
+
+    to_address = withdraw_request.recipient
+    amount = withdraw_request.amount
+    logging.info(f"Sending: {amount}, to:{to_address}")
+
+    tx, tx_digests = get_simple_withdraw_tx(
+        withdraw_request,
+        chain.vault_address,
+    )
+
+    original_priv = PrivateKey.from_bytes(BTC_WITHDRAWER_PRIVATE_KEY)
+
+    for i, utxo in withdraw_request.utxos:
+        tweaked_priv_bytes = tweak_taproot_privkey(
+            original_priv.to_bytes(), utxo.user_id
+        )
+        private = PrivateKey.from_bytes(tweaked_priv_bytes)
+        sig = private.sign_taproot_input(tx, i, utxo.script, utxo.amount)
+        tx.witnesses.append(TxWitnessInput([sig, utxo.address]))
+
+    raw_tx = tx.serialize()
+    logging.info(f"Raw tx: {raw_tx}")
+
+    resp = await btc.send_tx(raw_tx)
+    logger.info(
+        f"Transaction Info: {json.dumps({'raw_tx': raw_tx, 'tx_hash': resp.text}, indent=4)}"
+    )
+
+
+async def withdraw(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
 
     while True:
         try:
-            w3 = get_evm_async_client(chain).client
-            account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
-
             dkg_party = dkg_key["party"]
             withdraws_request = await find_withdraws_by_status(
-                WithdrawStatus.PENDING, chain.chain_id
+                [WithdrawStatus.PENDING, WithdrawStatus.PROCESSING], chain.chain_id
             )
             if len(withdraws_request) == 0:
                 _logger.debug(
@@ -161,8 +333,6 @@ async def withdraw(chain: EVMConfig):
             for withdraw_request in withdraws_request:
                 try:
                     await process_withdraw_sa(
-                        w3=w3,
-                        account=account,
                         chain=chain,
                         withdraw_request=withdraw_request,
                         dkg_party=dkg_party,

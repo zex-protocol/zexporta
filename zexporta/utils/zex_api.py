@@ -7,9 +7,12 @@ import httpx
 from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
+    BTCConfig,
+    ChainConfig,
     EVMConfig,
-    EVMWithdrawRequest,
     UserId,
+    WithdrawRequest,
+    WithdrawStatus,
     ZexUserAsset,
 )
 
@@ -78,7 +81,7 @@ async def get_zex_latest_block(
 
 
 async def get_zex_last_withdraw_nonce(
-    async_client: httpx.AsyncClient, chain: EVMConfig
+    async_client: httpx.AsyncClient, chain: ChainConfig
 ) -> int:
     try:
         res = await async_client.get(
@@ -100,10 +103,10 @@ async def get_zex_last_withdraw_nonce(
 
 async def get_zex_withdraws(
     async_client: httpx.AsyncClient,
-    chain: EVMConfig,
+    chain: ChainConfig,
     offset: int,
     limit: int | None = None,
-) -> list[EVMWithdrawRequest]:
+) -> list[WithdrawRequest]:
     from web3 import Web3
 
     params = dict()
@@ -119,13 +122,17 @@ async def get_zex_withdraws(
         withdraws = res.json()
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
+
         return [
-            EVMWithdrawRequest(
+            chain.withdraw_request_type(
                 amount=withdraw.get("amount"),
                 nonce=withdraw.get("nonce"),
                 recipient=Web3.to_checksum_address(withdraw.get("destination")),
                 token_address=Web3.to_checksum_address(withdraw.get("tokenContract")),
-                chain_id=chain.chain_id,
+                chain_symbol=chain.chain_symbol,
+                status=WithdrawStatus.PROCESSING
+                if isinstance(chain, BTCConfig)
+                else WithdrawStatus.PENDING,
             )
             for withdraw in withdraws
         ]

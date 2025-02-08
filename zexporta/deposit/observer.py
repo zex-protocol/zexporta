@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import logging.config
 
 import clients.exceptions as client_exception
@@ -14,7 +13,6 @@ from zexporta.db.chain import (
     get_last_observed_block,
     upsert_chain_last_observed_block,
 )
-from zexporta.db.deposit import insert_deposits_if_not_exists
 from zexporta.explorer import explorer
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 
@@ -44,7 +42,7 @@ async def observe_deposit(chain: ChainConfig):
         await insert_new_address_to_db(chain)
         accepted_addresses = await get_active_address(chain)
         try:
-            accepted_deposits = await explorer(
+            await explorer(
                 chain,
                 last_observed_block + 1,
                 to_block,
@@ -60,9 +58,6 @@ async def observe_deposit(chain: ChainConfig):
         except ValueError as e:
             _logger.error(f"ValueError: {e}")
             await asyncio.sleep(10)
-
-        if len(accepted_deposits) > 0:
-            await insert_deposits_if_not_exists(chain, accepted_deposits)
 
         await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
         last_observed_block = to_block

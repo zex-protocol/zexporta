@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -14,21 +15,21 @@ from clients.custom_types import URL, BlockNumber, TxHash, Value
 
 
 class AddressDetails(BaseModel):
-    page: int
-    totalPages: int
-    itemsOnPage: int
+    page: int | None = None
+    totalPages: int | None = None
+    itemsOnPage: int | None = None
     address: str
     balance: int
     totalReceived: int
     totalSent: int
-    unconfirmedBalance: int
-    unconfirmedTxs: int
-    txs: int
-    txids: list[str]
+    unconfirmedBalance: int | None = None
+    unconfirmedTxs: int | None = None
+    txs: int | None = None
+    txids: list[str] | None = None
 
 
-# Model for UTXO (Unspent Transaction Outputs)
-class UTXO(BaseModel):
+# Model for Unspent (Unspent Transaction Outputs)
+class Unspent(BaseModel):
     txid: str
     vout: Value
     value: Value
@@ -49,6 +50,7 @@ class Vout(BaseModel):
 
 # Common Model for all Transaction inputs (vin)
 class Vin(BaseModel):
+    value: Value | None = None
     sequence: int | None = None
     n: int | None = None
     isAddress: bool | None = None
@@ -61,10 +63,10 @@ class Transaction(BaseModel):
     txid: str
     vin: list[Vin]
     vout: list[Vout]
-    blockHash: str
-    blockHeight: int
+    blockHash: str | None
+    blockHeight: int | None
     confirmations: int
-    blockTime: int
+    blockTime: int | None
     value: Value
     valueIn: Value
     fees: Value
@@ -72,9 +74,9 @@ class Transaction(BaseModel):
 
 # Response for getting block by identifier (including multiple pages)
 class Block(BaseModel):
-    page: int
-    totalPages: int
-    itemsOnPage: int
+    page: int | None = None
+    totalPages: int | None = None
+    itemsOnPage: int | None = None
     hash: str
     previousBlockHash: str
     nextBlockHash: str | None = None
@@ -175,11 +177,11 @@ class BTCAnkrAsyncClient:
         data = await self._request("GET", url, params=params)
         return AddressDetails.model_validate(data)
 
-    async def get_utxo(self, address: str, confirmed: bool = True) -> list[UTXO]:
+    async def get_utxo(self, address: str, confirmed: bool = True) -> list[Unspent]:
         url = f"{self.block_book_base_url}/api/v2/utxo/{address}"
         params = {"confirmed": str(confirmed).lower()}
         data = await self._request("GET", url, params=params)
-        return [UTXO.model_validate(i) for i in data]
+        return [Unspent.model_validate(i) for i in data]
 
     async def get_block_by_identifier(self, identifier: str | int) -> Block:
         page = 1
@@ -217,3 +219,12 @@ class BTCAnkrAsyncClient:
         }
         resp = await self._request("POST", url, headers=headers, json_data=data)
         return resp["result"]["blocks"]  # type: ignore
+
+    async def get_fee_per_byte(self) -> int | None:
+        url = f"{self.base_url}"
+        data = {"id": "test", "method": "estimatesmartfee", "params": [6]}
+        headers = {
+            "Content-Type": "application/json",
+        }
+        resp = await self._request("POST", url, headers=headers, json_data=data)
+        return resp["result"] and Decimal(resp["result"]["feerate"]) * (10 ^ 8)

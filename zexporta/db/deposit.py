@@ -12,7 +12,6 @@ from zexporta.custom_types import (
     DepositStatus,
     EVMConfig,
     EVMTransfer,
-    Transfer,
     TxHash,
 )
 
@@ -88,16 +87,8 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
-) -> list[Deposit[Transfer]]: ...
-
-
-async def find_deposit_by_status(
-    chain,
-    status,
-    from_block=None,
-    to_block=None,
-    limit=None,
-):
+    txs_hash: list[TxHash] | None = None,
+) -> list[Deposit]:
     collection = get_collection(chain)
     res = []
     block_number_query = {"$gte": from_block or 0}
@@ -109,6 +100,8 @@ async def find_deposit_by_status(
         "transfer.block_number": block_number_query,
         "transfer.chain_symbol": chain.chain_symbol,
     }
+    if txs_hash:
+        query["transfer.tx_hash"] = ({"$in": txs_hash},)
 
     async for record in collection.find(
         query, sort={"transfer.block_number": ASCENDING}
