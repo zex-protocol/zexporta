@@ -5,14 +5,13 @@ import math
 import sentry_sdk
 from clients import filter_blocks, get_async_client
 
-from zexporta.custom_types import BTCConfig, ChainConfig, DepositStatus, UtxoStatus
+from zexporta.custom_types import ChainConfig, DepositStatus
 from zexporta.db.deposit import (
     find_deposit_by_status,
     get_pending_deposits_block_number,
     to_finalized,
     to_reorg_block_number,
 )
-from zexporta.db.utxo import populate_deposits_utxos
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 
 from .config import CHAINS_CONFIG, LOGGER_PATH, SENTRY_DNS
@@ -47,16 +46,15 @@ async def update_finalized_deposits(chain: ChainConfig):
                 client.get_block_tx_hash,
                 max_delay_per_block_batch=chain.delay,
             )
-            if isinstance(chain, BTCConfig):
-                finalized_deposits = await find_deposit_by_status(
+            finalize_deposits = chain.finalize_deposits
+            if finalize_deposits:
+                finalized_deposits_list = await find_deposit_by_status(
                     chain=chain,
                     status=DepositStatus.PENDING,
                     to_block=finalized_block_number,
                     txs_hash=results,
                 )
-                await populate_deposits_utxos(
-                    finalized_deposits, status=UtxoStatus.UNSPENT
-                )
+                await finalize_deposits(finalized_deposits_list)
             await to_finalized(chain, finalized_block_number, results)
 
             await to_reorg_block_number(

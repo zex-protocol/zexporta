@@ -76,15 +76,13 @@ async def upsert_utxos(utxos: list[UTXO]):
     await asyncio.gather(*[upsert_utxo(utxo) for utxo in utxos])
 
 
-async def populate_deposits_utxos(
-    deposits: list[Deposit], status: UtxoStatus = UtxoStatus.UNSPENT
-):
+async def populate_deposits_utxos(deposits: list[Deposit]):
     utxos = []
     for deposit in deposits:
         transfer = deposit.transfer
         utxos.append(
             UTXO(
-                status=status,
+                status=UtxoStatus.UNSPENT,
                 tx_hash=transfer.tx_hash,
                 amount=transfer.value,
                 index=transfer.index,

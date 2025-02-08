@@ -5,12 +5,15 @@ from web3 import Web3
 
 from .custom_types import (
     BTCConfig,
+    BTCWithdrawRequest,
     ChainConfig,
     ChainId,
     ChainSymbol,
     EnvEnum,
     EVMConfig,
+    EVMWithdrawRequest,
 )
+from .db.utxo import populate_deposits_utxos
 
 ENVIRONMENT = EnvEnum(os.environ["ENV"])
 
@@ -31,6 +34,7 @@ if ENVIRONMENT == EnvEnum.PROD:
                 "0x72E46E170342E4879b0Ea8126389111D4275173D"
             ),
             chain_id=ChainId(17000),
+            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
@@ -43,6 +47,7 @@ if ENVIRONMENT == EnvEnum.PROD:
                 "0x72E46E170342E4879b0Ea8126389111D4275173D"
             ),
             chain_id=ChainId(11155111),
+            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
@@ -56,6 +61,7 @@ if ENVIRONMENT == EnvEnum.PROD:
                 "0x72E46E170342E4879b0Ea8126389111D4275173D"
             ),
             chain_id=ChainId(97),
+            withdraw_request_type=EVMWithdrawRequest,
         ),
         # ChainSymbol.BTC.value: BTCConfig(
         #     private_rpc=os.environ["BTC_RPC"],
@@ -65,6 +71,8 @@ if ENVIRONMENT == EnvEnum.PROD:
         #     delay=10,
         #     batch_block_size=5,
         #     vault_address = "",
+        #     finalize_deposits = populate_deposits_utxos,
+        #     withdraw_request_type = BTCWithdrawRequest
         # ),
     }
     # setup("mainnet")
@@ -87,6 +95,7 @@ else:
                 "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
             ),
             chain_id=ChainId(17000),
+            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
@@ -99,6 +108,7 @@ else:
                 "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
             ),
             chain_id=ChainId(11155111),
+            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
@@ -112,6 +122,7 @@ else:
                 "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
             ),
             chain_id=ChainId(97),
+            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.BTC.value: BTCConfig(
             private_rpc=os.environ["BTC_RPC"],
@@ -121,6 +132,8 @@ else:
             delay=60,
             batch_block_size=5,
             vault_address="",
+            finalize_deposits=populate_deposits_utxos,
+            withdraw_request_type=BTCWithdrawRequest,
         ),
     }
     setup("testnet")

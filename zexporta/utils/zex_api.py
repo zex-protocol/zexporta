@@ -8,10 +8,8 @@ from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
     BTCConfig,
-    BTCWithdrawRequest,
     ChainConfig,
     EVMConfig,
-    EVMWithdrawRequest,
     UserId,
     WithdrawRequest,
     WithdrawStatus,
@@ -125,16 +123,8 @@ async def get_zex_withdraws(
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
 
-        match chain:
-            case EVMConfig():
-                mapper = EVMWithdrawRequest
-            case BTCConfig():
-                mapper = BTCWithdrawRequest
-            case _:
-                raise NotImplementedError
-
         return [
-            mapper(
+            chain.withdraw_request_type(
                 amount=withdraw.get("amount"),
                 nonce=withdraw.get("nonce"),
                 recipient=Web3.to_checksum_address(withdraw.get("destination")),
