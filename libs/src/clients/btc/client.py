@@ -105,7 +105,9 @@ def compute_btc_address(salt: int) -> Address:
     btc_group_key_pub = int(os.environ["BTC_GROUP_KEY_PUB"])
     public_key = code_to_pub(btc_group_key_pub)
     public_key = pub_compress(public_key=public_key)
-    taproot_public_key, _ = taproot_tweak_pubkey(public_key, str(salt).encode())
+    taproot_public_key, _ = taproot_tweak_pubkey(
+        public_key, salt.to_bytes(8, byteorder="big")
+    )
     x_hex = hex(taproot_public_key.x)[2:].zfill(64)
     y_hex = hex(taproot_public_key.y)[2:].zfill(64)
     prefix = "02" if int(y_hex, 16) % 2 == 0 else "03"
