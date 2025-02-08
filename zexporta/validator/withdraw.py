@@ -2,7 +2,10 @@ import asyncio
 from logging import LoggerAdapter
 
 import httpx
+from clients import compute_btc_address
+from zellular import Zellular
 
+from zexporta.config import SEQUENCER_APP_NAME, SEQUENCER_BASE_URL
 from zexporta.custom_types import (
     UTXO,
     BTCConfig,
@@ -53,7 +56,10 @@ async def btc_withdraw(
     withdraw_request = asyncio.run(
         get_withdraw_request(chain, sa_withdraw_nonce, logger)
     )
+    zellular = Zellular(SEQUENCER_APP_NAME, SEQUENCER_BASE_URL)
+    data = zellular.get_finalized(withdraw_request.zellular_index, None)[0]
     withdraw_request_utxos = [UTXO(**param) for param in data.get("utxos", [])]
+
     db_withdraw = await insert_sa_withdraw_if_not_exists(BTCWithdrawRequest(**data))
     if db_withdraw.utxos != withdraw_request_utxos:
         raise ValueError(
@@ -64,6 +70,9 @@ async def btc_withdraw(
     nonces = {withdraw.nonce for withdraw in withdraws}
     if not nonces or len(nonces) > 1 or nonces[0] != withdraw_request.nonce:
         raise ValueError(f"Double Spending Utxos Error, withdraw_nonces:{nonces}")
+
+    for utxo in withdraw_request_utxos:
+        assert utxo.address == compute_btc_address(utxo.user_id)
 
     tx, _ = get_simple_withdraw_tx(
         withdraw_request, chain.vault_address, utxos=withdraw_request_utxos

@@ -7,14 +7,12 @@ from clients import (
     get_async_client,
 )
 
-from zexporta.custom_types import BTCConfig, ChainConfig, UtxoStatus
+from zexporta.custom_types import ChainConfig
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.db.chain import (
     get_last_observed_block,
     upsert_chain_last_observed_block,
 )
-from zexporta.db.deposit import insert_deposits_if_not_exists
-from zexporta.db.utxo import populate_deposits_utxos
 from zexporta.explorer import explorer
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 
@@ -44,7 +42,7 @@ async def observe_deposit(chain: ChainConfig):
         await insert_new_address_to_db(chain)
         accepted_addresses = await get_active_address(chain)
         try:
-            accepted_deposits = await explorer(
+            await explorer(
                 chain,
                 last_observed_block + 1,
                 to_block,
@@ -60,13 +58,6 @@ async def observe_deposit(chain: ChainConfig):
         except ValueError as e:
             _logger.error(f"ValueError: {e}")
             await asyncio.sleep(10)
-
-        if len(accepted_deposits) > 0:
-            await insert_deposits_if_not_exists(chain, accepted_deposits)
-            if isinstance(chain, BTCConfig):
-                await populate_deposits_utxos(
-                    accepted_deposits, status=UtxoStatus.PROCESSING
-                )
 
         await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
         last_observed_block = to_block

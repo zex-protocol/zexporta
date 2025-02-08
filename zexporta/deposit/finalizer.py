@@ -59,16 +59,6 @@ async def update_finalized_deposits(chain: ChainConfig):
                 )
             await to_finalized(chain, finalized_block_number, results)
 
-            if isinstance(chain, BTCConfig):
-                reorged_deposits = await find_deposit_by_status(
-                    chain=chain,
-                    status=DepositStatus.PENDING,
-                    to_block=max(blocks_to_check),
-                    from_block=min(blocks_to_check),
-                )
-                await populate_deposits_utxos(
-                    reorged_deposits, status=UtxoStatus.REJECTED
-                )
             await to_reorg_block_number(
                 chain, min(blocks_to_check), max(blocks_to_check)
             )

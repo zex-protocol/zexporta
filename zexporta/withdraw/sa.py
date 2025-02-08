@@ -7,7 +7,7 @@ import sentry_sdk
 import web3.exceptions
 from bitcoinutils.keys import PrivateKey
 from bitcoinutils.transactions import TxWitnessInput
-from bitcoinutils.utils import to_satoshis
+from bitcoinutils.utils import to_satoshis, tweak_taproot_privkey
 from clients import BTCAsyncClient, ChainAsyncClient, get_async_client
 from clients.evm import EVMAsyncClient, get_signed_data
 from eth_typing import ChecksumAddress
@@ -242,7 +242,7 @@ async def process_btc_withdraw_sa(
         zellular = Zellular(SEQUENCER_APP_NAME, SEQUENCER_BASE_URL)
         index = zellular.send([data], blocking=True)
         withdraw_request.status = WithdrawStatus.PENDING
-        withdraw_request.zellular_index = index
+        withdraw_request.zellular_index = index  # todo in validator get from sequencer
         await upsert_withdraw(withdraw_request)
         logger.info(f"sequencer updated with index:{index}, data:{data}")
 
@@ -297,9 +297,13 @@ async def send_btc_withdraw(
         chain.vault_address,
     )
 
-    private = PrivateKey.from_bytes(BTC_WITHDRAWER_PRIVATE_KEY)
+    original_priv = PrivateKey.from_bytes(BTC_WITHDRAWER_PRIVATE_KEY)
 
     for i, utxo in withdraw_request.utxos:
+        tweaked_priv_bytes = tweak_taproot_privkey(
+            original_priv.to_bytes(), utxo.user_id
+        )
+        private = PrivateKey.from_bytes(tweaked_priv_bytes)
         sig = private.sign_taproot_input(tx, i, utxo.script, utxo.amount)
         tx.witnesses.append(TxWitnessInput([sig, utxo.address]))
 

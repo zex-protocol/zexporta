@@ -46,25 +46,23 @@ class WithdrawStatus(StrEnum):
 
 
 class UtxoStatus(StrEnum):
-    # deposit creation utxo created with status processing, deposit finalizing utxo status -> unspent, rejected
-    PROCESSING = "processing"
     UNSPENT = "unspent"
     SPEND = "spend"
-    REJECTED = "rejected"
 
 
 class UTXO(BaseModel):
-    status: UtxoStatus = UtxoStatus.PROCESSING
+    status: UtxoStatus = UtxoStatus.UNSPENT
     tx_hash: TxHash
     amount: Value
     index: Value
     address: Address
+    user_id: UserId
 
 
 class WithdrawRequest(BaseModel):
     model_config = {"extra": "ignore"}
     amount: Value
-    recipient: ChecksumAddress
+    recipient: Address
     tx_hash: TxHash | None = None
     status: WithdrawStatus = WithdrawStatus.PENDING
     chain_symbol: str
@@ -162,4 +160,5 @@ __all__ = [
     "BTCTransfer",
     "Transfer",
     "ChainId",
+    "UtxoStatus",
 ]

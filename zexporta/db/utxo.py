@@ -77,7 +77,7 @@ async def upsert_utxos(utxos: list[UTXO]):
 
 
 async def populate_deposits_utxos(
-    deposits: list[Deposit], status: UtxoStatus = UtxoStatus.PROCESSING
+    deposits: list[Deposit], status: UtxoStatus = UtxoStatus.UNSPENT
 ):
     utxos = []
     for deposit in deposits:
@@ -89,6 +89,7 @@ async def populate_deposits_utxos(
                 amount=transfer.value,
                 index=transfer.index,
                 address=transfer.to,
+                user_id=deposit.user_id,
             )
         )
     await insert_utxos_if_not_exists(utxos)
