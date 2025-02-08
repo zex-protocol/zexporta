@@ -140,7 +140,7 @@ class BTCAnkrAsyncClient:
         except httpx.HTTPStatusError as http_err:
             # Raised for non-2xx responses
             raise BTCRequestError(
-                f"HTTP error occurred: {http_err.response.status_code} {http_err.response.reason_phrase}",
+                f"HTTP error occurred: {http_err.response.status_code} {http_err.response.text}",
                 status_code=http_err.response.status_code,
             ) from http_err
         except httpx.ConnectError as conn_err:
