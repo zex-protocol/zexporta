@@ -23,7 +23,6 @@ class EVMTransfer(Transfer):
 class EVMConfig(ChainConfig):
     chain_id: ChainId
     poa: bool = Field(default=False)
-    vault_address: ChecksumAddress
     native_decimal: int
     transfer_class: ClassVar[type[EVMTransfer]] = EVMTransfer
 

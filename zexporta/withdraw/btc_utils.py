@@ -17,38 +17,30 @@ def get_simple_withdraw_tx(
 ):
     send_amount = to_satoshis(withdraw_request.amount)
     utxos = utxos or withdraw_request.utxos
-
-    fee = calculate_fee(
-        recipient=withdraw_request.recipient,
-        change_address=change_address,
-        amount=send_amount,
-        sat_per_byte=withdraw_request.sat_per_byte,
-        utxos=utxos,
-    )
-
-    utxos = withdraw_request.utxos
     to_address = withdraw_request.recipient
-    send_amount = to_satoshis(withdraw_request.amount)
-    change_address = P2trAddress(change_address)
-    change_address_script_pubkey = change_address.to_script_pub_key()
-    utxos_script_pubkeys = [change_address_script_pubkey] * len(utxos)
-    to_address = P2wpkhAddress(to_address)
 
-    txins = [TxInput(utxo.tx_hash, utxo.index) for utxo in utxos]
-    amounts = [utxo.amount for utxo in utxos]
+    amounts = []
+    input_amount = 0
+    utxos_script_pubkeys = []
+    inputs = []
+    for utxo in utxos:
+        amounts.append(utxo.amount)  # should be satoshi
+        input_amount += utxo.amount
+        utxos_script_pubkeys.append(P2trAddress(utxo.address).to_script_pub_key())
+        inputs.append(TxInput(txid=utxo.tx_hash, txout_index=utxo.index))
 
-    input_amount = sum(amounts)
-    txout1 = TxOutput(send_amount, to_address.to_script_pub_key())
-    txout2 = TxOutput(
-        input_amount - send_amount - fee, change_address.to_script_pub_key()
+    # create transaction output
+    txOut1 = TxOutput(send_amount, P2wpkhAddress(to_address).to_script_pub_key())
+    txOut2 = TxOutput(
+        input_amount - send_amount, P2trAddress(change_address).to_script_pub_key()
     )
-    tx = Transaction(txins, [txout1, txout2], has_segwit=True)
-    tx_digests = [
-        tx.get_transaction_taproot_digest(
-            i, utxos_script_pubkeys, amounts, 0, sighash=TAPROOT_SIGHASH_ALL
-        )
-        for i in range(len(utxos))
-    ]
+
+    # create transaction without change output - if at least a single input is
+    # segwit we need to set has_segwit=True
+    tx = Transaction(inputs, [txOut1, txOut2], has_segwit=True)
+    tx_digests = tx.get_transaction_taproot_digest(
+        0, utxos_script_pubkeys, amounts, 0, sighash=TAPROOT_SIGHASH_ALL
+    )
     return tx, tx_digests
 
 
@@ -58,20 +50,27 @@ def calculate_fee(
     change_address: str,
     utxos: list[UTXO],
     sat_per_byte: int,
-):
-    to_address = P2wpkhAddress(recipient)
-    change_address = P2trAddress(change_address)
+) -> int:
+    amounts = []
+    input_amount = 0
+    utxos_script_pubkeys = []
+    inputs = []
+    for utxo in utxos:
+        amounts.append(utxo.amount)  # should be satoshi
+        input_amount += utxo.amount
+        utxos_script_pubkeys.append(P2trAddress(utxo.address).to_script_pub_key())
+        inputs.append(TxInput(txid=utxo.tx_hash, txout_index=utxo.index))
 
-    txins = [TxInput(utxo.tx_hash, utxo.index) for utxo in utxos]
-    amounts = [utxo.amount for utxo in utxos]
-
-    input_amount = sum(amounts)
-    txout1 = TxOutput(amount, to_address.to_script_pub_key())
-
-    fee_calculator_out = TxOutput(
-        input_amount - amount, change_address.to_script_pub_key()
+    # create transaction output
+    txOut1 = TxOutput(amount, P2wpkhAddress(recipient).to_script_pub_key())
+    txOut2 = TxOutput(
+        input_amount - amount, P2trAddress(change_address).to_script_pub_key()
     )
-    fee_calculator_tx = Transaction(
-        txins, [txout1, fee_calculator_out], has_segwit=True
-    )
-    return fee_calculator_tx.get_size() * sat_per_byte
+
+    # create transaction without change output - if at least a single input is
+    # segwit we need to set has_segwit=True
+    fee_calculator_tx = Transaction(inputs, [txOut1, txOut2], has_segwit=True)
+    tx_size = fee_calculator_tx.get_size() + (
+        30 * len(utxos)
+    )  # add signature size (ceil of size actual size is less)
+    return tx_size * sat_per_byte

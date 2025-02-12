@@ -34,6 +34,7 @@ class Transfer(BaseModel, ABC):
 
 
 class ChainConfig(BaseModel, ABC):
+    vault_address: Address
     private_rpc: URL
     chain_symbol: str
     finalize_block_count: int | None = Field(default=15)

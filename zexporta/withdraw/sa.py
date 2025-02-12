@@ -5,10 +5,10 @@ import logging.config
 
 import sentry_sdk
 import web3.exceptions
-from bitcoinutils.keys import PrivateKey
-from bitcoinutils.transactions import TxWitnessInput
-from bitcoinutils.utils import to_satoshis, tweak_taproot_privkey
-from clients import BTCAsyncClient, ChainAsyncClient, get_async_client
+from bitcoinutils.keys import P2trAddress, PrivateKey
+from bitcoinutils.transactions import Transaction, TxWitnessInput
+from bitcoinutils.utils import to_satoshis
+from clients import BTCAsyncClient, get_async_client
 from clients.evm import EVMAsyncClient, get_signed_data
 from eth_typing import ChecksumAddress
 from pyfrost.network.sa import SA
@@ -279,12 +279,50 @@ async def process_btc_withdraw_sa(
 
 
 async def send_btc_withdraw(
-    client: ChainAsyncClient,
+    client: BTCAsyncClient,
     chain: BTCConfig,
     withdraw_request: BTCWithdrawRequest,
     group_sign: dict,
     logger: logging.Logger | ChainLoggerAdapter = logger,
 ):
+    def _sign_transaction(
+        _withdraw_request: BTCWithdrawRequest, _tx: Transaction
+    ) -> Transaction:
+        utxos_script_pubkeys = [
+            P2trAddress(utxo.address).to_script_pub_key()
+            for utxo in _withdraw_request.utxos
+        ]
+        amounts = [utxo.amount for utxo in withdraw_request.utxos]
+
+        private_key = PrivateKey.from_bytes(BTC_WITHDRAWER_PRIVATE_KEY)
+
+        for i, utxo in withdraw_request.utxos:
+            signature = private_key.sign_taproot_input(
+                _tx,
+                i,
+                utxos_script_pubkeys,
+                amounts,
+                tapleaf_scripts=utxo.user_id.to_bytes(8, byteorder="big"),
+            )
+            _tx.witnesses.append(TxWitnessInput([signature]))
+        return _tx
+
+    def add_fee_to_tx(
+        chain: BTCConfig, _withdraw_request: BTCWithdrawRequest, _tx: Transaction
+    ) -> Transaction:
+        signed_tx = _sign_transaction(_withdraw_request, _tx)
+        fee_amount = signed_tx.get_vsize() * withdraw_request.sat_per_byte
+        new_outputs = []
+        change_address_script = P2trAddress(chain.vault_address).to_script_pub_key()
+
+        for output in _tx.outputs:
+            if output.script_pubkey == change_address_script:
+                output.amount = output.amount - fee_amount
+            new_outputs.append(output)
+
+        _tx.outputs = new_outputs
+        return _tx
+
     assert group_sign is not None
     btc = client.client
 
@@ -296,18 +334,10 @@ async def send_btc_withdraw(
         withdraw_request,
         chain.vault_address,
     )
+    tx = add_fee_to_tx(chain, withdraw_request, tx)
+    signed_tx = _sign_transaction(withdraw_request, tx)
 
-    original_priv = PrivateKey.from_bytes(BTC_WITHDRAWER_PRIVATE_KEY)
-
-    for i, utxo in withdraw_request.utxos:
-        tweaked_priv_bytes = tweak_taproot_privkey(
-            original_priv.to_bytes(), utxo.user_id
-        )
-        private = PrivateKey.from_bytes(tweaked_priv_bytes)
-        sig = private.sign_taproot_input(tx, i, utxo.script, utxo.amount)
-        tx.witnesses.append(TxWitnessInput([sig, utxo.address]))
-
-    raw_tx = tx.serialize()
+    raw_tx = signed_tx.serialize()
     logging.info(f"Raw tx: {raw_tx}")
 
     resp = await btc.send_tx(raw_tx)
