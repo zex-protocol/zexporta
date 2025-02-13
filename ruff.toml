@@ -1,0 +1,20 @@
+line-length = 88
+indent-width = 4
+
+# Assume Python 3.12
+target-version = "py312"
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+
+# Per-file ignores (correct placement)
+[per-file-ignores]
+"config.py" = ["F401"]       # Ignore "module imported but unused" in config.py
+"__init__.py" = ["F401"]     # Ignore the same in __init__.py
+
+select = ["ALL"]

@@ -21,11 +21,8 @@ sentry-sdk = "^2.19.2"
 [tool.poetry.group.dev.dependencies]
 pytest = "~=8.3.3"
 pre-commit = "^4.0.1"
+ruff = "^0.9.6"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.ruff.lint.per-file-ignores]
-"config.py" = ["F401"]
-"__init__.py" = ["F401"]
