@@ -25,9 +25,7 @@ if ENVIRONMENT == EnvEnum.PROD:
             finalize_block_count=1,
             delay=1,
             batch_block_size=20,
-            vault_address=Web3.to_checksum_address(
-                "0x72E46E170342E4879b0Ea8126389111D4275173D"
-            ),
+            vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
             chain_id=ChainId(17000),
         ),
         ChainSymbol.SEP.value: EVMConfig(
@@ -37,9 +35,7 @@ if ENVIRONMENT == EnvEnum.PROD:
             finalize_block_count=1,
             delay=1,
             batch_block_size=20,
-            vault_address=Web3.to_checksum_address(
-                "0x72E46E170342E4879b0Ea8126389111D4275173D"
-            ),
+            vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
             chain_id=ChainId(11155111),
         ),
         ChainSymbol.BST.value: EVMConfig(
@@ -50,9 +46,7 @@ if ENVIRONMENT == EnvEnum.PROD:
             poa=True,
             delay=1,
             batch_block_size=30,
-            vault_address=Web3.to_checksum_address(
-                "0x72E46E170342E4879b0Ea8126389111D4275173D"
-            ),
+            vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
             chain_id=ChainId(97),
         ),
         # ChainSymbol.BTC.value: BTCConfig(
@@ -77,9 +71,7 @@ else:
             finalize_block_count=1,
             delay=1,
             batch_block_size=20,
-            vault_address=Web3.to_checksum_address(
-                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
-            ),
+            vault_address=Web3.to_checksum_address("0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"),
             chain_id=ChainId(17000),
         ),
         ChainSymbol.SEP.value: EVMConfig(
@@ -89,9 +81,7 @@ else:
             finalize_block_count=1,
             delay=1,
             batch_block_size=20,
-            vault_address=Web3.to_checksum_address(
-                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
-            ),
+            vault_address=Web3.to_checksum_address("0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"),
             chain_id=ChainId(11155111),
         ),
         ChainSymbol.BST.value: EVMConfig(
@@ -102,9 +92,7 @@ else:
             poa=True,
             delay=1,
             batch_block_size=30,
-            vault_address=Web3.to_checksum_address(
-                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
-            ),
+            vault_address=Web3.to_checksum_address("0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"),
             chain_id=ChainId(97),
         ),
         ChainSymbol.BTC.value: BTCConfig(
@@ -119,9 +107,7 @@ else:
     setup("testnet")
 
 
-EVM_NATIVE_TOKEN_ADDRESS = Web3.to_checksum_address(
-    "0x0000000000000000000000000000000000000000"
-)
+EVM_NATIVE_TOKEN_ADDRESS = Web3.to_checksum_address("0x0000000000000000000000000000000000000000")
 
 ZEX_ENCODE_VERSION = 1
 
