@@ -31,9 +31,7 @@ async def insert_withdraw_if_not_exists(withdraw: EVMWithdrawRequest):
 
 
 async def insert_withdraws_if_not_exists(withdraws: Iterable[EVMWithdrawRequest]):
-    await asyncio.gather(
-        *[insert_withdraw_if_not_exists(withdraw) for withdraw in withdraws]
-    )
+    await asyncio.gather(*[insert_withdraw_if_not_exists(withdraw) for withdraw in withdraws])
 
 
 async def upsert_withdraw(withdraw: EVMWithdrawRequest):

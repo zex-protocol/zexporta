@@ -21,9 +21,7 @@ class BTCAsyncClient(ChainAsyncClient):
     def client(self) -> BTCAnkrAsyncClient:
         if self.btc is not None:
             return self.btc
-        self.btc = BTCAnkrAsyncClient(
-            base_url=self.chain.private_rpc, indexer_url=self.chain.private_indexer_rpc
-        )
+        self.btc = BTCAnkrAsyncClient(base_url=self.chain.private_rpc, indexer_url=self.chain.private_indexer_rpc)
         return self.btc
 
     async def get_transfer_by_tx_hash(self, tx_hash: TxHash) -> list[BTCTransfer]:
@@ -32,24 +30,18 @@ class BTCAsyncClient(ChainAsyncClient):
 
     async def get_finalized_block_number(self) -> BlockNumber:
         finalize_block_count = self.chain.finalize_block_count or 0
-        finalized_block_number = (
-            await self.get_latest_block_number()
-        ) - finalize_block_count
+        finalized_block_number = (await self.get_latest_block_number()) - finalize_block_count
         return finalized_block_number
 
     async def get_token_decimals(self, token_address: Address) -> int:
         return 8
 
-    async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: logging.Logger | logging.LoggerAdapter
-    ) -> bool:
+    async def is_transaction_successful(self, tx_hash: TxHash, logger: logging.Logger | logging.LoggerAdapter) -> bool:
         if await self.client.get_tx_by_hash(tx_hash):
             return True
         return False
 
-    async def get_block_tx_hash(
-        self, block_number: BlockNumber, **kwargs
-    ) -> list[TxHash]:
+    async def get_block_tx_hash(self, block_number: BlockNumber, **kwargs) -> list[TxHash]:
         block = await self.client.get_block_by_identifier(block_number)
         return [tx.txid for tx in block.txs]  # type: ignore
 
@@ -105,9 +97,7 @@ def compute_btc_address(salt: int) -> Address:
     btc_group_key_pub = int(os.environ["BTC_GROUP_KEY_PUB"])
     public_key = code_to_pub(btc_group_key_pub)
     public_key = pub_compress(public_key=public_key)
-    taproot_public_key, _ = taproot_tweak_pubkey(
-        public_key, salt.to_bytes(8, byteorder="big")
-    )
+    taproot_public_key, _ = taproot_tweak_pubkey(public_key, salt.to_bytes(8, byteorder="big"))
     x_hex = hex(taproot_public_key.x)[2:].zfill(64)
     y_hex = hex(taproot_public_key.y)[2:].zfill(64)
     prefix = "02" if int(y_hex, 16) % 2 == 0 else "03"

@@ -20,9 +20,7 @@ def parse_dkg_json(dkg_path, dkg_name) -> dict:
     return dkg_info[dkg_name]
 
 
-async def initiate_dkg(
-    total_node_number: int, threshold: int, n: int, dkg_type: str, dkg_name: str
-) -> None:
+async def initiate_dkg(total_node_number: int, threshold: int, n: int, dkg_type: str, dkg_name: str) -> None:
     nodes_info = NodesInfo()
     all_nodes = nodes_info.get_all_nodes(total_node_number)
     dkg = Dkg(nodes_info, default_timeout=50)
@@ -96,10 +94,6 @@ if __name__ == "__main__":
     dkg_name = sys.argv[5]
 
     try:
-        asyncio.run(
-            initiate_dkg(
-                total_node_number, dkg_threshold, num_parties, dkg_type, dkg_name
-            )
-        )
+        asyncio.run(initiate_dkg(total_node_number, dkg_threshold, num_parties, dkg_type, dkg_name))
     except KeyboardInterrupt:
         pass

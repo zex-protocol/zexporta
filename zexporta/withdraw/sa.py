@@ -63,9 +63,7 @@ async def check_validator_data(
 ):
     withdraw_hash = get_withdraw_hash(zex_withdraw)
     if withdraw_hash != validator_hash:
-        raise WithdrawDifferentHashError(
-            f"validator_hash: {validator_hash}, withdraw_hash: {withdraw_hash}"
-        )
+        raise WithdrawDifferentHashError(f"validator_hash: {validator_hash}, withdraw_hash: {withdraw_hash}")
 
 
 async def process_withdraw_sa(
@@ -94,9 +92,7 @@ async def process_withdraw_sa(
 
     if result.get("result") == "SUCCESSFUL":
         validator_hash = result["message_hash"]
-        await check_validator_data(
-            zex_withdraw=withdraw_request, validator_hash=validator_hash
-        )
+        await check_validator_data(zex_withdraw=withdraw_request, validator_hash=validator_hash)
         data = list(result["signature_data_from_node"].values())[0]
         await send_withdraw(
             w3,
@@ -150,13 +146,9 @@ async def withdraw(chain: EVMConfig):
             account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
 
             dkg_party = dkg_key["party"]
-            withdraws_request = await find_withdraws_by_status(
-                WithdrawStatus.PENDING, chain.chain_id
-            )
+            withdraws_request = await find_withdraws_by_status(WithdrawStatus.PENDING, chain.chain_id)
             if len(withdraws_request) == 0:
-                _logger.debug(
-                    f"No {WithdrawStatus.PENDING.value} has been found to process ..."
-                )
+                _logger.debug(f"No {WithdrawStatus.PENDING.value} has been found to process ...")
                 continue
             for withdraw_request in withdraws_request:
                 try:
@@ -171,9 +163,9 @@ async def withdraw(chain: EVMConfig):
                 except ZexAPIError as e:
                     _logger.error(f"Error at sending deposit to Zex: {e}")
                     continue
-                except (web3.exceptions.ContractCustomError,) as e:
+                except (web3.exceptions.ContractCustomError,) as e:  # noqa: B013 TODO: fix this
                     _logger.error(
-                        f"Contract Error, error: {e.message} , decoded_error: {decode_custom_error_data(e.message, VAULT_ABI)}"
+                        f"Contract Error, error: {e.message} , decoded_error: {decode_custom_error_data(e.message, VAULT_ABI)}"  # noqa: E501 TODO: fix this
                     )
                     withdraw_request.status = WithdrawStatus.REJECTED
                     await upsert_withdraw(withdraw_request)
@@ -194,9 +186,7 @@ async def withdraw(chain: EVMConfig):
                 except ValidatorResultError as e:
                     _logger.error(f"Validator result is not successful, error {e}")
                 except WithdrawDifferentHashError as e:
-                    _logger.error(
-                        f"data that process in zex is different from validators: {e}"
-                    )
+                    _logger.error(f"data that process in zex is different from validators: {e}")
                     withdraw_request.status = WithdrawStatus.REJECTED
                     await upsert_withdraw(withdraw_request)
                 else:
@@ -208,11 +198,7 @@ async def withdraw(chain: EVMConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [
-        loop.create_task(withdraw(chain))
-        for chain in CHAINS_CONFIG.values()
-        if isinstance(chain, EVMConfig)
-    ]
+    tasks = [loop.create_task(withdraw(chain)) for chain in CHAINS_CONFIG.values() if isinstance(chain, EVMConfig)]
     await asyncio.gather(*tasks)
 
 

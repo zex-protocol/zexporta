@@ -37,9 +37,7 @@ async def observe_deposit(chain: ChainConfig):
         last_observed_block = last_observed_block or (latest_block - 1)
         to_block = min(latest_block, last_observed_block + chain.batch_block_size)
         if last_observed_block >= to_block:
-            _logger.warning(
-                f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}"
-            )
+            _logger.warning(f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}")
             continue
         await insert_new_address_to_db(chain)
         accepted_addresses = await get_active_address(chain)
@@ -74,9 +72,7 @@ async def observe_deposit(chain: ChainConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [
-        loop.create_task(observe_deposit(chain)) for chain in CHAINS_CONFIG.values()
-    ]
+    tasks = [loop.create_task(observe_deposit(chain)) for chain in CHAINS_CONFIG.values()]
     await asyncio.gather(*tasks)
 
 

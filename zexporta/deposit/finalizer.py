@@ -32,15 +32,11 @@ async def update_finalized_deposits(chain: ChainConfig):
             )
 
             if len(pending_blocks_number) == 0:
-                _logger.info(
-                    f"No pending tx has been found. finalized_block_number: {finalized_block_number}"
-                )
+                _logger.info(f"No pending tx has been found. finalized_block_number: {finalized_block_number}")
                 await asyncio.sleep(chain.delay)
                 continue
 
-            for i in range(
-                math.ceil(len(pending_blocks_number) / chain.batch_block_size)
-            ):
+            for i in range(math.ceil(len(pending_blocks_number) / chain.batch_block_size)):
                 blocks_to_check = pending_blocks_number[
                     (i * chain.batch_block_size) : ((i + 1) * chain.batch_block_size)
                 ]
@@ -50,19 +46,14 @@ async def update_finalized_deposits(chain: ChainConfig):
                     max_delay_per_block_batch=chain.delay,
                 )
                 await to_finalized(chain, finalized_block_number, results)
-                await to_reorg_block_number(
-                    chain, min(blocks_to_check), max(blocks_to_check)
-                )
+                await to_reorg_block_number(chain, min(blocks_to_check), max(blocks_to_check))
         except Exception as e:
             _logger.exception(f"An error occurred: {e}")
 
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [
-        loop.create_task(update_finalized_deposits(chain))
-        for chain in CHAINS_CONFIG.values()
-    ]
+    tasks = [loop.create_task(update_finalized_deposits(chain)) for chain in CHAINS_CONFIG.values()]
     await asyncio.gather(*tasks)
 
 
