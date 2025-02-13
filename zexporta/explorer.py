@@ -1,4 +1,5 @@
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from zexporta.clients import ChainAsyncClient, filter_blocks, get_async_client
 from zexporta.custom_types import (
@@ -65,7 +66,9 @@ async def explorer(
 
 
 async def get_token_decimals(
-    client: ChainAsyncClient, chain_symbol: ChainSymbol, token_address: Address
+    client: ChainAsyncClient,
+    chain_symbol: ChainSymbol,
+    token_address: Address,
 ) -> int:
     decimals = await get_decimals(chain_symbol, token_address)
     if decimals is None:
@@ -88,7 +91,9 @@ async def get_accepted_deposits(
     for transfer in transfers:
         if (user_id := accepted_addresses.get(transfer.to)) is not None:
             decimals = await get_token_decimals(
-                client, chain.chain_symbol, transfer.token
+                client,
+                chain.chain_symbol,
+                transfer.token,
             )
             if await client.is_transaction_successful(transfer.tx_hash, logger):
                 result.append(
@@ -98,7 +103,7 @@ async def get_accepted_deposits(
                         transfer=chain.transfer_class.model_validate(transfer),
                         status=deposit_status,
                         sa_timestamp=sa_timestamp,
-                    )
+                    ),
                 )
 
     return result

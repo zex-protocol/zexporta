@@ -3,7 +3,6 @@ import os
 from web3 import Web3
 
 from .custom_types import (
-    BTCConfig,
     ChainConfig,
     ChainId,
     ChainSymbol,
@@ -24,7 +23,7 @@ if ENVIRONMENT == EnvEnum.PROD:
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
-                "0x72E46E170342E4879b0Ea8126389111D4275173D"
+                "0x72E46E170342E4879b0Ea8126389111D4275173D",
             ),
             chain_id=ChainId(17000),
         ),
@@ -35,7 +34,7 @@ if ENVIRONMENT == EnvEnum.PROD:
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
-                "0x72E46E170342E4879b0Ea8126389111D4275173D"
+                "0x72E46E170342E4879b0Ea8126389111D4275173D",
             ),
             chain_id=ChainId(11155111),
         ),
@@ -47,7 +46,7 @@ if ENVIRONMENT == EnvEnum.PROD:
             delay=1,
             batch_block_size=30,
             vault_address=Web3.to_checksum_address(
-                "0x72E46E170342E4879b0Ea8126389111D4275173D"
+                "0x72E46E170342E4879b0Ea8126389111D4275173D",
             ),
             chain_id=ChainId(97),
         ),
@@ -63,7 +62,7 @@ else:
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
-                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
+                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979",
             ),
             chain_id=ChainId(17000),
         ),
@@ -74,7 +73,7 @@ else:
             delay=1,
             batch_block_size=20,
             vault_address=Web3.to_checksum_address(
-                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
+                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979",
             ),
             chain_id=ChainId(11155111),
         ),
@@ -86,7 +85,7 @@ else:
             delay=1,
             batch_block_size=30,
             vault_address=Web3.to_checksum_address(
-                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"
+                "0x17a8bC4724666738387Ef5Fc59F7EF835AF60979",
             ),
             chain_id=ChainId(97),
         ),

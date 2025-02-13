@@ -1,12 +1,8 @@
 import os
-from decimal import Decimal
 
 from web3 import Web3
 
 from zexporta.config import (
-    CHAINS_CONFIG,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
     ChainSymbol,
 )
 

@@ -22,12 +22,14 @@ async def get_decimals(chain_symbol: ChainSymbol, token_address: Address) -> int
 
 
 async def insert_token(
-    chain_symbol: ChainSymbol, token_address: Address, decimals: int
+    chain_symbol: ChainSymbol,
+    token_address: Address,
+    decimals: int,
 ) -> None:
     await _token_collection.insert_one(
         {
             "chain_symbol": chain_symbol.value,
             "token_address": token_address,
             "decimals": decimals,
-        }
+        },
     )

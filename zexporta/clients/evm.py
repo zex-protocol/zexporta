@@ -62,7 +62,7 @@ class EVMAsyncClient(ChainAsyncClient):
             tx = await self.client.eth.get_transaction(HexStr(tx_hash))
         except web3.exceptions.TransactionNotFound as e:
             raise EVMTransferNotFound(
-                f"Transfer with tx_hash: {tx_hash} not found"
+                f"Transfer with tx_hash: {tx_hash} not found",
             ) from e
         return self._parse_transfer(tx)
 
@@ -86,7 +86,7 @@ class EVMAsyncClient(ChainAsyncClient):
                 "payable": False,
                 "stateMutability": "view",
                 "type": "function",
-            }
+            },
         ]
 
         contract = self.client.eth.contract(address=token_address, abi=min_abi)
@@ -94,7 +94,9 @@ class EVMAsyncClient(ChainAsyncClient):
         return decimals
 
     async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: ChainLoggerAdapter
+        self,
+        tx_hash: TxHash,
+        logger: ChainLoggerAdapter,
     ) -> bool:
         try:
             receipt = await self.client.eth.get_transaction_receipt(HexStr(tx_hash))
@@ -104,7 +106,9 @@ class EVMAsyncClient(ChainAsyncClient):
         return False
 
     async def get_block_tx_hash(
-        self, block_number: BlockNumber, **kwargs
+        self,
+        block_number: BlockNumber,
+        **kwargs,
     ) -> list[TxHash]:
         block = await self.client.eth.get_block(block_number)
         return [tx_hash.hex() for tx_hash in block.transactions]  # type: ignore
@@ -121,11 +125,12 @@ class EVMAsyncClient(ChainAsyncClient):
         logger.debug(f"Observing block number {block_number} start")
         try:
             block = await self.client.eth.get_block(
-                block_number, full_transactions=True
+                block_number,
+                full_transactions=True,
             )
         except web3.exceptions.BlockNotFound as e:
             raise EVMBlockNotFound(
-                f"Block not found: {block_number}, error: {e}"
+                f"Block not found: {block_number}, error: {e}",
             ) from e
         result = []
         for tx in block.transactions:  # type: ignore
@@ -158,7 +163,7 @@ class EVMAsyncClient(ChainAsyncClient):
             ValidationError,
         ) as e:
             raise EVMTransferNotValid(
-                f"Transfer with tx_hash {tx} is not valid."  # type: error
+                f"Transfer with tx_hash {tx} is not valid.",  # type: error
             ) from e
 
 
@@ -182,13 +187,16 @@ def compute_create2_address(salt: int) -> ChecksumAddress:
         b"\xff"
         + Web3.to_bytes(hexstr=deployer_address)
         + salt.to_bytes(32, "big")
-        + Web3.to_bytes(hexstr=bytecode_hash)
+        + Web3.to_bytes(hexstr=bytecode_hash),
     ).hex()[-40:]
     return Web3.to_checksum_address(contract_address)
 
 
 def get_signed_data(
-    private_key, *, primitive: bytes | None = None, hexstr: str | None = None
+    private_key,
+    *,
+    primitive: bytes | None = None,
+    hexstr: str | None = None,
 ) -> str:
     signable = encode_defunct(primitive=primitive, hexstr=hexstr)  # type: ignore
     signed_message = Account.sign_message(signable, private_key)
@@ -196,7 +204,9 @@ def get_signed_data(
 
 
 async def get_ERC20_balance(
-    w3: AsyncWeb3, contract_address: ChecksumAddress, wallet_address: ChecksumAddress
+    w3: AsyncWeb3,
+    contract_address: ChecksumAddress,
+    wallet_address: ChecksumAddress,
 ):
     contract = w3.eth.contract(address=contract_address, abi=ERC20_ABI)
 

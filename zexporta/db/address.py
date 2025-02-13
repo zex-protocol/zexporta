@@ -48,7 +48,7 @@ def get_collection(chain: ChainConfig):
             return _address_collections[EVMConfig]
         case BTCConfig():
             return _address_collections[BTCConfig]
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 class UserNotExists(Exception):
@@ -78,11 +78,12 @@ async def get_active_address(
 async def get_last_user_id(chain: ChainConfig) -> UserId:
     collection = get_collection(chain=chain)
     result = await collection.find_one(
-        {"is_active": True}, sort=[("user_id", DESCENDING)]
+        {"is_active": True},
+        sort=[("user_id", DESCENDING)],
     )
     if result:
         return result["user_id"]
-    raise UserNotExists()
+    raise UserNotExists
 
 
 async def insert_user_address(chain: ChainConfig, address: UserAddress):
@@ -91,7 +92,8 @@ async def insert_user_address(chain: ChainConfig, address: UserAddress):
 
 
 async def insert_many_user_address(
-    chain: ChainConfig, users_address: list[UserAddress]
+    chain: ChainConfig,
+    users_address: list[UserAddress],
 ):
     collection = get_collection(chain=chain)
     await collection.insert_many(
@@ -100,7 +102,9 @@ async def insert_many_user_address(
 
 
 def get_users_address_to_insert(
-    chain: ChainConfig, first_to_compute: UserId, last_to_compute: UserId
+    chain: ChainConfig,
+    first_to_compute: UserId,
+    last_to_compute: UserId,
 ) -> list[UserAddress]:
     users_address_to_insert = []
     for user_id in range(first_to_compute, last_to_compute + 1):
@@ -110,7 +114,7 @@ def get_users_address_to_insert(
                 address=get_compute_address_function(chain)(
                     user_id,
                 ),
-            )
+            ),
         )
     return users_address_to_insert
 
@@ -130,7 +134,9 @@ async def insert_new_address_to_db(chain: ChainConfig):
     except UserNotExists:
         first_id_to_compute = 0
     users_address_to_insert = get_users_address_to_insert(
-        chain, first_id_to_compute, last_zex_user_id
+        chain,
+        first_id_to_compute,
+        last_zex_user_id,
     )
     if len(users_address_to_insert) == 0:
         return

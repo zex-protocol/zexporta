@@ -49,6 +49,6 @@ dummy_node_info = {
                 "socket": "http://validator-3:6002",
                 "stake": "1980028561960706956",
             },
-        ]
-    }
+        ],
+    },
 }

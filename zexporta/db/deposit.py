@@ -1,5 +1,5 @@
 import asyncio
-from typing import Iterable
+from collections.abc import Iterable
 
 from pymongo import ASCENDING
 
@@ -20,10 +20,12 @@ _deposit_collections = {EVMConfig: db["evm_deposit"], BTCConfig: db["btc_deposit
 
 async def __create_indexes():
     await _deposit_collections[EVMConfig].create_index(
-        ("transfer.tx_hash", "transfer.chain_symbol"), unique=True
+        ("transfer.tx_hash", "transfer.chain_symbol"),
+        unique=True,
     )
     await _deposit_collections[BTCConfig].create_index(
-        ("transfer.tx_hash", "transfer.chain_symbol", "transfer.index"), unique=True
+        ("transfer.tx_hash", "transfer.chain_symbol", "transfer.index"),
+        unique=True,
     )
 
 
@@ -36,7 +38,7 @@ def get_collection(chain: ChainConfig):
             return _deposit_collections[EVMConfig]
         case BTCConfig():
             return _deposit_collections[BTCConfig]
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 async def insert_deposit_if_not_exists(chain: ChainConfig, deposit: Deposit):
@@ -51,10 +53,11 @@ async def insert_deposit_if_not_exists(chain: ChainConfig, deposit: Deposit):
 
 
 async def insert_deposits_if_not_exists(
-    chain: ChainConfig, deposits: Iterable[Deposit]
+    chain: ChainConfig,
+    deposits: Iterable[Deposit],
 ):
     await asyncio.gather(
-        *[insert_deposit_if_not_exists(chain, deposit) for deposit in deposits]
+        *[insert_deposit_if_not_exists(chain, deposit) for deposit in deposits],
     )
 
 
@@ -78,7 +81,8 @@ async def find_deposit_by_status(
     }
 
     async for record in collection.find(
-        query, sort={"transfer.block_number": ASCENDING}
+        query,
+        sort={"transfer.block_number": ASCENDING},
     ):
         res.append(Deposit(**record))
         if limit and len(record) >= limit:
@@ -87,11 +91,14 @@ async def find_deposit_by_status(
 
 
 async def update_deposit_status(
-    chain: ChainConfig, tx_hash: TxHash, new_status: DepositStatus
+    chain: ChainConfig,
+    tx_hash: TxHash,
+    new_status: DepositStatus,
 ):
     collection = get_collection(chain)
     await collection.update_one(
-        {"transfer.tx_hash": tx_hash}, {"$set": {"status": new_status}}
+        {"transfer.tx_hash": tx_hash},
+        {"$set": {"status": new_status}},
     )
 
 
@@ -150,7 +157,8 @@ async def to_reorg_with_tx_hash(
 
 
 async def get_pending_deposits_block_number(
-    chain: ChainConfig, finalized_block_number: BlockNumber
+    chain: ChainConfig,
+    finalized_block_number: BlockNumber,
 ) -> list[BlockNumber]:
     collection = get_collection(chain)
     query = {
@@ -168,7 +176,8 @@ async def get_pending_deposits_block_number(
 
 
 async def get_block_numbers_by_status(
-    chain: ChainConfig, status: DepositStatus
+    chain: ChainConfig,
+    status: DepositStatus,
 ) -> list[BlockNumber]:
     collection = get_collection(chain)
     query = {"transfer.chain_symbol": chain.chain_symbol.value, "status": status.value}

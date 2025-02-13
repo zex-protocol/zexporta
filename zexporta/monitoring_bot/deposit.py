@@ -21,7 +21,7 @@ from .custom_types import MonitoringToken
 
 
 class DepositError(Exception):
-    "raise when deposit was not successful"
+    """raise when deposit was not successful"""
 
 
 async def _send_deposit(
@@ -34,7 +34,8 @@ async def _send_deposit(
     ERC20_token = w3.eth.contract(address=monitoring_token.address, abi=ERC20_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
     tx = await ERC20_token.functions.transfer(
-        user_address, monitoring_token.amount
+        user_address,
+        monitoring_token.amount,
     ).build_transaction({"from": account.address, "nonce": nonce})
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
@@ -55,7 +56,9 @@ async def _wait_for_transaction_receipt(w3, tx_hash, logger):
 
 
 async def get_user_balance(
-    client: httpx.AsyncClient, user_id: UserId, symbol: str
+    client: httpx.AsyncClient,
+    user_id: UserId,
+    symbol: str,
 ) -> Decimal:
     balance = [
         user_asset.free
@@ -68,7 +71,9 @@ async def get_user_balance(
 
 
 async def monitor_deposit(
-    async_client: httpx.AsyncClient, chain: EVMConfig, logger: ChainLoggerAdapter
+    async_client: httpx.AsyncClient,
+    chain: EVMConfig,
+    logger: ChainLoggerAdapter,
 ):
     monitoring_token = [
         token for token in MONITORING_TOKENS if token.chain_symbol == chain.chain_symbol
@@ -83,7 +88,9 @@ async def monitor_deposit(
     w3 = get_evm_async_client(chain).client
     account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
     balance_before = await get_user_balance(
-        async_client, TEST_USER_ID, monitoring_token.symbol
+        async_client,
+        TEST_USER_ID,
+        monitoring_token.symbol,
     )
     logger.info(f"Balance before deposit: {balance_before}")
 
@@ -103,13 +110,15 @@ async def monitor_deposit(
     await asyncio.sleep(30)  # wait until deposit store in zex
 
     balance_after = await get_user_balance(
-        async_client, TEST_USER_ID, monitoring_token.symbol
+        async_client,
+        TEST_USER_ID,
+        monitoring_token.symbol,
     )
     logger.info(f"Balance after deposit: {balance_after}")
 
     # Check if balance increased
     if balance_after == balance_before + Decimal(monitoring_token.amount) / Decimal(
-        10**monitoring_token.decimal
+        10**monitoring_token.decimal,
     ):
         logger.info("Balance has increased. Deposit successful.")
         return

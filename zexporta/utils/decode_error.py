@@ -28,7 +28,8 @@ def decode_custom_error_data(response_error_data, contract_abi):
                     # Decode the data
                     encoded_data = decode_hex(response_error_data[8:])
                     decoded_values = decode(
-                        [i["type"] for i in entry["inputs"]], encoded_data
+                        [i["type"] for i in entry["inputs"]],
+                        encoded_data,
                     )
 
                     # Format the decoded error
@@ -36,7 +37,9 @@ def decode_custom_error_data(response_error_data, contract_abi):
                         "error_name": entry["name"],
                         "decoded_values": {
                             input["name"]: value
-                            for input, value in zip(entry["inputs"], decoded_values)
+                            for input, value in zip(
+                                entry["inputs"], decoded_values, strict=False
+                            )
                         },
                     }
 

@@ -43,7 +43,7 @@ async def deploy_contract(
         {
             "from": account.address,
             "nonce": nonce,
-        }
+        },
     )
 
     signed_tx = account.sign_transaction(deploy_tx)
@@ -70,7 +70,8 @@ async def transfer_ERC20(
     user_deposit = w3.eth.contract(address=deposit.transfer.to, abi=USER_DEPOSIT_ABI)  # type: ignore
     nonce = await w3.eth.get_transaction_count(account.address)
     tx = await user_deposit.functions.transferERC20(
-        deposit.transfer.token, deposit.transfer.value
+        deposit.transfer.token,
+        deposit.transfer.value,
     ).build_transaction({"from": account.address, "nonce": nonce})
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
@@ -85,7 +86,8 @@ async def withdraw(chain: EVMConfig):
     while True:
         try:
             deposits = await find_deposit_by_status(
-                chain, status=DepositStatus.VERIFIED
+                chain,
+                status=DepositStatus.VERIFIED,
             )
             if len(deposits) == 0:
                 _logger.debug("Deposit not found.")
@@ -97,7 +99,7 @@ async def withdraw(chain: EVMConfig):
                 is_contract = (await w3.eth.get_code(deposit.transfer.to)) != b""  # type: ignore
                 if not is_contract:
                     _logger.info(
-                        f"Contract: {deposit.transfer.to} not found! Deploying a new one ..."
+                        f"Contract: {deposit.transfer.to} not found! Deploying a new one ...",
                     )
                     await deploy_contract(
                         w3,
@@ -110,14 +112,14 @@ async def withdraw(chain: EVMConfig):
                     deposit = await transfer_ERC20(w3, account, deposit, logger=_logger)
                 except web3.exceptions.ContractCustomError as e:
                     _logger.error(
-                        f"Error while trying to transfer ERC20 to contract {deposit.transfer.to} , error: {e}"
+                        f"Error while trying to transfer ERC20 to contract {deposit.transfer.to} , error: {e}",
                     )
 
                 await upsert_deposit(chain=chain, deposit=deposit)
 
         except ValueError as e:
             _logger.error(
-                f"Can not deploy contract for {deposit.transfer.to}, error: {e}"
+                f"Can not deploy contract for {deposit.transfer.to}, error: {e}",
             )
 
         finally:

@@ -1,6 +1,7 @@
 import asyncio
 import time
-from typing import Any, Callable, Coroutine, Iterable
+from collections.abc import Callable, Coroutine, Iterable
+from typing import Any
 
 from zexporta.custom_types import (
     Address,
@@ -16,7 +17,7 @@ from .abstract import ChainAsyncClient
 from .btc import BTCAsyncClient, compute_btc_address, get_btc_async_client
 from .evm import EVMAsyncClient, compute_create2_address, get_evm_async_client
 
-__all__ = ["get_async_client", "get_compute_address_function", "filter_blocks"]
+__all__ = ["filter_blocks", "get_async_client", "get_compute_address_function"]
 
 
 def get_async_client(chain: ChainConfig) -> ChainAsyncClient:
@@ -26,7 +27,7 @@ def get_async_client(chain: ChainConfig) -> ChainAsyncClient:
         case BTCConfig():
             return get_btc_async_client(chain)
         case _:
-            raise NotImplementedError()
+            raise NotImplementedError
 
 
 def get_compute_address_function(chain: ChainConfig) -> Callable[[int], Address]:
@@ -35,7 +36,7 @@ def get_compute_address_function(chain: ChainConfig) -> Callable[[int], Address]
             return compute_create2_address
         case BTCConfig():
             return compute_btc_address
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 async def _filter_blocks[T: (Transfer, TxHash)](

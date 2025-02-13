@@ -63,7 +63,7 @@ async def check_validator_data(
     withdraw_hash = get_withdraw_hash(zex_withdraw)
     if withdraw_hash != validator_hash:
         raise WithdrawDifferentHashError(
-            f"validator_hash: {validator_hash}, withdraw_hash: {withdraw_hash}"
+            f"validator_hash: {validator_hash}, withdraw_hash: {withdraw_hash}",
         )
 
 
@@ -94,7 +94,8 @@ async def process_withdraw_sa(
     if result.get("result") == "SUCCESSFUL":
         validator_hash = result["message_hash"]
         await check_validator_data(
-            zex_withdraw=withdraw_request, validator_hash=validator_hash
+            zex_withdraw=withdraw_request,
+            validator_hash=validator_hash,
         )
         data = list(result["signature_data_from_node"].values())[0]
         await send_withdraw(
@@ -150,11 +151,12 @@ async def withdraw(chain: EVMConfig):
 
             dkg_party = dkg_key["party"]
             withdraws_request = await find_withdraws_by_status(
-                WithdrawStatus.PENDING, chain.chain_id
+                WithdrawStatus.PENDING,
+                chain.chain_id,
             )
             if len(withdraws_request) == 0:
                 _logger.debug(
-                    f"No {WithdrawStatus.PENDING.value} has been found to process ..."
+                    f"No {WithdrawStatus.PENDING.value} has been found to process ...",
                 )
                 continue
             for withdraw_request in withdraws_request:
@@ -170,9 +172,9 @@ async def withdraw(chain: EVMConfig):
                 except ZexAPIError as e:
                     _logger.error(f"Error at sending deposit to Zex: {e}")
                     continue
-                except (web3.exceptions.ContractCustomError,) as e:
+                except web3.exceptions.ContractCustomError as e:
                     _logger.error(
-                        f"Contract Error, error: {e.message} , decoded_error: {decode_custom_error_data(e.message, VAULT_ABI)}"
+                        f"Contract Error, error: {e.message} , decoded_error: {decode_custom_error_data(e.message, VAULT_ABI)}",
                     )
                     withdraw_request.status = WithdrawStatus.REJECTED
                     await upsert_withdraw(withdraw_request)
@@ -186,7 +188,7 @@ async def withdraw(chain: EVMConfig):
                 except (KeyError, json.JSONDecodeError, TypeError) as e:
                     _logger.exception(f"Error occurred in pyfrost, {e}")
                     continue
-                except asyncio.TimeoutError as e:
+                except TimeoutError as e:
                     _logger.error(f"Timeout occurred continue after 1 min, error {e}")
                     await asyncio.sleep(60)
                     continue
@@ -194,7 +196,7 @@ async def withdraw(chain: EVMConfig):
                     _logger.error(f"Validator result is not successful, error {e}")
                 except WithdrawDifferentHashError as e:
                     _logger.error(
-                        f"data that process in zex is different from validators: {e}"
+                        f"data that process in zex is different from validators: {e}",
                     )
                     withdraw_request.status = WithdrawStatus.REJECTED
                     await upsert_withdraw(withdraw_request)

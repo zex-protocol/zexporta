@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 async def did_last_nonce_observed(
-    client: httpx.AsyncClient, last_withdraw_nonce: int, chain: EVMConfig
+    client: httpx.AsyncClient,
+    last_withdraw_nonce: int,
+    chain: EVMConfig,
 ) -> bool:
     zex_last_nonce = await get_zex_last_withdraw_nonce(client, chain)
 
@@ -42,18 +44,23 @@ async def observe_withdraw(chain: EVMConfig):
             last_withdraw_nonce = await get_last_withdraw_nonce(chain.chain_symbol)
 
             last_nonce_observed = await did_last_nonce_observed(
-                client, last_withdraw_nonce, chain
+                client,
+                last_withdraw_nonce,
+                chain,
             )
             if last_nonce_observed:
                 _logger.info("No withdraw to process ...")
                 continue
             withdraws = await get_zex_withdraws(
-                async_client=client, chain=chain, offset=last_withdraw_nonce + 1
+                async_client=client,
+                chain=chain,
+                offset=last_withdraw_nonce + 1,
             )
             _logger.info(f"withdraws: {withdraws}")
             await insert_withdraws_if_not_exists(withdraws)
             await upsert_chain_last_withdraw_nonce(
-                chain.chain_symbol, last_withdraw_nonce + len(withdraws)
+                chain.chain_symbol,
+                last_withdraw_nonce + len(withdraws),
             )
 
         except ZexAPIError as e:

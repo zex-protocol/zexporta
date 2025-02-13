@@ -26,7 +26,8 @@ class ChainAsyncClient(ABC):
 
     @abstractmethod
     async def get_transfer_by_tx_hash(
-        self, tx_hash: TxHash
+        self,
+        tx_hash: TxHash,
     ) -> Transfer | list[Transfer]:
         """Retrieve transfer details by transaction hash"""
 
@@ -40,13 +41,17 @@ class ChainAsyncClient(ABC):
 
     @abstractmethod
     async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: ChainLoggerAdapter
+        self,
+        tx_hash: TxHash,
+        logger: ChainLoggerAdapter,
     ) -> bool:
         """Check if transaction was successful"""
 
     @abstractmethod
     async def get_block_tx_hash(
-        self, block_number: BlockNumber, **kwargs
+        self,
+        block_number: BlockNumber,
+        **kwargs,
     ) -> list[TxHash]:
         """Get all transaction hashes in a block"""
 

@@ -59,7 +59,8 @@ async def send_deposits(async_client: httpx.AsyncClient, deposits: list):
 
 
 async def get_zex_latest_block(
-    async_client: httpx.AsyncClient, chain: EVMConfig
+    async_client: httpx.AsyncClient,
+    chain: EVMConfig,
 ) -> BlockNumber | None:
     try:
         res = await async_client.get(
@@ -78,7 +79,8 @@ async def get_zex_latest_block(
 
 
 async def get_zex_last_withdraw_nonce(
-    async_client: httpx.AsyncClient, chain: EVMConfig
+    async_client: httpx.AsyncClient,
+    chain: EVMConfig,
 ) -> int:
     try:
         res = await async_client.get(
@@ -162,7 +164,9 @@ async def get_user_asset(
 
 
 async def get_user_withdraw_nonce(
-    async_client: httpx.AsyncClient, chain: EVMConfig, user_id: UserId
+    async_client: httpx.AsyncClient,
+    chain: EVMConfig,
+    user_id: UserId,
 ) -> int:
     try:
         res = await async_client.get(

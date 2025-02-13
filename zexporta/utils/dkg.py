@@ -14,14 +14,18 @@ from .node_info import NodesInfo
 
 
 def parse_dkg_json(dkg_path, dkg_name) -> dict:
-    with open(dkg_path, "r") as f:
+    with open(dkg_path) as f:
         dkg_info = json.load(f)
 
     return dkg_info[dkg_name]
 
 
 async def initiate_dkg(
-    total_node_number: int, threshold: int, n: int, dkg_type: str, dkg_name: str
+    total_node_number: int,
+    threshold: int,
+    n: int,
+    dkg_type: str,
+    dkg_name: str,
 ) -> None:
     nodes_info = NodesInfo()
     all_nodes = nodes_info.get_all_nodes(total_node_number)
@@ -55,7 +59,7 @@ async def initiate_dkg(
         os.mkdir(dkg_file_path) if not os.path.exists(dkg_file_path) else None
         data = {}
     else:
-        with open(f"{dkg_file_path}/{dkg_file_name}", "r") as file:
+        with open(f"{dkg_file_path}/{dkg_file_name}") as file:
             data = json.load(file)
 
     data[dkg_name] = dkg_key
@@ -93,8 +97,12 @@ if __name__ == "__main__":
     try:
         asyncio.run(
             initiate_dkg(
-                total_node_number, dkg_threshold, num_parties, dkg_type, dkg_name
-            )
+                total_node_number,
+                dkg_threshold,
+                num_parties,
+                dkg_type,
+                dkg_name,
+            ),
         )
     except KeyboardInterrupt:
         pass

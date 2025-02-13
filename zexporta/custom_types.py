@@ -48,7 +48,7 @@ class BaseTransfer(BaseModel, ABC):
 
 
 class EVMTransfer(BaseTransfer):
-    def __eq__(self, value: Any) -> bool:
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, EVMTransfer):
             return self.tx_hash == value.tx_hash
         return NotImplemented
@@ -62,7 +62,7 @@ class EVMTransfer(BaseTransfer):
 class BTCTransfer(BaseTransfer):
     index: int
 
-    def __eq__(self, value: Any) -> bool:
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, BTCTransfer):
             return self.tx_hash == value.tx_hash and self.index == value.index
         return NotImplemented
@@ -132,7 +132,7 @@ class Deposit(BaseModel):
     sa_timestamp: Timestamp | None = None
     transfer: Transfer
 
-    def __eq__(self, value: Any) -> bool:
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, Deposit):
             return self.transfer == value.transfer
         return NotImplemented

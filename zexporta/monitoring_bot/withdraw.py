@@ -26,14 +26,15 @@ WITHDRAW_OPERATION = "w"
 
 
 class WithdrawError(Exception):
-    "raise when WithdrawError occurred"
+    """raise when WithdrawError occurred"""
 
 
 def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
     version, token_len = struct.unpack(">B x B", tx[:3])
     withdraw_format = f">3s {token_len}s d 20s I I 33s"
     unpacked = struct.unpack(
-        withdraw_format, tx[3 : 3 + struct.calcsize(withdraw_format)]
+        withdraw_format,
+        tx[3 : 3 + struct.calcsize(withdraw_format)],
     )
     token_chain, token_name, amount, destination, t, nonce, public = unpacked
     token_chain = token_chain.decode("ascii")
@@ -85,7 +86,9 @@ def create_tx(
 
 
 async def monitor_withdraw(
-    async_client: httpx.AsyncClient, chain: EVMConfig, logger: ChainLoggerAdapter
+    async_client: httpx.AsyncClient,
+    chain: EVMConfig,
+    logger: ChainLoggerAdapter,
 ):
     monitoring_token = [
         token for token in MONITORING_TOKENS if token.chain_symbol == chain.chain_symbol
@@ -104,14 +107,20 @@ async def monitor_withdraw(
         wallet_address=Web3.to_checksum_address(destination_address),
     )
     user_withdraw_nonce = await get_user_withdraw_nonce(
-        async_client, chain, TEST_USER_ID
+        async_client,
+        chain,
+        TEST_USER_ID,
     )
     tx = create_tx(
-        chain, monitoring_token, public_key, destination_address, user_withdraw_nonce
+        chain,
+        monitoring_token,
+        public_key,
+        destination_address,
+        user_withdraw_nonce,
     )
     msg = withdraw_msg(tx, logger)
     signed_data = bytes.fromhex(
-        get_signed_data(WITHDRAWER_PRIVATE_KEY, primitive=msg)[2:]
+        get_signed_data(WITHDRAWER_PRIVATE_KEY, primitive=msg)[2:],
     )[:-1]
     logger.debug(tx + signed_data)
     send_data = (tx + signed_data).decode("latin-1")

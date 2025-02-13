@@ -11,12 +11,17 @@ limit_tx = 1
 
 
 async def get_withdraw_request(
-    chain: EVMConfig, sa_withdraw_nonce: int, logger: LoggerAdapter
+    chain: EVMConfig,
+    sa_withdraw_nonce: int,
+    logger: LoggerAdapter,
 ) -> EVMWithdrawRequest:
     async with httpx.AsyncClient() as client:
         withdraw = (
             await get_zex_withdraws(
-                client, chain, offset=sa_withdraw_nonce, limit=sa_withdraw_nonce + 1
+                client,
+                chain,
+                offset=sa_withdraw_nonce,
+                limit=sa_withdraw_nonce + 1,
             )
         )[0]
 
@@ -25,7 +30,7 @@ async def get_withdraw_request(
 
 def withdraw(chain: EVMConfig, sa_withdraw_nonce: int, logger: LoggerAdapter):
     withdraw_request = asyncio.run(
-        get_withdraw_request(chain, sa_withdraw_nonce, logger)
+        get_withdraw_request(chain, sa_withdraw_nonce, logger),
     )
     zex_withdraw_hash = get_withdraw_hash(withdraw_request)
 

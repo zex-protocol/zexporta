@@ -175,7 +175,7 @@ class BTCAnkrAsyncClient:
         except httpx.ConnectError as conn_err:
             # Raised for connection-related errors
             raise BTCConnectionError(
-                f"Connection error occurred: {conn_err}"
+                f"Connection error occurred: {conn_err}",
             ) from conn_err
         except httpx.TimeoutException as timeout_err:
             # Raised when a request times out
@@ -183,12 +183,12 @@ class BTCAnkrAsyncClient:
         except httpx.RequestError as req_err:
             # Base class for all other request-related errors
             raise BTCClientError(
-                f"An error occurred while requesting {req_err.request.url!r}."
+                f"An error occurred while requesting {req_err.request.url!r}.",
             ) from req_err
         except ValueError as json_err:
             # Raised if response.json() fails
             raise BTCResponseError(
-                f"Failed to parse JSON response: {json_err}"
+                f"Failed to parse JSON response: {json_err}",
             ) from json_err
 
     async def get_tx_by_hash(self, tx_hash: TxHash) -> Transaction:
@@ -197,7 +197,9 @@ class BTCAnkrAsyncClient:
         return Transaction.model_validate(data)
 
     async def get_address_details(
-        self, address: str, details: str | None = "txids"
+        self,
+        address: str,
+        details: str | None = "txids",
     ) -> AddressDetails:
         url = f"{self.block_book_base_url}/api/v2/address/{address}"
         params = {"details": details}
@@ -258,7 +260,8 @@ class BTCAsyncClient(ChainAsyncClient):
         if self.btc is not None:
             return self.btc
         self.btc = BTCAnkrAsyncClient(
-            base_url=self.chain.private_rpc, indexer_url=self.chain.private_indexer_rpc
+            base_url=self.chain.private_rpc,
+            indexer_url=self.chain.private_indexer_rpc,
         )
         return self.btc
 
@@ -277,14 +280,18 @@ class BTCAsyncClient(ChainAsyncClient):
         return 8
 
     async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: ChainLoggerAdapter
+        self,
+        tx_hash: TxHash,
+        logger: ChainLoggerAdapter,
     ) -> bool:
         if await self.client.get_tx_by_hash(tx_hash):
             return True
         return False
 
     async def get_block_tx_hash(
-        self, block_number: BlockNumber, **kwargs
+        self,
+        block_number: BlockNumber,
+        **kwargs,
     ) -> list[TxHash]:
         block = await self.client.get_block_by_identifier(block_number)
         return [tx.txid for tx in block.txs]  # type: ignore
@@ -321,7 +328,7 @@ class BTCAsyncClient(ChainAsyncClient):
                         value=output.value,
                         token="0x0000000000000000000000000000000000000000",
                         index=output.n,
-                    )
+                    ),
                 )
         return transfers
 

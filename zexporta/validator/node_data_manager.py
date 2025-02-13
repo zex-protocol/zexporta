@@ -19,7 +19,7 @@ class NodeDataManager(DataManager):
 
     def _load_data(self, file_path):
         if os.path.exists(file_path):
-            with open(file_path, "r") as file:
+            with open(file_path) as file:
                 return json.load(file)
         return {}
 

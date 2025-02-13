@@ -20,29 +20,31 @@ from .config import ZEX_ENCODE_VERSION
 
 
 class NoTxHashError(Exception):
-    "Raise when a txs_hash list is empty"
+    """Raise when a txs_hash list is empty"""
 
 
 class NotFinalizedBlockError(Exception):
-    "Raise when a block number is bigger then current finalized block"
+    """Raise when a block number is bigger then current finalized block"""
 
 
 logger = logging.getLogger(__name__)
 
 
 def deposit(
-    chain: ChainConfig, data: SaDepositSchema, logger: ChainLoggerAdapter
+    chain: ChainConfig,
+    data: SaDepositSchema,
+    logger: ChainLoggerAdapter,
 ) -> dict:
     txs_hash = data.txs_hash
     if len(txs_hash) == 0:
-        raise NoTxHashError()
+        raise NoTxHashError
     deposits = asyncio.run(
         get_deposits(
             chain=chain,
             txs_hash=txs_hash,
             sa_finalized_block_number=data.finalized_block_number,
             sa_timestamp=data.timestamp,
-        )
+        ),
     )
     encoded_data = encode_zex_deposit(
         version=ZEX_ENCODE_VERSION,
@@ -71,12 +73,12 @@ async def get_deposits(
     if sa_finalized_block_number > finalized_block_number:
         raise NotFinalizedBlockError(
             f"sa_finalized_block_number: {sa_finalized_block_number} \
-            is not finalized in validator , finalized_block: {finalized_block_number}"
+            is not finalized in validator , finalized_block: {finalized_block_number}",
         )
     await insert_new_address_to_db(chain)
     accepted_addresses = await get_active_address(chain)
     transfers = await asyncio.gather(
-        *[client.get_transfer_by_tx_hash(tx_hash) for tx_hash in txs_hash]
+        *[client.get_transfer_by_tx_hash(tx_hash) for tx_hash in txs_hash],
     )
     flattened_transfers = []
     for item in transfers:

@@ -23,7 +23,9 @@ async def get_finalized_tx(
 ) -> JSONResponse:
     try:
         deposits = await find_deposit_by_status(
-            chain=CHAINS_CONFIG[chain_symbol], status=status, from_block=from_block
+            chain=CHAINS_CONFIG[chain_symbol],
+            status=status,
+            from_block=from_block,
         )
     except KeyError:
         raise HTTPException(
@@ -31,7 +33,7 @@ async def get_finalized_tx(
             detail=f"Chain with symbol {chain_symbol.value} not found",
         )
     return JSONResponse(
-        content=[deposit.model_dump(mode="json") for deposit in deposits]
+        content=[deposit.model_dump(mode="json") for deposit in deposits],
     )
 
 

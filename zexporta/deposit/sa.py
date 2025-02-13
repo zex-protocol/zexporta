@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 import logging.config
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from hashlib import sha256
 
 import httpx
@@ -74,7 +74,7 @@ async def process_deposit(
         "method": "deposit",
         "data": SaDepositSchema(
             txs_hash=txs_hash,
-            timestamp=int(datetime.now(timezone.utc).timestamp()),
+            timestamp=int(datetime.now(UTC).timestamp()),
             chain_symbol=chain.chain_symbol,
             finalized_block_number=finalized_block_number,
         ).model_dump(mode="json"),
@@ -159,7 +159,7 @@ async def deposit(chain: ChainConfig):
                 _logger.error(f"Validator error, error: {e}")
             except (KeyError, json.JSONDecodeError, TypeError) as e:
                 _logger.exception(f"Error occurred in pyfrost, {e}")
-            except asyncio.TimeoutError as e:
+            except TimeoutError as e:
                 _logger.error(f"Timeout occurred continue after 1 min, error {e}")
             except DepositDifferentHashError as e:
                 _logger.error(e)

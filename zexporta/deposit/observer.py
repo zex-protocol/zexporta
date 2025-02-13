@@ -38,7 +38,7 @@ async def observe_deposit(chain: ChainConfig):
         to_block = min(latest_block, last_observed_block + chain.batch_block_size)
         if last_observed_block >= to_block:
             _logger.warning(
-                f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}"
+                f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}",
             )
             continue
         await insert_new_address_to_db(chain)

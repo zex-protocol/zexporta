@@ -32,7 +32,7 @@ async def update_finalized_deposits(chain: ChainConfig):
 
         if len(pending_blocks_number) == 0:
             _logger.info(
-                f"No pending tx has been found. finalized_block_number: {finalized_block_number}"
+                f"No pending tx has been found. finalized_block_number: {finalized_block_number}",
             )
             await asyncio.sleep(chain.delay)
             continue
@@ -48,7 +48,9 @@ async def update_finalized_deposits(chain: ChainConfig):
             )
             await to_finalized(chain, finalized_block_number, results)
             await to_reorg_block_number(
-                chain, min(blocks_to_check), max(blocks_to_check)
+                chain,
+                min(blocks_to_check),
+                max(blocks_to_check),
             )
 
 

@@ -1,21 +1,6 @@
-# noqa: F401
-
 import os
 
 from dotenv import load_dotenv
-
-from zexporta.config import (
-    CHAINS_CONFIG,
-    DKG_JSON_PATH,
-    DKG_NAME,
-    MONGO_URI,
-    SA_SHIELD_PRIVATE_KEY,
-    SENTRY_DNS,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
-    WITHDRAWER_PRIVATE_KEY,
-    ZEX_ENCODE_VERSION,
-)
 
 load_dotenv()
 

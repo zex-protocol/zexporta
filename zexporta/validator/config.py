@@ -1,10 +1,7 @@
 import os
 
 from zexporta.config import (
-    CHAINS_CONFIG,
     ENVIRONMENT,
-    SENTRY_DNS,
-    ZEX_ENCODE_VERSION,
 )
 from zexporta.custom_types import EnvEnum
 

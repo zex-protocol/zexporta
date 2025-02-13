@@ -37,4 +37,4 @@ class NodeValidators(Validators):
                 case EVMConfig():
                     return withdraw(chain, sa_withdraw_nonce, logger=_logger)
 
-        raise NotImplementedError()
+        raise NotImplementedError

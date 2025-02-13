@@ -8,8 +8,8 @@ def get_logger_config(logger_path: str):
         "version": 1,
         "formatters": {
             "standard": {
-                "format": "%(levelname)s | %(asctime)s | %(module)s  | %(message)s"
-            }
+                "format": "%(levelname)s | %(asctime)s | %(module)s  | %(message)s",
+            },
         },
         "handlers": {
             "console": {
