@@ -161,4 +161,5 @@ __all__ = [
     "Transfer",
     "ChainId",
     "UtxoStatus",
+    "UTXO",
 ]

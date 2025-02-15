@@ -2,7 +2,7 @@ import asyncio
 from logging import LoggerAdapter
 
 import httpx
-from clients import compute_btc_address
+from clients import ChainConfig, compute_btc_address
 from zellular import Zellular
 
 from zexporta.config import SEQUENCER_APP_NAME, SEQUENCER_BASE_URL
@@ -25,7 +25,7 @@ limit_tx = 1
 
 
 async def get_withdraw_request(
-    chain: EVMConfig, sa_withdraw_nonce: int, logger: LoggerAdapter
+    chain: ChainConfig, sa_withdraw_nonce: int, logger: LoggerAdapter
 ) -> WithdrawRequest:
     async with httpx.AsyncClient() as client:
         withdraw = (

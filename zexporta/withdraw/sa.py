@@ -5,12 +5,14 @@ import logging.config
 
 import sentry_sdk
 import web3.exceptions
+from bitcoinutils.constants import TAPROOT_SIGHASH_ALL
 from bitcoinutils.keys import P2trAddress, PrivateKey
 from bitcoinutils.transactions import Transaction, TxWitnessInput
 from bitcoinutils.utils import to_satoshis
 from clients import BTCAsyncClient, get_async_client
 from clients.evm import EVMAsyncClient, get_signed_data
 from eth_typing import ChecksumAddress
+from pyfrost.crypto_utils import bytes_from_int
 from pyfrost.network.sa import SA
 from web3 import Web3
 from zellular import Zellular
@@ -309,7 +311,7 @@ async def send_btc_withdraw(
 
     def add_fee_to_tx(
         chain: BTCConfig, _withdraw_request: BTCWithdrawRequest, _tx: Transaction
-    ) -> Transaction:
+    ):
         signed_tx = _sign_transaction(_withdraw_request, _tx)
         fee_amount = signed_tx.get_vsize() * withdraw_request.sat_per_byte
         new_outputs = []
@@ -321,7 +323,16 @@ async def send_btc_withdraw(
             new_outputs.append(output)
 
         _tx.outputs = new_outputs
-        return _tx
+
+        utxos_script_pubkeys = [
+            P2trAddress(utxo.address).to_script_pub_key()
+            for utxo in _withdraw_request.utxos
+        ]
+        amounts = [utxo.amount for utxo in withdraw_request.utxos]
+        tx_digests = tx.get_transaction_taproot_digest(
+            0, utxos_script_pubkeys, amounts, 0, sighash=TAPROOT_SIGHASH_ALL
+        )
+        return _tx, tx_digests
 
     assert group_sign is not None
     btc = client.client
@@ -330,12 +341,18 @@ async def send_btc_withdraw(
     amount = withdraw_request.amount
     logging.info(f"Sending: {amount}, to:{to_address}")
 
-    tx, tx_digests = get_simple_withdraw_tx(
+    tx, _ = get_simple_withdraw_tx(
         withdraw_request,
         chain.vault_address,
     )
-    tx = add_fee_to_tx(chain, withdraw_request, tx)
+    tx, tx_digests = add_fee_to_tx(chain, withdraw_request, tx)
+
     signed_tx = _sign_transaction(withdraw_request, tx)
+
+    sig = bytes_from_int(group_sign["public_nonce"].x) + bytes_from_int(
+        group_sign["signature"]
+    )
+    tx.witnesses.append(TxWitnessInput([sig.hex()]))
 
     raw_tx = signed_tx.serialize()
     logging.info(f"Raw tx: {raw_tx}")

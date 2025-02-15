@@ -21,6 +21,8 @@ __all__ = [
     "BTCConfig",
     "EVMConfig",
     "compute_btc_address",
+    "ChainConfig",
+    "ChainAsyncClient",
 ]
 
 
