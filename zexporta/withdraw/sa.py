@@ -1,40 +1,25 @@
 import asyncio
 import json
-import logging
 import logging.config
 
 import sentry_sdk
 import web3.exceptions
-from bitcoinutils.constants import TAPROOT_SIGHASH_ALL
-from bitcoinutils.keys import P2trAddress, PrivateKey
-from bitcoinutils.transactions import Transaction, TxWitnessInput
-from bitcoinutils.utils import to_satoshis
-from clients import BTCAsyncClient, get_async_client
+from clients import get_async_client
 from clients.evm import EVMAsyncClient, get_signed_data
 from eth_typing import ChecksumAddress
-from pyfrost.crypto_utils import bytes_from_int
 from pyfrost.network.sa import SA
 from web3 import Web3
-from zellular import Zellular
 
 from zexporta.config import (
-    BTC_WITHDRAWER_PRIVATE_KEY,
     EVM_WITHDRAWER_PRIVATE_KEY,
-    SEQUENCER_APP_NAME,
-    SEQUENCER_BASE_URL,
 )
 from zexporta.custom_types import (
-    UTXO,
-    BTCConfig,
-    BTCWithdrawRequest,
     ChainConfig,
     EVMConfig,
     EVMWithdrawRequest,
-    UtxoStatus,
     WithdrawRequest,
     WithdrawStatus,
 )
-from zexporta.db.utxo import find_utxo_by_status, upsert_utxo
 from zexporta.db.withdraw import find_withdraws_by_status, upsert_withdraw
 from zexporta.utils.abi import VAULT_ABI
 from zexporta.utils.decode_error import decode_custom_error_data
@@ -44,11 +29,6 @@ from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
 from zexporta.utils.zex_api import (
     ZexAPIError,
-)
-from zexporta.withdraw.btc_utils import (
-    NotEnoughInputs,
-    calculate_fee,
-    get_simple_withdraw_tx,
 )
 
 from .config import (
@@ -87,9 +67,6 @@ async def check_validator_data(
     match chain:
         case EVMConfig():
             withdraw_hash = get_evm_withdraw_hash(zex_withdraw)
-        case BTCConfig():
-            tx, _ = get_simple_withdraw_tx(zex_withdraw, chain.vault_address)
-            withdraw_hash = tx.to_hex()
         case _:
             raise NotImplementedError
     if withdraw_hash != validator_hash:
@@ -99,7 +76,7 @@ async def check_validator_data(
 
 
 async def process_withdraw_sa(
-    chain: EVMConfig,
+    chain: ChainConfig,
     withdraw_request: WithdrawRequest,
     dkg_party,
     logger: ChainLoggerAdapter,
@@ -108,8 +85,6 @@ async def process_withdraw_sa(
     match chain:
         case EVMConfig():
             _process_sa = process_evm_withdraw_sa
-        case BTCConfig():
-            _process_sa = process_btc_withdraw_sa
         case _:
             raise NotImplementedError
 
@@ -192,175 +167,6 @@ async def send_evm_withdraw(
     withdraw_request.tx_hash = tx_hash.hex()
     await w3.eth.wait_for_transaction_receipt(tx_hash)
     logger.info(f"Method called successfully. Transaction Hash: {tx_hash.hex()}")
-
-
-async def get_utxos_for_withdraw(
-    withdraw_request: BTCWithdrawRequest, change_address: str
-) -> list[UTXO]:
-    inputs = []
-    amount = 0
-    withdraw_amount = to_satoshis(withdraw_request.amount)
-    utxos = await find_utxo_by_status(status=UtxoStatus.UNSPENT)
-    for utxo in utxos:
-        inputs.append(utxo)
-        amount += utxo.amount
-        fee = calculate_fee(
-            recipient=withdraw_request.recipient,
-            change_address=change_address,
-            amount=withdraw_amount,
-            sat_per_byte=withdraw_request.sat_per_byte,
-            utxos=inputs,
-        )
-        if amount >= fee + withdraw_amount:
-            return inputs
-    else:
-        raise NotEnoughInputs
-
-
-async def process_btc_withdraw_sa(
-    client: BTCAsyncClient,
-    chain: BTCConfig,
-    withdraw_request: BTCWithdrawRequest,
-    dkg_party,
-    logger: ChainLoggerAdapter,
-):
-    if withdraw_request.status == WithdrawStatus.PROCESSING:
-        if withdraw_request.utxos is None:
-            withdraw_request.sat_per_byte = client.client.get_fee_per_byte()
-            utxos = get_utxos_for_withdraw(
-                withdraw_request, change_address=chain.vault_address
-            )
-            for utxo in utxos:
-                utxo.status = UtxoStatus.SPEND
-                await upsert_utxo(utxo)
-            withdraw_request.utxos = utxos
-            await upsert_withdraw(withdraw_request)
-
-        data = {
-            "operation": "withdraw_tx_data",
-            "data": withdraw_request.json(),
-        }
-
-        zellular = Zellular(SEQUENCER_APP_NAME, SEQUENCER_BASE_URL)
-        index = zellular.send([data], blocking=True)
-        withdraw_request.status = WithdrawStatus.PENDING
-        withdraw_request.zellular_index = index  # todo in validator get from sequencer
-        await upsert_withdraw(withdraw_request)
-        logger.info(f"sequencer updated with index:{index}, data:{data}")
-
-    else:
-        nonces_response = await sa.request_nonces(dkg_party, number_of_nonces=1)
-        nonces_for_sig = {}
-        for id, nonce in nonces_response.items():
-            nonces_for_sig[id] = nonce["data"][0]
-
-        data = {
-            "method": "withdraw",
-            "data": withdraw_request.json(),
-        }
-        logger.debug(f"Zex withdraw request is: {withdraw_request}")
-        result = await sa.request_signature(dkg_key, nonces_for_sig, data, dkg_party)
-        logger.debug(f"Validator results is: {result}")
-
-        if result.get("result") == "SUCCESSFUL":
-            validator_hash = result["message_hash"]
-            await check_validator_data(
-                chain=chain,
-                zex_withdraw=withdraw_request,
-                validator_hash=validator_hash,
-            )
-            await send_btc_withdraw(
-                client,
-                chain,
-                withdraw_request,
-                result,
-                logger,
-            )
-        else:
-            raise ValidatorResultError(result)
-
-
-async def send_btc_withdraw(
-    client: BTCAsyncClient,
-    chain: BTCConfig,
-    withdraw_request: BTCWithdrawRequest,
-    group_sign: dict,
-    logger: logging.Logger | ChainLoggerAdapter = logger,
-):
-    def _sign_transaction(
-        _withdraw_request: BTCWithdrawRequest, _tx: Transaction
-    ) -> Transaction:
-        utxos_script_pubkeys = [
-            P2trAddress(utxo.address).to_script_pub_key()
-            for utxo in _withdraw_request.utxos
-        ]
-        amounts = [utxo.amount for utxo in withdraw_request.utxos]
-
-        private_key = PrivateKey.from_bytes(BTC_WITHDRAWER_PRIVATE_KEY)
-
-        for i, utxo in withdraw_request.utxos:
-            signature = private_key.sign_taproot_input(
-                _tx,
-                i,
-                utxos_script_pubkeys,
-                amounts,
-                tapleaf_scripts=utxo.user_id.to_bytes(8, byteorder="big"),
-            )
-            _tx.witnesses.append(TxWitnessInput([signature]))
-        return _tx
-
-    def add_fee_to_tx(
-        chain: BTCConfig, _withdraw_request: BTCWithdrawRequest, _tx: Transaction
-    ):
-        signed_tx = _sign_transaction(_withdraw_request, _tx)
-        fee_amount = signed_tx.get_vsize() * withdraw_request.sat_per_byte
-        new_outputs = []
-        change_address_script = P2trAddress(chain.vault_address).to_script_pub_key()
-
-        for output in _tx.outputs:
-            if output.script_pubkey == change_address_script:
-                output.amount = output.amount - fee_amount
-            new_outputs.append(output)
-
-        _tx.outputs = new_outputs
-
-        utxos_script_pubkeys = [
-            P2trAddress(utxo.address).to_script_pub_key()
-            for utxo in _withdraw_request.utxos
-        ]
-        amounts = [utxo.amount for utxo in withdraw_request.utxos]
-        tx_digests = tx.get_transaction_taproot_digest(
-            0, utxos_script_pubkeys, amounts, 0, sighash=TAPROOT_SIGHASH_ALL
-        )
-        return _tx, tx_digests
-
-    assert group_sign is not None
-    btc = client.client
-
-    to_address = withdraw_request.recipient
-    amount = withdraw_request.amount
-    logging.info(f"Sending: {amount}, to:{to_address}")
-
-    tx, _ = get_simple_withdraw_tx(
-        withdraw_request,
-        chain.vault_address,
-    )
-    tx, tx_digests = add_fee_to_tx(chain, withdraw_request, tx)
-
-    signed_tx = _sign_transaction(withdraw_request, tx)
-
-    sig = bytes_from_int(group_sign["public_nonce"].x) + bytes_from_int(
-        group_sign["signature"]
-    )
-    tx.witnesses.append(TxWitnessInput([sig.hex()]))
-
-    raw_tx = signed_tx.serialize()
-    logging.info(f"Raw tx: {raw_tx}")
-
-    resp = await btc.send_tx(raw_tx)
-    logger.info(
-        f"Transaction Info: {json.dumps({'raw_tx': raw_tx, 'tx_hash': resp.text}, indent=4)}"
-    )
 
 
 async def withdraw(chain: ChainConfig):

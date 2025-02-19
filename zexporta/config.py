@@ -19,8 +19,6 @@ ENVIRONMENT = EnvEnum(os.environ["ENV"])
 
 if ENVIRONMENT == EnvEnum.PROD:
     ZEX_BASE_URL = "https://api.zex.finance/v1"
-    SEQUENCER_BASE_URL = ""
-    SEQUENCER_APP_NAME = ""
 
     CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.HOL.value: EVMConfig(
@@ -80,8 +78,6 @@ if ENVIRONMENT == EnvEnum.PROD:
 
 else:
     ZEX_BASE_URL = "https://api-dev.zex.finance/v1"
-    SEQUENCER_BASE_URL = ""
-    SEQUENCER_APP_NAME = ""
 
     CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.HOL.value: EVMConfig(

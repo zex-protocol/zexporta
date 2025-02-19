@@ -1,14 +1,13 @@
-import asyncio
 import logging
 
 from pyfrost.network.abstract import Validators
 
-from zexporta.custom_types import BTCConfig, ChainSymbol, EVMConfig, SaDepositSchema
+from zexporta.custom_types import ChainSymbol, EVMConfig, SaDepositSchema
 from zexporta.utils.logger import ChainLoggerAdapter
 
 from .config import CHAINS_CONFIG, VALIDATED_IPS
 from .deposit import deposit
-from .withdraw import btc_withdraw, evm_withdraw
+from .withdraw import evm_withdraw
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +36,5 @@ class NodeValidators(Validators):
             match chain:
                 case EVMConfig():
                     return evm_withdraw(chain, sa_withdraw_nonce, logger=_logger)
-                case BTCConfig():
-                    return asyncio.run(
-                        btc_withdraw(
-                            chain, sa_withdraw_nonce, data=data, logger=_logger
-                        )
-                    )
 
         raise NotImplementedError()

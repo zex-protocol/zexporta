@@ -7,7 +7,6 @@ import httpx
 from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
-    BTCConfig,
     ChainConfig,
     EVMConfig,
     UserId,
@@ -130,9 +129,7 @@ async def get_zex_withdraws(
                 recipient=Web3.to_checksum_address(withdraw.get("destination")),
                 token_address=Web3.to_checksum_address(withdraw.get("tokenContract")),
                 chain_symbol=chain.chain_symbol,
-                status=WithdrawStatus.PROCESSING
-                if isinstance(chain, BTCConfig)
-                else WithdrawStatus.PENDING,
+                status=WithdrawStatus.PENDING,
             )
             for withdraw in withdraws
         ]

@@ -17,7 +17,6 @@ dependencies = [
     "redis[hiredis]~=5.2.0",
     "sentry-sdk~=2.20",
     "web3~=6.19",
-    "zellular>=0.1.5",
 ]
 
 [tool.uv.sources]

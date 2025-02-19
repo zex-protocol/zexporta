@@ -1,6 +1,7 @@
 import asyncio
 from typing import Iterable, overload
 
+from clients import Transfer
 from pymongo import ASCENDING
 
 from zexporta.custom_types import (
@@ -67,6 +68,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit[BTCTransfer]]: ...
 
 
@@ -77,6 +79,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit[EVMTransfer]]: ...
 
 
@@ -88,7 +91,17 @@ async def find_deposit_by_status(
     to_block: BlockNumber | None = None,
     limit: int | None = None,
     txs_hash: list[TxHash] | None = None,
-) -> list[Deposit]:
+) -> list[Deposit[Transfer]]: ...
+
+
+async def find_deposit_by_status(
+    chain,
+    status,
+    from_block=None,
+    to_block=None,
+    limit=None,
+    txs_hash=None,
+):
     collection = get_collection(chain)
     res = []
     block_number_query = {"$gte": from_block or 0}
