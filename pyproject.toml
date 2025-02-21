@@ -31,6 +31,7 @@ dev = [
     "pre-commit~=4.0.1",
     "pyright>=1.1.394",
     "pytest~=8.3.3",
+    "pytest-asyncio>=0.25.3",
     "ruff>=0.9.6",
 ]
 [tool.ruff]
@@ -92,3 +93,13 @@ reportIncompatibleMethodOverride = "warning"
 reportPrivateImportUsage = "warning"
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
+
+[tool.pytest.ini_options]
+minversion = "8.3.4"  # Minimum pytest version required
+addopts = "-ra -q -vv"  # Default options when running pytest
+testpaths = ["./zexporta", "./libs"]  # Directory where pytest looks for tests
+python_files = ["test_*.py", "*_test.py"]  # Match test filenames
+python_classes = ["Test*"]  # Match test classes
+python_functions = ["test_*"]  # Match test functions
+asyncio_mode = "auto"  # Auto-detects pytest-asyncio mode
+asyncio_default_fixture_loop_scope = "function"
