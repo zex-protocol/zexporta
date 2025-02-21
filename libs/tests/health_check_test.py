@@ -5,7 +5,6 @@ from health_check import HealthCheck
 from health_check.abstract import Checkable
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "database_status, api_status, expected_result",
     [(True, True, True), (False, True, False), (True, False, False), (False, False, False)],
@@ -23,7 +22,6 @@ async def test_health_check_in_case_of_register(database_status, api_status, exp
     assert result == expected_result
 
 
-@pytest.mark.asyncio
 async def test_health_check_in_case_of_empty():
     # Arrangement Phase
     health_check = HealthCheck()
