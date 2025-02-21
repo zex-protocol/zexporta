@@ -17,9 +17,7 @@ class BTCTransfer(Transfer):
 
     def __gt__(self, value: Any) -> bool:
         if isinstance(value, BTCTransfer):
-            return self.tx_hash > value.tx_hash or (
-                self.tx_hash == value.tx_hash and self.index > value.index
-            )
+            return self.tx_hash > value.tx_hash or (self.tx_hash == value.tx_hash and self.index > value.index)
         return NotImplemented
 
 

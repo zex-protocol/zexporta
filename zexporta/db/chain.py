@@ -13,9 +13,7 @@ _chain_collection = db["chain"]
 asyncio.run(__create_chain_index())
 
 
-async def upsert_chain_last_observed_block(
-    chain_symbol: str, block_number: BlockNumber
-):
+async def upsert_chain_last_observed_block(chain_symbol: str, block_number: BlockNumber):
     query = {"chain_symbol": chain_symbol}
     update = {
         "$set": {

@@ -37,9 +37,7 @@ FACTORY_ABI = [
     {
         "inputs": [{"internalType": "uint256", "name": "salt", "type": "uint256"}],
         "name": "deploy",
-        "outputs": [
-            {"internalType": "address", "name": "userDepositAddress", "type": "address"}
-        ],
+        "outputs": [{"internalType": "address", "name": "userDepositAddress", "type": "address"}],
         "stateMutability": "nonpayable",
         "type": "function",
     },

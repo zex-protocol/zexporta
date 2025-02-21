@@ -27,6 +27,11 @@ pre-commit-run:
 	@echo "Running pre-commit hooks on all files..."
 	$(PRE_COMMIT) run --all-files
 
+# Run type check for all files
+type-check:
+	@echo "Running type check for all files"
+	$(UV) run pyright .
+
 # Clean up the project (remove virtual environment and pre-commit hooks)
 clean:
 	@echo "Cleaning up..."
@@ -42,5 +47,6 @@ help:
 	@echo "  make pre-commit-run - Run pre-commit hooks on all files"
 	@echo "  make clean        - Clean up the project (remove virtual environment and pre-commit hooks)"
 	@echo "  make help         - Display this help message"
+	@echo "  make type-check   - Run type check for all files"
 
-.PHONY: all init uv-sync pre-commit-install pre-commit-run clean help
+.PHONY: all init uv-sync pre-commit-install pre-commit-run clean type-check help

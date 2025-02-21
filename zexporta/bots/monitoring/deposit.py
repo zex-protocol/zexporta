@@ -20,25 +20,17 @@ class DepositError(Exception):
     "raise when deposit was not successful"
 
 
-async def get_user_balance(
-    client: httpx.AsyncClient, user_id: UserId, symbol: str
-) -> Decimal:
+async def get_user_balance(client: httpx.AsyncClient, user_id: UserId, symbol: str) -> Decimal:
     balance = [
-        user_asset.free
-        for user_asset in (await get_user_asset(client, user_id=user_id))
-        if user_asset.asset == symbol
+        user_asset.free for user_asset in (await get_user_asset(client, user_id=user_id)) if user_asset.asset == symbol
     ]
     if len(balance) == 0:
         return Decimal(0)
     return Decimal(balance[0])
 
 
-async def monitor_deposit(
-    async_client: httpx.AsyncClient, chain: EVMConfig, logger: ChainLoggerAdapter
-):
-    monitoring_token = [
-        token for token in MONITORING_TOKENS if token.chain_symbol == chain.chain_symbol
-    ]
+async def monitor_deposit(async_client: httpx.AsyncClient, chain: EVMConfig, logger: ChainLoggerAdapter):
+    monitoring_token = [token for token in MONITORING_TOKENS if token.chain_symbol == chain.chain_symbol]
     if len(monitoring_token) == 0:
         raise DepositError("No token for monitoring found")
     monitoring_token = monitoring_token[0]
@@ -48,9 +40,7 @@ async def monitor_deposit(
 
     w3 = get_evm_async_client(chain).client
     account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
-    balance_before = await get_user_balance(
-        async_client, TEST_USER_ID, monitoring_token.symbol
-    )
+    balance_before = await get_user_balance(async_client, TEST_USER_ID, monitoring_token.symbol)
     logger.info(f"Balance before deposit: {balance_before}")
 
     tx_hash = await send_deposit(
@@ -68,15 +58,11 @@ async def monitor_deposit(
 
     await asyncio.sleep(30)  # wait until deposit store in zex
 
-    balance_after = await get_user_balance(
-        async_client, TEST_USER_ID, monitoring_token.symbol
-    )
+    balance_after = await get_user_balance(async_client, TEST_USER_ID, monitoring_token.symbol)
     logger.info(f"Balance after deposit: {balance_after}")
 
     # Check if balance increased
-    if balance_after == balance_before + Decimal(monitoring_token.amount) / Decimal(
-        10**monitoring_token.decimal
-    ):
+    if balance_after == balance_before + Decimal(monitoring_token.amount) / Decimal(10**monitoring_token.decimal):
         logger.info("Balance has increased. Deposit successful.")
         return
     raise DepositError("Balance is not correct, something went wrong.")

@@ -26,9 +26,7 @@ async def upsert_last_transferred_id(chain_symbol: str, user_id: UserId):
         }
     }
 
-    result = await _test_token_transfer_collection.update_one(
-        query, update, upsert=True
-    )
+    result = await _test_token_transfer_collection.update_one(query, update, upsert=True)
     return result
 
 
