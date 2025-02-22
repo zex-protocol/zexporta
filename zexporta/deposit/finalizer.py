@@ -24,7 +24,7 @@ async def update_finalized_deposits(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
         try:
-            client = get_async_client(chain)
+            client = get_async_client(chain, logger=_logger)
             finalized_block_number = await client.get_finalized_block_number()
             pending_blocks_number = await get_pending_deposits_block_number(
                 chain=chain,

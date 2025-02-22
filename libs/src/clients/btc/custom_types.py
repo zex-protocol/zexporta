@@ -1,12 +1,12 @@
 # Model for Address Details
-from typing import Any, ClassVar
+from typing import Any
 
 from clients.custom_types import URL, ChainConfig, Transfer
 
 type Address = str
 
 
-class BTCTransfer(Transfer):
+class BTCTransfer(Transfer[Address]):
     to: Address
     index: int
 
@@ -23,4 +23,4 @@ class BTCTransfer(Transfer):
 
 class BTCConfig(ChainConfig):
     private_indexer_rpc: URL
-    transfer_class: ClassVar[type[BTCTransfer]] = BTCTransfer
+    transfer_class: type[BTCTransfer] = BTCTransfer

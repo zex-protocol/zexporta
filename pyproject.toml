@@ -32,6 +32,7 @@ dev = [
     "pyright>=1.1.394",
     "pytest~=8.3.3",
     "ruff>=0.9.6",
+    "testcontainers[mongodb]>=4.9.1",
 ]
 [tool.ruff]
 exclude = [
@@ -86,9 +87,6 @@ convention = "google"
 
 # FIXME: the warning which has been set should remove but since project has these problems ignore them
 [tool.pyright]
-reportPossiblyUnboundVariable = "warning"
-reportIncompatibleVariableOverride = "warning"
 reportIncompatibleMethodOverride = "warning"
-reportPrivateImportUsage = "warning"
 pythonVersion = "3.12"
 typeCheckingMode = "standard"

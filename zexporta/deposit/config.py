@@ -9,7 +9,6 @@ from zexporta.config import (
     DKG_JSON_PATH,
     DKG_NAME,
     EVM_NATIVE_TOKEN_ADDRESS,
-    MONGO_URI,
     SA_SHIELD_PRIVATE_KEY,
     SENTRY_DNS,
     USER_DEPOSIT_BYTECODE_HASH,
