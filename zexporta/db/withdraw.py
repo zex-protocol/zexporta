@@ -51,15 +51,13 @@ async def upsert_withdraws(withdraws: list[WithdrawRequest]):
 
 
 async def find_withdraws_by_status(
-    status: WithdrawStatus | list[WithdrawStatus],
+    status: WithdrawStatus,
     chain: ChainConfig,
     nonce: int = 0,
 ) -> list[WithdrawRequest]:
     res = []
     query = {
-        "status": status.value
-        if isinstance(status, WithdrawStatus)
-        else {"$in": [status.value for status in status]},
+        "status": status.value,
         "chain_symbol": chain.chain_symbol,
         "nonce": {"$gte": nonce},
     }

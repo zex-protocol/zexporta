@@ -46,15 +46,16 @@ async def update_finalized_deposits(chain: ChainConfig):
                 client.get_block_tx_hash,
                 max_delay_per_block_batch=chain.delay,
             )
-            finalize_deposits = chain.finalize_deposits
-            if finalize_deposits:
+            deposit_finalizer_middleware = chain.deposit_finalizer_middleware
+            if deposit_finalizer_middleware:
                 finalized_deposits_list = await find_deposit_by_status(
                     chain=chain,
                     status=DepositStatus.PENDING,
                     to_block=finalized_block_number,
                     txs_hash=results,
                 )
-                await finalize_deposits(finalized_deposits_list)
+                for middleware in deposit_finalizer_middleware:
+                    await middleware(finalized_deposits_list)
             await to_finalized(chain, finalized_block_number, results)
 
             await to_reorg_block_number(

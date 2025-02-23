@@ -69,7 +69,7 @@ if ENVIRONMENT == EnvEnum.PROD:
         #     delay=10,
         #     batch_block_size=5,
         #     vault_address = "",
-        #     finalize_deposits = populate_deposits_utxos,
+        #     deposit_finalizer_middleware = [populate_deposits_utxos],
         #     withdraw_request_type = BTCWithdrawRequest
         # ),
     }
@@ -128,7 +128,7 @@ else:
             delay=60,
             batch_block_size=5,
             vault_address="",
-            finalize_deposits=populate_deposits_utxos,
+            deposit_finalizer_middleware=[populate_deposits_utxos],
             withdraw_request_type=BTCWithdrawRequest,
         ),
     }

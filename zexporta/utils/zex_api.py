@@ -3,6 +3,7 @@ from enum import StrEnum
 from json import JSONDecodeError
 
 import httpx
+from clients import BTCConfig
 
 from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
@@ -122,12 +123,13 @@ async def get_zex_withdraws(
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
 
+        address_type = str if isinstance(chain, BTCConfig) else Web3.to_checksum_address
         return [
             chain.withdraw_request_type(
                 amount=withdraw.get("amount"),
                 nonce=withdraw.get("nonce"),
-                recipient=Web3.to_checksum_address(withdraw.get("destination")),
-                token_address=Web3.to_checksum_address(withdraw.get("tokenContract")),
+                recipient=address_type(withdraw.get("destination")),
+                token_address=address_type(withdraw.get("tokenContract")),
                 chain_symbol=chain.chain_symbol,
                 status=WithdrawStatus.PENDING,
             )

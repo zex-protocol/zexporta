@@ -9,7 +9,7 @@ from clients.btc.exceptions import (
     BTCResponseError,
     BTCTimeoutError,
 )
-from clients.btc.rpc.ankr import (
+from clients.btc.rpc.data_models import (
     AddressDetails,
     Block,
     Transaction,
@@ -166,7 +166,7 @@ class BTCMempoolAsyncClient:
             vout=vout_list,
             blockHash=tx["status"].get("block_hash"),
             blockHeight=tx["status"].get("block_height"),
-            confirmations=0,  # مقدار واقعی باید از شبکه دریافت شود
+            confirmations=0,  # todo
             blockTime=tx["status"].get("block_time"),
             value=value,
             valueIn=valueIn,
@@ -182,7 +182,7 @@ class BTCMempoolAsyncClient:
             hash=data["id"],
             previousBlockHash=data["previousblockhash"],
             height=data["height"],
-            confirmations=0,  # مقدار واقعی باید از شبکه دریافت شود
+            confirmations=0,  # todo
             size=data["size"],
             time=data["timestamp"],
             version=data["version"],

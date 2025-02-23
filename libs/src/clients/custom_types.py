@@ -41,5 +41,7 @@ class ChainConfig(BaseModel, ABC):
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
     transfer_class: ClassVar[type[Transfer]]
-    finalize_deposits: Callable[..., Awaitable[Any]]  # Supports async functions
+    deposit_finalizer_middleware: list[
+        Callable[..., Awaitable[Any]]
+    ]  # Supports async functions
     withdraw_request_type: type
