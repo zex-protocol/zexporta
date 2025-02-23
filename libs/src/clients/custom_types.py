@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Annotated, Any, ClassVar
+from typing import Annotated, Any, Awaitable, Callable, ClassVar
 
 from eth_typing import ChecksumAddress
 from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
@@ -34,9 +34,12 @@ class Transfer(BaseModel, ABC):
 
 
 class ChainConfig(BaseModel, ABC):
+    vault_address: Address
     private_rpc: URL
     chain_symbol: str
     finalize_block_count: int | None = Field(default=15)
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
     transfer_class: ClassVar[type[Transfer]]
+    deposit_finalizer_middleware: list[Callable[..., Awaitable[Any]]] | None = None  # Supports async functions
+    withdraw_request_type: type

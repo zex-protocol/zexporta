@@ -2,9 +2,9 @@ from zexporta.config import (
     CHAINS_CONFIG,
     DKG_JSON_PATH,
     DKG_NAME,
+    EVM_WITHDRAWER_PRIVATE_KEY,
     SA_SHIELD_PRIVATE_KEY,
     SENTRY_DNS,
-    WITHDRAWER_PRIVATE_KEY,
 )
 
 LOGGER_PATH = "/var/log/withdraw/"

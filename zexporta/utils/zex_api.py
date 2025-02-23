@@ -3,13 +3,16 @@ from enum import StrEnum
 from json import JSONDecodeError
 
 import httpx
+from clients import BTCConfig
 
 from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
+    ChainConfig,
     EVMConfig,
-    EVMWithdrawRequest,
     UserId,
+    WithdrawRequest,
+    WithdrawStatus,
     ZexUserAsset,
 )
 
@@ -75,7 +78,7 @@ async def get_zex_latest_block(async_client: httpx.AsyncClient, chain: EVMConfig
         raise ZexAPIError(e)  # noqa: B904 FIXME
 
 
-async def get_zex_last_withdraw_nonce(async_client: httpx.AsyncClient, chain: EVMConfig) -> int:
+async def get_zex_last_withdraw_nonce(async_client: httpx.AsyncClient, chain: ChainConfig) -> int:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LAST_WITHDRAW_NONCE.value}",
@@ -96,10 +99,10 @@ async def get_zex_last_withdraw_nonce(async_client: httpx.AsyncClient, chain: EV
 
 async def get_zex_withdraws(
     async_client: httpx.AsyncClient,
-    chain: EVMConfig,
+    chain: ChainConfig,
     offset: int,
     limit: int | None = None,
-) -> list[EVMWithdrawRequest]:
+) -> list[WithdrawRequest]:
     from web3 import Web3
 
     params = dict()
@@ -115,13 +118,16 @@ async def get_zex_withdraws(
         withdraws = res.json()
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
+
+        address_type = str if isinstance(chain, BTCConfig) else Web3.to_checksum_address
         return [
-            EVMWithdrawRequest(
+            chain.withdraw_request_type(
                 amount=withdraw.get("amount"),
                 nonce=withdraw.get("nonce"),
-                recipient=Web3.to_checksum_address(withdraw.get("destination")),
-                token_address=Web3.to_checksum_address(withdraw.get("tokenContract")),
-                chain_id=chain.chain_id,
+                recipient=address_type(withdraw.get("destination")),
+                token_address=address_type(withdraw.get("tokenContract")),
+                chain_symbol=chain.chain_symbol,
+                status=WithdrawStatus.PENDING,
             )
             for withdraw in withdraws
         ]

@@ -3,8 +3,9 @@ import logging.config
 
 import httpx
 import sentry_sdk
+from clients import EVMConfig
 
-from zexporta.custom_types import EVMConfig
+from zexporta.custom_types import ChainConfig
 from zexporta.db.chain import (
     get_last_withdraw_nonce,
     upsert_chain_last_withdraw_nonce,
@@ -23,7 +24,7 @@ logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/observer.log"))
 logger = logging.getLogger(__name__)
 
 
-async def did_last_nonce_observed(client: httpx.AsyncClient, last_withdraw_nonce: int, chain: EVMConfig) -> bool:
+async def did_last_nonce_observed(client: httpx.AsyncClient, last_withdraw_nonce: int, chain: ChainConfig) -> bool:
     zex_last_nonce = await get_zex_last_withdraw_nonce(client, chain)
 
     if last_withdraw_nonce >= zex_last_nonce:
@@ -31,7 +32,7 @@ async def did_last_nonce_observed(client: httpx.AsyncClient, last_withdraw_nonce
     return False
 
 
-async def observe_withdraw(chain: EVMConfig):
+async def observe_withdraw(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
 
     while True:
