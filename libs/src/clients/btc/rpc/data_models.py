@@ -53,7 +53,7 @@ class Transaction(BaseModel):
     vin: list[Vin]
     vout: list[Vout]
     blockHash: str | None
-    blockHeight: int | None
+    blockHeight: int = -1
     confirmations: int
     blockTime: int | None
     value: Value

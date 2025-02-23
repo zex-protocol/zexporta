@@ -24,9 +24,7 @@ from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.zex_api import ZexAPIError, get_async_client, get_last_zex_user_id
 
-logging.config.dictConfig(
-    get_logger_config(logger_path=f"{LOGGER_PATH}/transfer_test_token_bot.log")
-)
+logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/transfer_test_token_bot.log"))
 logger = logging.getLogger(__name__)
 
 
@@ -55,16 +53,12 @@ async def transfer_test_tokens(chain: EVMConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     w3 = get_evm_async_client(chain).client
     account = w3.eth.account.from_key(HOLDER_PRIVATE_KEY)
-    test_tokens = [
-        token for token in TEST_TOKENS if token.chain_symbol == chain.chain_symbol
-    ]
+    test_tokens = [token for token in TEST_TOKENS if token.chain_symbol == chain.chain_symbol]
     if len(test_tokens) == 0:
         _logger.error("No token for transfer found")
 
     while True:
-        last_transferred_user_id = (
-            await get_last_transferred_id(chain.chain_symbol) or 0
-        )
+        last_transferred_user_id = await get_last_transferred_id(chain.chain_symbol) or 0
 
         last_user_id = await _get_last_user_id() or 0
 

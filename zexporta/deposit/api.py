@@ -21,9 +21,7 @@ async def get_finalized_tx(
 ) -> JSONResponse:
     chain = CHAINS_CONFIG[chain_symbol.value]
     deposits = await find_deposit_by_status(chain, status, from_block=from_block)
-    return JSONResponse(
-        content=[deposit.model_dump(mode="json") for deposit in deposits]
-    )
+    return JSONResponse(content=[deposit.model_dump(mode="json") for deposit in deposits])
 
 
 app.include_router(route)

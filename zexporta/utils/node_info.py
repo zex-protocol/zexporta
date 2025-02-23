@@ -20,9 +20,7 @@ class NodesInfo(BaseNodeInfo):
 
     def __init__(self):
         self._stop_event = threading.Event()
-        self.nodes = self._convert_operators_to_nodes(
-            dummy_node_info.get("data", {}).get("operators", [])
-        )
+        self.nodes = self._convert_operators_to_nodes(dummy_node_info.get("data", {}).get("operators", []))
 
     def _convert_operators_to_nodes(self, operators):
         nodes = {}

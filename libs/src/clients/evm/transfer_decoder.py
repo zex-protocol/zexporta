@@ -39,9 +39,7 @@ def _parse_abi(abi: list[dict]) -> dict[FunctionHash, SolidityFunction]:
                 input_types = [inp["type"] for inp in func["inputs"]]
                 func_signature = f"{func_name}({','.join(input_types)})"
                 func_selector = Web3.keccak(text=func_signature)[:4].hex()
-                function_selectors[func_selector] = SolidityFunction(
-                    name=func_name, inputs=func["inputs"]
-                )
+                function_selectors[func_selector] = SolidityFunction(name=func_name, inputs=func["inputs"])
     return function_selectors
 
 
@@ -78,6 +76,4 @@ def decode_transfer_tx(tx_input: str) -> TransferTX:
         decoded_tx_input = TransferTX(**decoded_input_data)
         return decoded_tx_input
     else:
-        raise NotRecognizedSolidityFuncError(
-            f"Function {function_selector} is not recognized"
-        )
+        raise NotRecognizedSolidityFuncError(f"Function {function_selector} is not recognized")

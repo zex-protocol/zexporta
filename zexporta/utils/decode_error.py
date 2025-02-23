@@ -18,25 +18,20 @@ def decode_custom_error_data(response_error_data, contract_abi):
         for entry in contract_abi:
             if entry["type"] == "error":
                 # Compute the error signature
-                error_signature = (
-                    f"{entry['name']}({','.join(i['type'] for i in entry['inputs'])})"
-                )
+                error_signature = f"{entry['name']}({','.join(i['type'] for i in entry['inputs'])})"
                 computed_hash = keccak(text=error_signature).hex()[:8]
 
                 # Match the signature hash
                 if error_signature_hash == computed_hash:
                     # Decode the data
                     encoded_data = decode_hex(response_error_data[8:])
-                    decoded_values = decode(
-                        [i["type"] for i in entry["inputs"]], encoded_data
-                    )
+                    decoded_values = decode([i["type"] for i in entry["inputs"]], encoded_data)
 
                     # Format the decoded error
                     return {
                         "error_name": entry["name"],
                         "decoded_values": {
-                            input["name"]: value
-                            for input, value in zip(entry["inputs"], decoded_values)
+                            input["name"]: value for input, value in zip(entry["inputs"], decoded_values)
                         },
                     }
 
@@ -47,4 +42,4 @@ def decode_custom_error_data(response_error_data, contract_abi):
 
 
 if __name__ == "__main__":
-    print(decode_custom_error_data("0xf4d678b8", FACTORY_ABI))
+    print(decode_custom_error_data("0xf4d678b8", FACTORY_ABI))  # noqa: T201 FIXME

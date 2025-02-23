@@ -73,9 +73,9 @@ async def transfer_token(
     logger.info(f"to: {deposit.transfer.token}")
     if deposit.transfer.token == EVM_NATIVE_TOKEN_ADDRESS:
         logger.info("Creating transferNativeToken tx.")
-        tx = await user_deposit.functions.transferNativeToken(
-            deposit.transfer.value
-        ).build_transaction({"from": account.address, "nonce": nonce})
+        tx = await user_deposit.functions.transferNativeToken(deposit.transfer.value).build_transaction(
+            {"from": account.address, "nonce": nonce}
+        )
     else:
         logger.info("Creating transferERC20 token tx.")
         tx = await user_deposit.functions.transferERC20(
@@ -94,9 +94,7 @@ async def withdraw(chain: EVMConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
         try:
-            deposits = await find_deposit_by_status(
-                chain, status=DepositStatus.VERIFIED
-            )
+            deposits = await find_deposit_by_status(chain, status=DepositStatus.VERIFIED)
             if len(deposits) == 0:
                 _logger.debug("Deposit not found.")
                 continue
@@ -106,9 +104,7 @@ async def withdraw(chain: EVMConfig):
             for deposit in deposits:
                 is_contract = (await w3.eth.get_code(deposit.transfer.to)) != b""  # type: ignore
                 if not is_contract:
-                    _logger.info(
-                        f"Contract: {deposit.transfer.to} not found! Deploying a new one ..."
-                    )
+                    _logger.info(f"Contract: {deposit.transfer.to} not found! Deploying a new one ...")
                     await deploy_contract(
                         w3,
                         account,
@@ -129,9 +125,7 @@ async def withdraw(chain: EVMConfig):
                 await upsert_deposit(chain=chain, deposit=deposit)
 
         except ValueError as e:
-            _logger.error(
-                f"Can not deploy contract for {deposit.transfer.to}, error: {e}"
-            )
+            _logger.error(f"Can not deploy contract for {deposit.transfer.to}, error: {e}")
 
         finally:
             await asyncio.sleep(10)
@@ -139,11 +133,7 @@ async def withdraw(chain: EVMConfig):
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [
-        loop.create_task(withdraw(chain))
-        for chain in CHAINS_CONFIG.values()
-        if isinstance(chain, EVMConfig)
-    ]
+    tasks = [loop.create_task(withdraw(chain)) for chain in CHAINS_CONFIG.values() if isinstance(chain, EVMConfig)]
     await asyncio.gather(*tasks)
 
 
