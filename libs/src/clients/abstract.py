@@ -1,13 +1,13 @@
+import logging
 from abc import ABC, abstractmethod
 
-from zexporta.custom_types import (
+from clients.custom_types import (
     Address,
     BlockNumber,
     ChainConfig,
     Transfer,
     TxHash,
 )
-from zexporta.utils.logger import ChainLoggerAdapter
 
 
 class BaseClientError(Exception):
@@ -25,9 +25,7 @@ class ChainAsyncClient(ABC):
         """Get or create an async client connection"""
 
     @abstractmethod
-    async def get_transfer_by_tx_hash(
-        self, tx_hash: TxHash
-    ) -> Transfer | list[Transfer]:
+    async def get_transfer_by_tx_hash(self, tx_hash: TxHash) -> Transfer | list[Transfer]:
         """Retrieve transfer details by transaction hash"""
 
     @abstractmethod
@@ -39,15 +37,11 @@ class ChainAsyncClient(ABC):
         """Get decimals for a token contract"""
 
     @abstractmethod
-    async def is_transaction_successful(
-        self, tx_hash: TxHash, logger: ChainLoggerAdapter
-    ) -> bool:
+    async def is_transaction_successful(self, tx_hash: TxHash, logger: logging.Logger | logging.LoggerAdapter) -> bool:
         """Check if transaction was successful"""
 
     @abstractmethod
-    async def get_block_tx_hash(
-        self, block_number: BlockNumber, **kwargs
-    ) -> list[TxHash]:
+    async def get_block_tx_hash(self, block_number: BlockNumber, **kwargs) -> list[TxHash]:
         """Get all transaction hashes in a block"""
 
     @abstractmethod
@@ -58,7 +52,7 @@ class ChainAsyncClient(ABC):
     async def extract_transfer_from_block(
         self,
         block_number: BlockNumber,
-        logger: ChainLoggerAdapter,
+        logger: logging.Logger | logging.LoggerAdapter,
         **kwargs,
     ) -> list[Transfer]:
         """Get block transfers"""

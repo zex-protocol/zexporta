@@ -31,10 +31,9 @@ class NodeValidators(Validators):
         if method == "deposit":
             return deposit(chain, SaDepositSchema(**data), _logger)
 
-        if method == "withdraw":
-            sa_withdraw_nonce = data["sa_withdraw_nonce"]
-            match chain:
-                case EVMConfig():
-                    return withdraw(chain, sa_withdraw_nonce, logger=_logger)
+        if isinstance(chain, EVMConfig):
+            if method == "withdraw":
+                sa_withdraw_nonce = data["sa_withdraw_nonce"]
+                return withdraw(chain, sa_withdraw_nonce, logger=_logger)
 
         raise NotImplementedError()

@@ -2,12 +2,12 @@ import asyncio
 import logging
 import logging.config
 
+import clients.exceptions as client_exception
 import sentry_sdk
-
-import zexporta.clients.exceptions as client_exception
-from zexporta.clients import (
+from clients import (
     get_async_client,
 )
+
 from zexporta.custom_types import ChainConfig
 from zexporta.db.address import get_active_address, insert_new_address_to_db
 from zexporta.db.chain import (
@@ -34,12 +34,10 @@ async def observe_deposit(chain: ChainConfig):
             _logger.info(f"Block {last_observed_block} already observed continue")
             await asyncio.sleep(chain.delay)
             continue
-        last_observed_block = last_observed_block or latest_block
+        last_observed_block = last_observed_block or (latest_block - 1)
         to_block = min(latest_block, last_observed_block + chain.batch_block_size)
         if last_observed_block >= to_block:
-            _logger.warning(
-                f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}"
-            )
+            _logger.warning(f"last_observed_block: {last_observed_block} is bigger then to_block {to_block}")
             continue
         await insert_new_address_to_db(chain)
         accepted_addresses = await get_active_address(chain)
@@ -60,18 +58,21 @@ async def observe_deposit(chain: ChainConfig):
         except ValueError as e:
             _logger.error(f"ValueError: {e}")
             await asyncio.sleep(10)
-            continue
+
+        except Exception as e:
+            _logger.exception(f"Exception: {e}")
+            await asyncio.sleep(5)
+
         if len(accepted_deposits) > 0:
             await insert_deposits_if_not_exists(chain, accepted_deposits)
+
         await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
         last_observed_block = to_block
 
 
 async def main():
     loop = asyncio.get_running_loop()
-    tasks = [
-        loop.create_task(observe_deposit(chain)) for chain in CHAINS_CONFIG.values()
-    ]
+    tasks = [loop.create_task(observe_deposit(chain)) for chain in CHAINS_CONFIG.values()]
     await asyncio.gather(*tasks)
 
 

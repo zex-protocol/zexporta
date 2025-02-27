@@ -23,9 +23,7 @@ logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/observer.log"))
 logger = logging.getLogger(__name__)
 
 
-async def did_last_nonce_observed(
-    client: httpx.AsyncClient, last_withdraw_nonce: int, chain: EVMConfig
-) -> bool:
+async def did_last_nonce_observed(client: httpx.AsyncClient, last_withdraw_nonce: int, chain: EVMConfig) -> bool:
     zex_last_nonce = await get_zex_last_withdraw_nonce(client, chain)
 
     if last_withdraw_nonce >= zex_last_nonce:
@@ -41,20 +39,14 @@ async def observe_withdraw(chain: EVMConfig):
         try:
             last_withdraw_nonce = await get_last_withdraw_nonce(chain.chain_symbol)
 
-            last_nonce_observed = await did_last_nonce_observed(
-                client, last_withdraw_nonce, chain
-            )
+            last_nonce_observed = await did_last_nonce_observed(client, last_withdraw_nonce, chain)
             if last_nonce_observed:
                 _logger.info("No withdraw to process ...")
                 continue
-            withdraws = await get_zex_withdraws(
-                async_client=client, chain=chain, offset=last_withdraw_nonce + 1
-            )
+            withdraws = await get_zex_withdraws(async_client=client, chain=chain, offset=last_withdraw_nonce + 1)
             _logger.info(f"withdraws: {withdraws}")
             await insert_withdraws_if_not_exists(withdraws)
-            await upsert_chain_last_withdraw_nonce(
-                chain.chain_symbol, last_withdraw_nonce + len(withdraws)
-            )
+            await upsert_chain_last_withdraw_nonce(chain.chain_symbol, last_withdraw_nonce + len(withdraws))
 
         except ZexAPIError as e:
             _logger.error(f"Error at sending deposit to Zex: {e}")
@@ -68,9 +60,7 @@ async def observe_withdraw(chain: EVMConfig):
 async def main():
     loop = asyncio.get_running_loop()
     tasks = [
-        loop.create_task(observe_withdraw(chain))
-        for chain in CHAINS_CONFIG.values()
-        if isinstance(chain, EVMConfig)
+        loop.create_task(observe_withdraw(chain)) for chain in CHAINS_CONFIG.values() if isinstance(chain, EVMConfig)
     ]
     await asyncio.gather(*tasks)
 

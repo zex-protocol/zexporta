@@ -1,15 +1,18 @@
 import asyncio
-from typing import Iterable
+from typing import Iterable, overload
 
 from pymongo import ASCENDING
 
 from zexporta.custom_types import (
     BlockNumber,
     BTCConfig,
+    BTCTransfer,
     ChainConfig,
     Deposit,
     DepositStatus,
     EVMConfig,
+    EVMTransfer,
+    Transfer,
     TxHash,
 )
 
@@ -19,9 +22,7 @@ _deposit_collections = {EVMConfig: db["evm_deposit"], BTCConfig: db["btc_deposit
 
 
 async def __create_indexes():
-    await _deposit_collections[EVMConfig].create_index(
-        ("transfer.tx_hash", "transfer.chain_symbol"), unique=True
-    )
+    await _deposit_collections[EVMConfig].create_index(("transfer.tx_hash", "transfer.chain_symbol"), unique=True)
     await _deposit_collections[BTCConfig].create_index(
         ("transfer.tx_hash", "transfer.chain_symbol", "transfer.index"), unique=True
     )
@@ -50,21 +51,47 @@ async def insert_deposit_if_not_exists(chain: ChainConfig, deposit: Deposit):
         await collection.insert_one(deposit.model_dump(mode="json"))
 
 
-async def insert_deposits_if_not_exists(
-    chain: ChainConfig, deposits: Iterable[Deposit]
-):
-    await asyncio.gather(
-        *[insert_deposit_if_not_exists(chain, deposit) for deposit in deposits]
-    )
+async def insert_deposits_if_not_exists(chain: ChainConfig, deposits: Iterable[Deposit]):
+    await asyncio.gather(*[insert_deposit_if_not_exists(chain, deposit) for deposit in deposits])
 
 
+@overload
+async def find_deposit_by_status(
+    chain: BTCConfig,
+    status: DepositStatus,
+    from_block: BlockNumber | None = None,
+    to_block: BlockNumber | None = None,
+    limit: int | None = None,
+) -> list[Deposit[BTCTransfer]]: ...
+
+
+@overload
+async def find_deposit_by_status(
+    chain: EVMConfig,
+    status: DepositStatus,
+    from_block: BlockNumber | None = None,
+    to_block: BlockNumber | None = None,
+    limit: int | None = None,
+) -> list[Deposit[EVMTransfer]]: ...
+
+
+@overload
 async def find_deposit_by_status(
     chain: ChainConfig,
     status: DepositStatus,
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
-) -> list[Deposit]:
+) -> list[Deposit[Transfer]]: ...
+
+
+async def find_deposit_by_status(
+    chain,
+    status,
+    from_block=None,
+    to_block=None,
+    limit=None,
+):
     collection = get_collection(chain)
     res = []
     block_number_query = {"$gte": from_block or 0}
@@ -74,25 +101,21 @@ async def find_deposit_by_status(
     query = {
         "status": status.value,
         "transfer.block_number": block_number_query,
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
     }
 
-    async for record in collection.find(
-        query, sort={"transfer.block_number": ASCENDING}
-    ):
-        res.append(Deposit(**record))
+    async for record in collection.find(query, sort={"transfer.block_number": ASCENDING}):
+        transfer = chain.transfer_class(**record["transfer"])
+        del record["transfer"]
+        res.append(Deposit(transfer=transfer, **record))
         if limit and len(record) >= limit:
             break
     return res
 
 
-async def update_deposit_status(
-    chain: ChainConfig, tx_hash: TxHash, new_status: DepositStatus
-):
+async def update_deposit_status(chain: ChainConfig, tx_hash: TxHash, new_status: DepositStatus):
     collection = get_collection(chain)
-    await collection.update_one(
-        {"transfer.tx_hash": tx_hash}, {"$set": {"status": new_status}}
-    )
+    await collection.update_one({"transfer.tx_hash": tx_hash}, {"$set": {"status": new_status}})
 
 
 async def delete_deposit(chain: ChainConfig, tx_hash: TxHash):
@@ -110,7 +133,7 @@ async def to_finalized(
         "status": DepositStatus.PENDING.value,
         "transfer.block_number": {"$lte": finalized_block_number},
         "transfer.tx_hash": {"$in": txs_hash},
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
     }
 
     update = {"$set": {"status": DepositStatus.FINALIZED.value}}
@@ -128,7 +151,7 @@ async def to_reorg_block_number(
     query = {
         "status": status.value,
         "transfer.block_number": {"$lte": to_block, "$gte": from_block},
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
     }
     update = {"$set": {"status": DepositStatus.REORG.value}}
     await collection.update_many(query, update)
@@ -142,7 +165,7 @@ async def to_reorg_with_tx_hash(
     collection = get_collection(chain)
     query = {
         "status": status.value,
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
         "transfer.tx_hash": {"$in": txs_hash},
     }
     update = {"$set": {"status": DepositStatus.REORG.value}}
@@ -155,7 +178,7 @@ async def get_pending_deposits_block_number(
     collection = get_collection(chain)
     query = {
         "status": DepositStatus.PENDING.value,
-        "transfer.chain_symbol": chain.chain_symbol.value,
+        "transfer.chain_symbol": chain.chain_symbol,
         "transfer.block_number": {"$lte": finalized_block_number},
     }
     block_numbers = set()
@@ -167,11 +190,9 @@ async def get_pending_deposits_block_number(
     return list(block_numbers)
 
 
-async def get_block_numbers_by_status(
-    chain: ChainConfig, status: DepositStatus
-) -> list[BlockNumber]:
+async def get_block_numbers_by_status(chain: ChainConfig, status: DepositStatus) -> list[BlockNumber]:
     collection = get_collection(chain)
-    query = {"transfer.chain_symbol": chain.chain_symbol.value, "status": status.value}
+    query = {"transfer.chain_symbol": chain.chain_symbol, "status": status.value}
     block_numbers = set()
     async for record in collection.find(
         query,
@@ -188,7 +209,7 @@ async def upsert_deposit(chain: ChainConfig, deposit: Deposit):
     }
     filter_ = {
         "transfer.tx_hash": deposit.transfer.tx_hash,
-        "transfer.chain_symbol": deposit.transfer.chain_symbol.value,
+        "transfer.chain_symbol": deposit.transfer.chain_symbol,
     }
     await collection.update_one(filter=filter_, update=update, upsert=True)
 

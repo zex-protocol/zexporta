@@ -7,7 +7,7 @@ import sys
 import time
 import timeit
 
-from pyfrost.crypto_utils import Half_N, code_to_pub
+from pyfrost.crypto_utils import Half_N, code_to_pub, is_y_even
 from pyfrost.network.dkg import Dkg
 
 from .node_info import NodesInfo
@@ -20,9 +20,7 @@ def parse_dkg_json(dkg_path, dkg_name) -> dict:
     return dkg_info[dkg_name]
 
 
-async def initiate_dkg(
-    total_node_number: int, threshold: int, n: int, dkg_type: str, dkg_name: str
-) -> None:
+async def initiate_dkg(total_node_number: int, threshold: int, n: int, dkg_type: str, dkg_name: str) -> None:
     nodes_info = NodesInfo()
     all_nodes = nodes_info.get_all_nodes(total_node_number)
     dkg = Dkg(nodes_info, default_timeout=50)
@@ -35,7 +33,12 @@ async def initiate_dkg(
     # Requesting DKG:
     now = timeit.default_timer()
     dkg_key = await dkg.request_dkg(threshold, party, dkg_type)
-    if dkg_type == "ETH":
+    if dkg_type == "BTC":
+        is_even = is_y_even(code_to_pub(dkg_key["public_key"]))
+        while not is_even:
+            dkg_key = await dkg.request_dkg(threshold, party, dkg_type)
+            is_even = is_y_even(code_to_pub(dkg_key["public_key"]))
+    elif dkg_type == "ETH":
         is_gt_halfq = code_to_pub(dkg_key["public_key"]).x < Half_N
         while not is_gt_halfq:
             dkg_key = await dkg.request_dkg(threshold, party, dkg_type)
@@ -91,10 +94,6 @@ if __name__ == "__main__":
     dkg_name = sys.argv[5]
 
     try:
-        asyncio.run(
-            initiate_dkg(
-                total_node_number, dkg_threshold, num_parties, dkg_type, dkg_name
-            )
-        )
+        asyncio.run(initiate_dkg(total_node_number, dkg_threshold, num_parties, dkg_type, dkg_name))
     except KeyboardInterrupt:
         pass

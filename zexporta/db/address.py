@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
+from clients import get_compute_address_function
 from pymongo import DESCENDING
 from web3 import Web3
 
-from zexporta.clients import get_compute_address_function
 from zexporta.custom_types import (
     Address,
     BTCConfig,
@@ -65,7 +65,7 @@ async def get_active_address(
     collection = get_collection(chain=chain)
     async for address in collection.find({"is_active": True}):
         match chain:
-            case ChainConfig():
+            case EVMConfig():
                 key = Web3.to_checksum_address(address["address"])
             case BTCConfig():
                 key = address["address"]
@@ -77,9 +77,7 @@ async def get_active_address(
 
 async def get_last_user_id(chain: ChainConfig) -> UserId:
     collection = get_collection(chain=chain)
-    result = await collection.find_one(
-        {"is_active": True}, sort=[("user_id", DESCENDING)]
-    )
+    result = await collection.find_one({"is_active": True}, sort=[("user_id", DESCENDING)])
     if result:
         return result["user_id"]
     raise UserNotExists()
@@ -90,13 +88,9 @@ async def insert_user_address(chain: ChainConfig, address: UserAddress):
     await collection.insert_one(address.model_dump(mode="json"))
 
 
-async def insert_many_user_address(
-    chain: ChainConfig, users_address: list[UserAddress]
-):
+async def insert_many_user_address(chain: ChainConfig, users_address: list[UserAddress]):
     collection = get_collection(chain=chain)
-    await collection.insert_many(
-        user_address.model_dump(mode="json") for user_address in users_address
-    )
+    await collection.insert_many(user_address.model_dump(mode="json") for user_address in users_address)
 
 
 def get_users_address_to_insert(
@@ -129,9 +123,7 @@ async def insert_new_address_to_db(chain: ChainConfig):
         first_id_to_compute = await get_last_user_id(chain=chain) + 1
     except UserNotExists:
         first_id_to_compute = 0
-    users_address_to_insert = get_users_address_to_insert(
-        chain, first_id_to_compute, last_zex_user_id
-    )
+    users_address_to_insert = get_users_address_to_insert(chain, first_id_to_compute, last_zex_user_id)
     if len(users_address_to_insert) == 0:
         return
     await insert_many_user_address(chain, users_address=users_address_to_insert)

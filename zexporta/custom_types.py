@@ -1,24 +1,25 @@
-from abc import ABC
 from enum import StrEnum
-from typing import Annotated, Any, ClassVar
+from typing import Any
 
-from eth_typing import BlockNumber as EvmBlockNumber
-from eth_typing import ChainId, ChecksumAddress
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
+from clients.btc.custom_types import BTCConfig, BTCTransfer
+from clients.custom_types import (
+    Address,
+    BlockNumber,
+    ChainConfig,
+    Transfer,
+    TxHash,
+    Value,
+)
+from clients.evm.custom_types import ChainId, ChecksumAddress, EVMConfig, EVMTransfer
+from pydantic import BaseModel, Field
 
 
 def convert_int_to_str(value: int) -> str:
     return str(value)
 
 
-type Value = Annotated[int, PlainSerializer(convert_int_to_str, when_used="json")]
-type Timestamp = int | float
+type Timestamp = int
 type UserId = int
-type TxHash = str
-type Address = str | ChecksumAddress
-type BlockNumber = EvmBlockNumber | int
-type URL = str
-type Transfer = EVMTransfer | BTCTransfer
 
 
 class EnvEnum(StrEnum):
@@ -35,65 +36,6 @@ class ChainSymbol(StrEnum):
     BSC = "BSC"
     OPT = "OPT"
     BTC = "BTC"
-
-
-class BaseTransfer(BaseModel, ABC):
-    model_config: ConfigDict = {"from_attributes": True}
-    tx_hash: TxHash
-    value: Value
-    chain_symbol: ChainSymbol
-    token: Address
-    to: Address
-    block_number: BlockNumber
-
-
-class EVMTransfer(BaseTransfer):
-    def __eq__(self, value: Any) -> bool:
-        if isinstance(value, EVMTransfer):
-            return self.tx_hash == value.tx_hash
-        return NotImplemented
-
-    def __gt__(self, value: Any) -> bool:
-        if isinstance(value, EVMTransfer):
-            return self.tx_hash > value.tx_hash
-        return NotImplemented
-
-
-class BTCTransfer(BaseTransfer):
-    index: int
-
-    def __eq__(self, value: Any) -> bool:
-        if isinstance(value, BTCTransfer):
-            return self.tx_hash == value.tx_hash and self.index == value.index
-        return NotImplemented
-
-    def __gt__(self, value: Any) -> bool:
-        if isinstance(value, BTCTransfer):
-            return self.tx_hash > value.tx_hash or (
-                self.tx_hash == value.tx_hash and self.index > value.index
-            )
-        return NotImplemented
-
-
-class ChainConfig(BaseModel, ABC):
-    private_rpc: URL
-    chain_symbol: ChainSymbol
-    finalize_block_count: int | None = Field(default=15)
-    delay: int | float = Field(default=3)
-    batch_block_size: int = Field(default=5)
-    transfer_class: ClassVar[type[Transfer]]
-
-
-class EVMConfig(ChainConfig):
-    chain_id: ChainId
-    poa: bool = Field(default=False)
-    vault_address: ChecksumAddress
-    transfer_class: ClassVar[type[EVMTransfer]] = EVMTransfer
-
-
-class BTCConfig(ChainConfig):
-    private_indexer_rpc: URL
-    transfer_class: ClassVar[type[BTCTransfer]] = BTCTransfer
 
 
 class DepositStatus(StrEnum):
@@ -121,16 +63,16 @@ class Token(BaseModel):
 class SaDepositSchema(BaseModel):
     txs_hash: list[TxHash]
     timestamp: Timestamp
-    chain_symbol: ChainSymbol
+    chain_symbol: str
     finalized_block_number: BlockNumber
 
 
-class Deposit(BaseModel):
+class Deposit[T: (Transfer, EVMTransfer, BTCTransfer)](BaseModel):
     user_id: UserId
     decimals: int
     status: DepositStatus
     sa_timestamp: Timestamp | None = None
-    transfer: Transfer
+    transfer: T
 
     def __eq__(self, value: Any) -> bool:
         if isinstance(value, Deposit):
@@ -166,3 +108,30 @@ class ZexUserAsset(BaseModel):
     locked: str
     freeze: str
     withdrawing: str
+
+
+__all__ = [
+    "ZexUserAsset",
+    "EVMWithdrawRequest",
+    "UserAddress",
+    "Deposit",
+    "SaDepositSchema",
+    "Token",
+    "WithdrawStatus",
+    "DepositStatus",
+    "ChainSymbol",
+    "EnvEnum",
+    "BTCConfig",
+    "EVMConfig",
+    "ChainConfig",
+    "TxHash",
+    "Value",
+    "ChecksumAddress",
+    "Timestamp",
+    "UserId",
+    "BlockNumber",
+    "Address",
+    "EVMTransfer",
+    "BTCTransfer",
+    "Transfer",
+]

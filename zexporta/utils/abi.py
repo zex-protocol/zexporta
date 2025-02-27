@@ -37,9 +37,7 @@ FACTORY_ABI = [
     {
         "inputs": [{"internalType": "uint256", "name": "salt", "type": "uint256"}],
         "name": "deploy",
-        "outputs": [
-            {"internalType": "address", "name": "userDepositAddress", "type": "address"}
-        ],
+        "outputs": [{"internalType": "address", "name": "userDepositAddress", "type": "address"}],
         "stateMutability": "nonpayable",
         "type": "function",
     },
@@ -54,6 +52,7 @@ FACTORY_ABI = [
     },
 ]
 
+
 USER_DEPOSIT_ABI = [
     {
         "inputs": [
@@ -64,8 +63,16 @@ USER_DEPOSIT_ABI = [
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function",
-    }
+    },
+    {
+        "inputs": [{"internalType": "uint256", "name": "_amount", "type": "uint256"}],
+        "name": "transferNativeToken",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
 ]
+
 
 VAULT_ABI = [
     {
