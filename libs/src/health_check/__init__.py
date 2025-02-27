@@ -25,8 +25,9 @@ class HealthController:
         self.svc = svc
         self.router = router
 
-    def register_handlers(self) -> None:
+    def register_handlers(self) -> APIRouter:
         self.router.add_api_route("/_health", self.check_health, methods=["GET"])
+        return self.router
 
     async def check_health(self) -> dict[str, str]:
         is_healthy = await self.svc.check_healthiness()
