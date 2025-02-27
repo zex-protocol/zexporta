@@ -54,7 +54,7 @@ services:
       dockerfile: Dockerfile
     image: zexporta
     container_name: monitoring-bot
-    entrypoint: python -m zexporta.monitoring_bot.main
+    entrypoint: python -m zexporta.bots.monitoring.main
     networks:
       zexporta_custom_network:
         ipv4_address: 172.20.0.13
