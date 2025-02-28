@@ -9,7 +9,7 @@ from zexporta.config import CHAINS_CONFIG
 from zexporta.custom_types import ChainSymbol, DepositStatus
 from zexporta.db.deposit import find_deposit_by_status
 
-app = FastAPI(name="ZexDeposit", version="1")
+app = FastAPI(name="Zexporta", version="1")
 
 route = APIRouter(tags=["Deposits"], prefix="/deposits")
 
