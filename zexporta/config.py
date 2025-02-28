@@ -1,6 +1,7 @@
 import os
 
 from bitcoinutils.setup import setup
+from dotenv import load_dotenv
 from web3 import Web3
 
 from .custom_types import (
@@ -11,6 +12,8 @@ from .custom_types import (
     EnvEnum,
     EVMConfig,
 )
+
+load_dotenv()
 
 ENVIRONMENT = EnvEnum(os.environ["ENV"])
 
@@ -115,7 +118,6 @@ BTC_GROUP_KEY_PUB = os.getenv("BTC_GROUP_KEY_PUB")
 
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")
 
 SA_SHIELD_PRIVATE_KEY = os.environ["SA_SHIELD_PRIVATE_KEY"]
 
@@ -125,3 +127,7 @@ DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 WITHDRAWER_PRIVATE_KEY = os.environ["WITHDRAWER_PRIVATE_KEY"]
 
 SENTRY_DNS = os.getenv("SENTRY_DNS")
+
+MONGO_HOST = os.environ["MONGO_HOST"]
+MONGO_PORT = os.environ["MONGO_PORT"]
+MONGO_DBNAME = os.environ.get("MONGO_DBNAME", "transaction_database")

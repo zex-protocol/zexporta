@@ -65,7 +65,7 @@ async def get_deposits(
     sa_timestamp: Timestamp,
 ):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
-    client = get_async_client(chain=chain)
+    client = get_async_client(chain=chain, logger=_logger)
     finalized_block_number = await client.get_finalized_block_number()
     if sa_finalized_block_number > finalized_block_number:
         raise NotFinalizedBlockError(
@@ -85,14 +85,12 @@ async def get_deposits(
 
     deposits = await get_accepted_deposits(
         client,
-        chain,
         [
             transfer
             for transfer in transfers
             if transfer is not None and transfer.block_number <= finalized_block_number
         ],
         accepted_addresses,
-        logger=_logger,
         deposit_status=DepositStatus.VERIFIED,
         sa_timestamp=sa_timestamp,
     )

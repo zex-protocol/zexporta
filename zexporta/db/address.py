@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from functools import lru_cache
 
 from clients import get_compute_address_function
 from pymongo import DESCENDING
@@ -19,36 +20,25 @@ from zexporta.utils.zex_api import (
     get_last_zex_user_id,
 )
 
-from .collections import db
-
-_address_collections = {EVMConfig: db["evm_address"], BTCConfig: db["btc_address"]}
+from .db import get_db_connection
 
 
-async def __create_evm_address_index():
-    await _address_collections[EVMConfig].create_index("user_id", unique=True)
-    await _address_collections[EVMConfig].create_index("address", unique=True)
+async def __create_address_index(collection):
+    await collection.create_index("user_id", unique=True)
+    await collection.create_index("address", unique=True)
 
 
-async def __create_btc_address_index():
-    await _address_collections[BTCConfig].create_index("user_id", unique=True)
-    await _address_collections[BTCConfig].create_index("address", unique=True)
-
-
-async def __create_indexes():
-    await __create_evm_address_index()
-    await __create_btc_address_index()
-
-
-asyncio.run(__create_indexes())
-
-
+@lru_cache()
 def get_collection(chain: ChainConfig):
     match chain:
         case EVMConfig():
-            return _address_collections[EVMConfig]
+            collection = get_db_connection()["evm_address"]
         case BTCConfig():
-            return _address_collections[BTCConfig]
-    raise NotImplementedError()
+            collection = get_db_connection()["btc_address"]
+        case _:
+            raise NotImplementedError()
+    asyncio.run_coroutine_threadsafe(__create_address_index(collection), asyncio.get_event_loop())
+    return collection
 
 
 class UserNotExists(Exception):

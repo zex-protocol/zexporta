@@ -1,20 +1,26 @@
 import asyncio
+from functools import lru_cache
 
 from zexporta.custom_types import Address
-
-from .collections import db
-
-
-async def __create_token_index():
-    await _token_collection.create_index(("token_address", "chain_symbol"), unique=True)
+from zexporta.db.db import get_db_connection
 
 
-_token_collection = db["token"]
-asyncio.run(__create_token_index())
+async def __create_token_index(collection):
+    await collection.create_index(("token_address", "chain_symbol"), unique=True)
+
+
+@lru_cache()
+def get_collection():
+    collection = get_db_connection()["token"]
+    asyncio.run_coroutine_threadsafe(
+        __create_token_index(collection),
+        asyncio.get_event_loop(),
+    )
+    return collection
 
 
 async def get_decimals(chain_symbol: str, token_address: Address) -> int | None:
-    result = await _token_collection.find_one(
+    result = await get_collection().find_one(
         {"chain_symbol": chain_symbol, "token_address": token_address},
         projection={"decimals": 1},
     )
@@ -22,7 +28,7 @@ async def get_decimals(chain_symbol: str, token_address: Address) -> int | None:
 
 
 async def insert_token(chain_symbol: str, token_address: Address, decimals: int) -> None:
-    await _token_collection.insert_one(
+    await get_collection().insert_one(
         {
             "chain_symbol": chain_symbol,
             "token_address": token_address,

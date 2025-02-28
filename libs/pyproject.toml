@@ -5,7 +5,7 @@ description = "Zexporta libraries"
 readme = "README.md"
 authors = [{ name = "Zex" }]
 requires-python = ">=3.12"
-dependencies = ["httpx>=0.28.1,<1.0.0", "web3~=6.19"]
+dependencies = ["httpx>=0.28.1,<1.0.0", "web3~=6.19", "bitcoin-utils~=0.6.8"]
 
 [build-system]
 requires = ["hatchling"]

@@ -9,15 +9,21 @@ from zexporta.custom_types import (
     EVMWithdrawRequest,
     WithdrawStatus,
 )
-from zexporta.db.collections import db
+
+from .db import get_db_connection
 
 
-async def __create_withdraw_index():
-    await _withdraw_collection.create_index(("nonce", "chain_id"), unique=True)
+async def __create_withdraw_index(collection):
+    await collection.create_index(("nonce", "chain_id"), unique=True)
 
 
-_withdraw_collection = db["withdraw"]
-asyncio.run(__create_withdraw_index())
+def get_collection():
+    collection = get_db_connection()["withdraw"]
+    asyncio.run_coroutine_threadsafe(
+        __create_withdraw_index(collection),
+        asyncio.get_event_loop(),
+    )
+    return collection
 
 
 async def insert_withdraw_if_not_exists(withdraw: EVMWithdrawRequest):
@@ -25,9 +31,9 @@ async def insert_withdraw_if_not_exists(withdraw: EVMWithdrawRequest):
         "chain_id": withdraw.chain_id.value,
         "nonce": withdraw.nonce,
     }
-    record = await _withdraw_collection.find_one(query)
+    record = await get_collection().find_one(query)
     if not record:
-        await _withdraw_collection.insert_one(withdraw.model_dump(mode="json"))
+        await get_collection().insert_one(withdraw.model_dump(mode="json"))
 
 
 async def insert_withdraws_if_not_exists(withdraws: Iterable[EVMWithdrawRequest]):
@@ -42,7 +48,7 @@ async def upsert_withdraw(withdraw: EVMWithdrawRequest):
         "nonce": withdraw.nonce,
         "chain_id": withdraw.chain_id.value,
     }
-    await _withdraw_collection.update_one(filter=filter_, update=update, upsert=True)
+    await get_collection().update_one(filter=filter_, update=update, upsert=True)
 
 
 async def upsert_withdraws(withdraws: list[EVMWithdrawRequest]):
@@ -60,7 +66,7 @@ async def find_withdraws_by_status(
         "chain_id": chain_id.value,
         "nonce": {"$gte": nonce},
     }
-    async for record in _withdraw_collection.find(query, sort={"nonce": ASCENDING}):
+    async for record in get_collection().find(query, sort={"nonce": ASCENDING}):
         res.append(EVMWithdrawRequest(**record))
     return res
 
@@ -73,7 +79,7 @@ async def find_withdraw_by_nonce(
         "chain_id": chain_id.value,
         "nonce": nonce,
     }
-    record = await _withdraw_collection.find_one(query)
+    record = await get_collection().find_one(query)
 
     if record is not None:
         return EVMWithdrawRequest(**record)

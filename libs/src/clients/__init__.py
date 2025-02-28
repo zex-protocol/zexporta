@@ -1,5 +1,7 @@
 import asyncio
+import logging
 import time
+from functools import lru_cache
 from typing import Any, Callable, Coroutine, Iterable
 
 from .abstract import ChainAsyncClient
@@ -23,16 +25,18 @@ __all__ = [
 ]
 
 
-def get_async_client(chain: ChainConfig) -> ChainAsyncClient:
+@lru_cache()
+def get_async_client(chain: ChainConfig, logger: logging.Logger | logging.LoggerAdapter) -> ChainAsyncClient:
     match chain:
         case EVMConfig():
-            return get_evm_async_client(chain)
+            return get_evm_async_client(chain, logger)
         case BTCConfig():
-            return get_btc_async_client(chain)
+            return get_btc_async_client(chain, logger)
         case _:
             raise NotImplementedError()
 
 
+@lru_cache()
 def get_compute_address_function(chain: ChainConfig) -> Callable[[int], Address]:
     match chain:
         case EVMConfig():

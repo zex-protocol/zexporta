@@ -125,7 +125,7 @@ async def withdraw(chain: EVMConfig):
                 await upsert_deposit(chain=chain, deposit=deposit)
 
         except ValueError as e:
-            _logger.error(f"Can not deploy contract for {deposit.transfer.to}, error: {e}")
+            _logger.error(f"ValueError, error: {e}")
 
         finally:
             await asyncio.sleep(10)

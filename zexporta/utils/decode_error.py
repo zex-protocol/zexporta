@@ -1,5 +1,5 @@
-from eth_abi import decode
-from eth_utils import decode_hex, keccak
+from eth_abi import decode  # type: ignore
+from eth_utils import decode_hex, keccak  # type: ignore
 
 from zexporta.utils.abi import FACTORY_ABI
 

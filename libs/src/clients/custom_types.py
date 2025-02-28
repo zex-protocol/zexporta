@@ -1,13 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Annotated, Any, ClassVar
+from typing import Annotated, Any, Hashable
 
-from eth_typing import ChecksumAddress
-from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
+from pydantic import BaseModel, Field, PlainSerializer
 
 type TxHash = str
 type BlockNumber = int
-type Address = str | ChecksumAddress
 type URL = str
+type Address = Any
 
 
 def convert_int_to_str(value: int) -> str:
@@ -17,13 +16,13 @@ def convert_int_to_str(value: int) -> str:
 type Value = Annotated[int, PlainSerializer(convert_int_to_str, when_used="json")]
 
 
-class Transfer(BaseModel, ABC):
-    model_config: ConfigDict = {"from_attributes": True}
+class Transfer[_AddressT](BaseModel, ABC):
+    model_config = {"from_attributes": True}
     tx_hash: TxHash
     value: Value
     chain_symbol: str
-    token: Address
-    to: Address
+    token: _AddressT
+    to: _AddressT
     block_number: BlockNumber
 
     @abstractmethod
@@ -33,10 +32,12 @@ class Transfer(BaseModel, ABC):
     def __gt__(self, value: Any) -> bool: ...
 
 
-class ChainConfig(BaseModel, ABC):
+class ChainConfig[_TransferT: Transfer](BaseModel, Hashable, ABC):
+    model_config = {"frozen": True}
+
     private_rpc: URL
     chain_symbol: str
     finalize_block_count: int | None = Field(default=15)
     delay: int | float = Field(default=3)
     batch_block_size: int = Field(default=5)
-    transfer_class: ClassVar[type[Transfer]]
+    transfer_class: type[_TransferT]
