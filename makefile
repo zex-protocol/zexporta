@@ -38,6 +38,10 @@ clean:
 	rm -rf $(VENV_DIR)
 	$(PRE_COMMIT) uninstall
 
+unit-test:
+	@echo "Running all tests..."
+	$(UV) run pytest
+
 # Help target to display available commands
 help:
 	@echo "Available commands:"
@@ -48,5 +52,6 @@ help:
 	@echo "  make clean        - Clean up the project (remove virtual environment and pre-commit hooks)"
 	@echo "  make help         - Display this help message"
 	@echo "  make type-check   - Run type check for all files"
+	@echo "  make unit-test   - Run all unit tests"
 
-.PHONY: all init uv-sync pre-commit-install pre-commit-run clean type-check help
+.PHONY: all init uv-sync pre-commit-install pre-commit-run clean type-check unit-test help
