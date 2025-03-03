@@ -20,9 +20,10 @@ from clients.custom_types import BlockNumber
 
 
 class BTCMempoolAsyncClient:
-    def __init__(self, base_url: str = "https://mempool.space/testnet4/api"):
+    def __init__(self, base_url: str = "https://mempool.space/testnet4/api", timeout: int = 15):
         self.base_url = base_url
         self._client = httpx.AsyncClient()
+        self.time_out = timeout
 
     @property
     def client(self):
@@ -38,7 +39,7 @@ class BTCMempoolAsyncClient:
         data: Any = None,
     ) -> dict[str, Any] | str:
         try:
-            response = await self.client.request(method, url, params=params, json=data, timeout=15)
+            response = await self.client.request(method, url, params=params, json=data, timeout=self.time_out)
             response.raise_for_status()
             if response.headers.get("content-type") == "application/json":
                 data = response.json()

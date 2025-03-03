@@ -45,13 +45,13 @@ class WithdrawStatus(StrEnum):
     REJECTED = "rejected"
 
 
-class UtxoStatus(StrEnum):
+class UTXOStatus(StrEnum):
     UNSPENT = "unspent"
     SPEND = "spend"
 
 
 class UTXO(BaseModel):
-    status: UtxoStatus = UtxoStatus.UNSPENT
+    status: UTXOStatus = UTXOStatus.UNSPENT
     tx_hash: TxHash
     amount: Value
     index: Value
@@ -161,6 +161,6 @@ __all__ = [
     "BTCTransfer",
     "Transfer",
     "ChainId",
-    "UtxoStatus",
+    "UTXOStatus",
     "UTXO",
 ]

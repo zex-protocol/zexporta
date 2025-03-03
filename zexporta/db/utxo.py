@@ -7,7 +7,7 @@ from zexporta.custom_types import (
     UTXO,
     Deposit,
     TxHash,
-    UtxoStatus,
+    UTXOStatus,
 )
 
 from .collections import db
@@ -37,7 +37,7 @@ async def insert_utxos_if_not_exists(utxos: Iterable[UTXO]):
 
 
 async def find_utxo_by_status(
-    status: UtxoStatus,
+    status: UTXOStatus,
     limit: int | None = None,
 ) -> list[UTXO]:
     res = []
@@ -52,10 +52,8 @@ async def find_utxo_by_status(
     return res
 
 
-async def update_utxo_status(tx_hash: TxHash, new_status: UtxoStatus):
-    await utxo_collection.update_one(
-        {"tx_hash": tx_hash}, {"$set": {"status": new_status}}
-    )
+async def update_utxo_status(tx_hash: TxHash, new_status: UTXOStatus):
+    await utxo_collection.update_one({"tx_hash": tx_hash}, {"$set": {"status": new_status}})
 
 
 async def delete_utxo(tx_hash: TxHash):
@@ -77,12 +75,17 @@ async def upsert_utxos(utxos: list[UTXO]):
 
 
 async def populate_deposits_utxos(deposits: list[Deposit]):
+    utxos = serialize_utxo_from_deposit(deposits)
+    await insert_utxos_if_not_exists(utxos)
+
+
+def serialize_utxo_from_deposit(deposits: list[Deposit]):
     utxos = []
     for deposit in deposits:
         transfer = deposit.transfer
         utxos.append(
             UTXO(
-                status=UtxoStatus.UNSPENT,
+                status=UTXOStatus.UNSPENT,
                 tx_hash=transfer.tx_hash,
                 amount=transfer.value,
                 index=transfer.index,
@@ -90,4 +93,4 @@ async def populate_deposits_utxos(deposits: list[Deposit]):
                 user_id=deposit.user_id,
             )
         )
-    await insert_utxos_if_not_exists(utxos)
+    return utxos
