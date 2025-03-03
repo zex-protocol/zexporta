@@ -21,9 +21,7 @@ async def get_decimals(chain_symbol: str, token_address: Address) -> int | None:
     return result["decimals"] if result else None
 
 
-async def insert_token(
-    chain_symbol: str, token_address: Address, decimals: int
-) -> None:
+async def insert_token(chain_symbol: str, token_address: Address, decimals: int) -> None:
     await _token_collection.insert_one(
         {
             "chain_symbol": chain_symbol,

@@ -44,7 +44,7 @@ async def get_last_zex_user_id(async_client: httpx.AsyncClient) -> UserId | None
         res = await async_client.get(f"{ZEX_BASE_URL}{ZexPath.LAST_USER_ID.value}")
         res.raise_for_status()
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME
     else:
         return res.json().get("id")
 
@@ -57,13 +57,11 @@ async def send_deposits(async_client: httpx.AsyncClient, deposits: list):
         )
         res.raise_for_status()
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME
     return res.json()
 
 
-async def get_zex_latest_block(
-    async_client: httpx.AsyncClient, chain: EVMConfig
-) -> BlockNumber | None:
+async def get_zex_latest_block(async_client: httpx.AsyncClient, chain: EVMConfig) -> BlockNumber | None:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LATEST_BLOCK.value}",
@@ -77,12 +75,10 @@ async def get_zex_latest_block(
         JSONDecodeError,
         AttributeError,
     ) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME
 
 
-async def get_zex_last_withdraw_nonce(
-    async_client: httpx.AsyncClient, chain: ChainConfig
-) -> int:
+async def get_zex_last_withdraw_nonce(async_client: httpx.AsyncClient, chain: ChainConfig) -> int:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LAST_WITHDRAW_NONCE.value}",
@@ -98,7 +94,7 @@ async def get_zex_last_withdraw_nonce(
         JSONDecodeError,
         AttributeError,
     ) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME
 
 
 async def get_zex_withdraws(
@@ -123,7 +119,16 @@ async def get_zex_withdraws(
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
 
-        address_type = str if isinstance(chain, BTCConfig) else Web3.to_checksum_address
+        match chain:
+            case BTCConfig():
+                address_type = str
+                base_conf = {}
+            case EVMConfig():
+                address_type = Web3.to_checksum_address
+                base_conf = {"chain_id": chain.chain_id}
+            case _:
+                raise NotImplementedError
+
         return [
             chain.withdraw_request_type(
                 amount=withdraw.get("amount"),
@@ -132,11 +137,12 @@ async def get_zex_withdraws(
                 token_address=address_type(withdraw.get("tokenContract")),
                 chain_symbol=chain.chain_symbol,
                 status=WithdrawStatus.PENDING,
+                **base_conf,
             )
             for withdraw in withdraws
         ]
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME
 
 
 async def get_exchange_info(async_client: httpx.AsyncClient) -> dict:
@@ -148,7 +154,7 @@ async def get_exchange_info(async_client: httpx.AsyncClient) -> dict:
         res.raise_for_status()
         return res.json()
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME
 
 
 async def get_user_asset(
@@ -164,12 +170,10 @@ async def get_user_asset(
         res.raise_for_status()
         return [ZexUserAsset(**user_asset) for user_asset in res.json()]
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME
 
 
-async def get_user_withdraw_nonce(
-    async_client: httpx.AsyncClient, chain: EVMConfig, user_id: UserId
-) -> int:
+async def get_user_withdraw_nonce(async_client: httpx.AsyncClient, chain: EVMConfig, user_id: UserId) -> int:
     try:
         res = await async_client.get(
             f"{ZEX_BASE_URL}{ZexPath.USER_WITHDRAW_NONCE}",
@@ -180,7 +184,7 @@ async def get_user_withdraw_nonce(
         data = res.json()
         return data["nonce"]
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME
 
 
 async def send_withdraw_request(async_client: httpx.AsyncClient, withdraws: list[str]):
@@ -192,4 +196,4 @@ async def send_withdraw_request(async_client: httpx.AsyncClient, withdraws: list
         res.raise_for_status()
         return res.json()
     except (httpx.RequestError, httpx.HTTPStatusError) as e:
-        raise ZexAPIError(e)
+        raise ZexAPIError(e)  # noqa: B904 FIXME

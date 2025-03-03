@@ -18,6 +18,10 @@ repos:
         args: [--fix]
       # Run the formatter.
       - id: ruff-format
-      # Run isort
-      - id: ruff
-        args: [check, --select, I, --fix]
+  - repo: local
+    hooks:
+    -   id: type-check
+        name: type check
+        entry: make type-check
+        language: system
+        pass_filenames: false

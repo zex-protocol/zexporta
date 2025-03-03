@@ -71,6 +71,7 @@ class WithdrawRequest(BaseModel):
 
 class EVMWithdrawRequest(WithdrawRequest):
     token_address: ChecksumAddress
+    chain_id: ChainId
 
 
 class BTCWithdrawRequest(WithdrawRequest):

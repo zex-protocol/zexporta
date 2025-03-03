@@ -20,9 +20,9 @@ async def send_deposit(
 ):
     ERC20_token = w3.eth.contract(address=monitoring_token.address, abi=ERC20_ABI)
     nonce = await w3.eth.get_transaction_count(account.address, "pending")
-    tx = await ERC20_token.functions.transfer(
-        user_address, monitoring_token.amount
-    ).build_transaction({"from": account.address, "nonce": nonce})
+    tx = await ERC20_token.functions.transfer(user_address, monitoring_token.amount).build_transaction(
+        {"from": account.address, "nonce": nonce}
+    )
     signed_tx = account.sign_transaction(tx)
     tx_hash = await w3.eth.send_raw_transaction(signed_tx.rawTransaction)
     await w3.eth.wait_for_transaction_receipt(tx_hash)

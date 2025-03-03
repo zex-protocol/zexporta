@@ -63,36 +63,28 @@ class BTCAnkrAsyncClient:
         except httpx.HTTPStatusError as http_err:
             # Raised for non-2xx responses
             raise BTCRequestError(
-                f"HTTP error occurred: {http_err.response.status_code} {http_err.response.reason_phrase}",
+                f"HTTP error occurred: {http_err.response.status_code} {http_err.response.text}",
                 status_code=http_err.response.status_code,
             ) from http_err
         except httpx.ConnectError as conn_err:
             # Raised for connection-related errors
-            raise BTCConnectionError(
-                f"Connection error occurred: {conn_err}"
-            ) from conn_err
+            raise BTCConnectionError(f"Connection error occurred: {conn_err}") from conn_err
         except httpx.TimeoutException as timeout_err:
             # Raised when a request times out
             raise BTCTimeoutError(f"Request timed out: {timeout_err}") from timeout_err
         except httpx.RequestError as req_err:
             # Base class for all other request-related errors
-            raise BTCClientError(
-                f"An error occurred while requesting {req_err.request.url!r}."
-            ) from req_err
+            raise BTCClientError(f"An error occurred while requesting {req_err.request.url!r}.") from req_err
         except ValueError as json_err:
             # Raised if response.json() fails
-            raise BTCResponseError(
-                f"Failed to parse JSON response: {json_err}"
-            ) from json_err
+            raise BTCResponseError(f"Failed to parse JSON response: {json_err}") from json_err
 
     async def get_tx_by_hash(self, tx_hash: TxHash) -> Transaction:
         url = f"{self.block_book_base_url}/api/v2/tx/{tx_hash}"
         data = await self._request("GET", url)
         return Transaction.model_validate(data)
 
-    async def get_address_details(
-        self, address: str, details: str | None = "txids"
-    ) -> AddressDetails:
+    async def get_address_details(self, address: str, details: str | None = "txids") -> AddressDetails:
         url = f"{self.block_book_base_url}/api/v2/address/{address}"
         params = {"details": details}
         data = await self._request("GET", url, params=params)
@@ -141,11 +133,11 @@ class BTCAnkrAsyncClient:
         resp = await self._request("POST", url, headers=headers, json_data=data)
         return resp["result"]["blocks"]  # type: ignore
 
-    async def get_fee_per_byte(self) -> int | None:
+    async def get_fee_per_byte(self) -> int | Decimal:
         url = f"{self.base_url}"
         data = {"id": "test", "method": "estimatesmartfee", "params": [6]}
         headers = {
             "Content-Type": "application/json",
         }
         resp = await self._request("POST", url, headers=headers, json_data=data)
-        return resp["result"] and Decimal(resp["result"]["feerate"]) * (10 ^ 8)
+        return Decimal(resp["result"]["feerate"]) * (10 ^ 8)

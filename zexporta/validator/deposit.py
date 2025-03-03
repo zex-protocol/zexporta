@@ -31,9 +31,7 @@ class NotFinalizedBlockError(Exception):
 logger = logging.getLogger(__name__)
 
 
-def deposit(
-    chain: ChainConfig, data: SaDepositSchema, logger: ChainLoggerAdapter
-) -> dict:
+def deposit(chain: ChainConfig, data: SaDepositSchema, logger: ChainLoggerAdapter) -> dict:
     txs_hash = data.txs_hash
     if len(txs_hash) == 0:
         raise NoTxHashError()
@@ -76,9 +74,7 @@ async def get_deposits(
         )
     await insert_new_address_to_db(chain)
     accepted_addresses = await get_active_address(chain)
-    transfers = await asyncio.gather(
-        *[client.get_transfer_by_tx_hash(tx_hash) for tx_hash in txs_hash]
-    )
+    transfers = await asyncio.gather(*[client.get_transfer_by_tx_hash(tx_hash) for tx_hash in txs_hash])
     flattened_transfers = []
     for item in transfers:
         if isinstance(item, list):
