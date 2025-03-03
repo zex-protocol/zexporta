@@ -140,4 +140,8 @@ class BTCAnkrAsyncClient:
             "Content-Type": "application/json",
         }
         resp = await self._request("POST", url, headers=headers, json_data=data)
-        return Decimal(resp["result"]["feerate"]) * (10 ^ 8)
+        fee_rate = resp and resp["result"] and Decimal(resp["result"]["feerate"]) * (10 ^ 8)
+        if isinstance(fee_rate, Decimal):
+            return fee_rate
+        else:
+            raise BTCResponseError("Cant get fee rate")
