@@ -119,28 +119,32 @@ async def get_zex_withdraws(
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
 
-        match chain:
-            case BTCConfig():
-                address_type = str
-                base_conf = {}
-            case EVMConfig():
-                address_type = Web3.to_checksum_address
-                base_conf = {"chain_id": chain.chain_id}
-            case _:
-                raise NotImplementedError
+        result = []
+        for withdraw in withdraws:
+            match chain:
+                case BTCConfig():
+                    address_type = str
+                    base_conf = {}
+                case EVMConfig():
+                    address_type = Web3.to_checksum_address
+                    base_conf = {
+                        "chain_id": chain.chain_id,
+                        "token_address": address_type(withdraw.get("tokenContract")),
+                    }
+                case _:
+                    raise NotImplementedError
 
-        return [
-            chain.withdraw_request_type(
-                amount=withdraw.get("amount"),
-                nonce=withdraw.get("nonce"),
-                recipient=address_type(withdraw.get("destination")),
-                token_address=address_type(withdraw.get("tokenContract")),
-                chain_symbol=chain.chain_symbol,
-                status=WithdrawStatus.PENDING,
-                **base_conf,
+            result.append(
+                chain.withdraw_request_type(
+                    amount=withdraw.get("amount"),
+                    nonce=withdraw.get("nonce"),
+                    recipient=address_type(withdraw.get("destination")),
+                    chain_symbol=chain.chain_symbol,
+                    status=WithdrawStatus.PENDING,
+                    **base_conf,
+                )
             )
-            for withdraw in withdraws
-        ]
+        return result
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
         raise ZexAPIError(e)  # noqa: B904 FIXME
 
