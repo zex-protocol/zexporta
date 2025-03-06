@@ -25,3 +25,10 @@ repos:
         entry: make type-check
         language: system
         pass_filenames: false
+  - repo: local
+    hooks:
+    -   id: unit-test
+        name: unit test
+        entry: make unit-test
+        language: system
+        pass_filenames: false
