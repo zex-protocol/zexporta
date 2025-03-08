@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Any
 
-from clients.btc.custom_types import BTCConfig, BTCTransfer
+from clients.btc.custom_types import UTXO, BTCConfig, BTCTransfer, BTCWithdrawRequest, UTXOStatus
 from clients.custom_types import (
     Address,
     BlockNumber,
@@ -9,8 +9,10 @@ from clients.custom_types import (
     Transfer,
     TxHash,
     Value,
+    WithdrawRequest,
+    WithdrawStatus,
 )
-from clients.evm.custom_types import ChainId, ChecksumAddress, EVMConfig, EVMTransfer
+from clients.evm.custom_types import ChainId, ChecksumAddress, EVMConfig, EVMTransfer, EVMWithdrawRequest
 from pydantic import BaseModel, Field
 
 
@@ -36,48 +38,6 @@ class ChainSymbol(StrEnum):
     BSC = "BSC"
     OPT = "OPT"
     BTC = "BTC"
-
-
-class WithdrawStatus(StrEnum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    SUCCESSFUL = "successful"
-    REJECTED = "rejected"
-
-
-class UTXOStatus(StrEnum):
-    UNSPENT = "unspent"
-    SPEND = "spend"
-
-
-class UTXO(BaseModel):
-    status: UTXOStatus = UTXOStatus.UNSPENT
-    tx_hash: TxHash
-    amount: Value
-    index: Value
-    address: Address
-    user_id: UserId
-
-
-class WithdrawRequest(BaseModel):
-    model_config = {"extra": "ignore"}
-    amount: Value
-    recipient: Address
-    tx_hash: TxHash | None = None
-    status: WithdrawStatus = WithdrawStatus.PENDING
-    chain_symbol: str
-    nonce: int
-
-
-class EVMWithdrawRequest(WithdrawRequest):
-    token_address: ChecksumAddress
-    chain_id: ChainId
-
-
-class BTCWithdrawRequest(WithdrawRequest):
-    utxos: list[UTXO]
-    zellular_index: str
-    sat_per_byte: int
 
 
 class DepositStatus(StrEnum):

@@ -108,7 +108,7 @@ async def find_deposit_by_status(
         "transfer.chain_symbol": chain.chain_symbol,
     }
     if txs_hash:
-        query["transfer.tx_hash"] = ({"$in": txs_hash},)
+        query["transfer.tx_hash"] = {"$in": txs_hash}
 
     async for record in collection.find(query, sort={"transfer.block_number": ASCENDING}):
         transfer = chain.transfer_class(**record["transfer"])

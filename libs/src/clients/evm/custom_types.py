@@ -3,7 +3,7 @@ from typing import Any, ClassVar
 from eth_typing import ChainId, ChecksumAddress
 from pydantic import Field
 
-from clients.custom_types import ChainConfig, Transfer
+from clients.custom_types import ChainConfig, Transfer, WithdrawRequest
 
 
 class EVMTransfer(Transfer):
@@ -20,11 +20,17 @@ class EVMTransfer(Transfer):
         return NotImplemented
 
 
+class EVMWithdrawRequest(WithdrawRequest):
+    token_address: ChecksumAddress
+    chain_id: ChainId
+
+
 class EVMConfig(ChainConfig):
     chain_id: ChainId
     poa: bool = Field(default=False)
     native_decimal: int
     transfer_class: ClassVar[type[EVMTransfer]] = EVMTransfer
+    withdraw_request_type: ClassVar[type[EVMWithdrawRequest]] = EVMWithdrawRequest
 
 
-__all__ = ["ChecksumAddress", "ChainId", "EVMConfig", "EVMTransfer"]
+__all__ = ["ChecksumAddress", "ChainId", "EVMConfig", "EVMTransfer", "EVMWithdrawRequest"]

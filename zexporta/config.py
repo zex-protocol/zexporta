@@ -30,7 +30,6 @@ if ENVIRONMENT == EnvEnum.PROD:
             batch_block_size=20,
             vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
             chain_id=ChainId(17000),
-            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
@@ -41,7 +40,6 @@ if ENVIRONMENT == EnvEnum.PROD:
             batch_block_size=20,
             vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
             chain_id=ChainId(11155111),
-            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
@@ -53,7 +51,6 @@ if ENVIRONMENT == EnvEnum.PROD:
             batch_block_size=30,
             vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
             chain_id=ChainId(97),
-            withdraw_request_type=EVMWithdrawRequest,
         ),
         # ChainSymbol.BTC.value: BTCConfig(
         #     private_rpc=os.environ["BTC_RPC"],
@@ -64,7 +61,6 @@ if ENVIRONMENT == EnvEnum.PROD:
         #     batch_block_size=5,
         #     vault_address = "",
         #     deposit_finalizer_middleware = [populate_deposits_utxos],
-        #     withdraw_request_type = BTCWithdrawRequest
         # ),
     }
     # setup("mainnet")
@@ -83,7 +79,6 @@ else:
             batch_block_size=20,
             vault_address=Web3.to_checksum_address("0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"),
             chain_id=ChainId(17000),
-            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.SEP.value: EVMConfig(
             private_rpc=os.environ["SEP_RPC"],
@@ -94,7 +89,6 @@ else:
             batch_block_size=20,
             vault_address=Web3.to_checksum_address("0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"),
             chain_id=ChainId(11155111),
-            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.BST.value: EVMConfig(
             private_rpc=os.environ["BST_RPC"],
@@ -106,7 +100,6 @@ else:
             batch_block_size=30,
             vault_address=Web3.to_checksum_address("0x17a8bC4724666738387Ef5Fc59F7EF835AF60979"),
             chain_id=ChainId(97),
-            withdraw_request_type=EVMWithdrawRequest,
         ),
         ChainSymbol.BTC.value: BTCConfig(
             private_rpc=os.environ["BTC_RPC"],
@@ -117,7 +110,6 @@ else:
             batch_block_size=5,
             vault_address="",
             deposit_finalizer_middleware=[populate_deposits_utxos],
-            withdraw_request_type=BTCWithdrawRequest,
         ),
     }
     setup("testnet")
@@ -139,6 +131,5 @@ DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./zexporta/dkgs/dkgs.json")
 DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 
 EVM_WITHDRAWER_PRIVATE_KEY = os.environ["EVM_WITHDRAWER_PRIVATE_KEY"]
-BTC_WITHDRAWER_PRIVATE_KEY = os.environ["BTC_WITHDRAWER_PRIVATE_KEY"]
 
 SENTRY_DNS = os.getenv("SENTRY_DNS")

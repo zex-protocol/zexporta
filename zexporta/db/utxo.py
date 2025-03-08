@@ -90,7 +90,7 @@ def serialize_utxo_from_deposit(deposits: list[Deposit]):
                 amount=transfer.value,
                 index=transfer.index,
                 address=transfer.to,
-                user_id=deposit.user_id,
+                salt=deposit.user_id,
             )
         )
     return utxos
