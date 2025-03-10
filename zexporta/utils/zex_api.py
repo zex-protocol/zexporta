@@ -4,7 +4,6 @@ from json import JSONDecodeError
 
 import httpx
 
-from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
     EVMConfig,
@@ -12,6 +11,9 @@ from zexporta.custom_types import (
     UserId,
     ZexUserAsset,
 )
+from zexporta.settings import app_settings
+
+ZEX_BASE_URL = app_settings.zex.base_url
 
 
 class ZexPath(StrEnum):

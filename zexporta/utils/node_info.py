@@ -3,8 +3,10 @@ from urllib.parse import urlparse
 
 from pyfrost.network.abstract import NodesInfo as BaseNodeInfo
 
-from zexporta.config import ENVIRONMENT
 from zexporta.custom_types import EnvEnum
+from zexporta.settings import app_settings
+
+ENVIRONMENT = app_settings.environment
 
 if ENVIRONMENT == EnvEnum.PROD:
     from ._dummy_node_info import dummy_node_info

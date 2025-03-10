@@ -4,11 +4,12 @@ from web3 import Web3
 
 from zexporta.bots.custom_types import BotToken
 from zexporta.custom_types import ChainSymbol
+from zexporta.settings import app_settings
 
 LOGGER_PATH = "."
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")
+MONGO_URI = app_settings.mongo.uri
 
-HOLDER_PRIVATE_KEY = os.environ["HOLDER_PRIVATE_KEY"]
+HOLDER_PRIVATE_KEY = app_settings.holder_private_key
 
 TEST_TOKENS = [
     BotToken(

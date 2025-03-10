@@ -1,11 +1,5 @@
-import os
+from zexporta.settings import app_settings
 
-from dotenv import load_dotenv
-
-from zexporta.config import (
-    MONGO_URI,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
-)
-
-load_dotenv()
+MONGO_URI = app_settings.mongo.uri
+USER_DEPOSIT_BYTECODE_HASH = app_settings.user_deposit.bytecode_hash
+USER_DEPOSIT_FACTORY_ADDRESS = app_settings.user_deposit.factory_address

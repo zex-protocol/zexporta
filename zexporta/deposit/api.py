@@ -4,7 +4,7 @@ from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 
-from zexporta.config import CHAINS_CONFIG
+from zexporta.chain_config import CHAIN_CONFIG
 from zexporta.custom_types import ChainSymbol, DepositStatus
 from zexporta.db.deposit import find_deposit_by_status
 
@@ -19,7 +19,7 @@ async def get_finalized_tx(
     from_block: Annotated[int, Query(default=0)],
     status: Annotated[DepositStatus, Query(default=DepositStatus.FINALIZED)],
 ) -> JSONResponse:
-    chain = CHAINS_CONFIG[chain_symbol.value]
+    chain = CHAIN_CONFIG[chain_symbol.value]
     deposits = await find_deposit_by_status(chain, status, from_block=from_block)
     return JSONResponse(content=[deposit.model_dump(mode="json") for deposit in deposits])
 

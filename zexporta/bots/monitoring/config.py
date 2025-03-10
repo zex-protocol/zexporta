@@ -3,18 +3,18 @@ import os
 from web3 import Web3
 
 from zexporta.bots.custom_types import BotToken
-from zexporta.config import (
-    CHAINS_CONFIG,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
-    ChainSymbol,
-)
+from zexporta.chain_config import CHAIN_CONFIG, ChainSymbol
+from zexporta.settings import app_settings
+
+CHAINS_CONFIG = CHAIN_CONFIG
+USER_DEPOSIT_BYTECODE_HASH = app_settings.user_deposit.bytecode_hash
+USER_DEPOSIT_FACTORY_ADDRESS = app_settings.user_deposit.factory_address
 
 LOGGER_PATH = "/var/log/monitoring_bot/"
 
-TEST_USER_ID = int(os.environ["MONITORING_BOT_ZEX_USER_ID"])
+TEST_USER_ID = app_settings.monitoring_bot_zex_user_id
 
-WITHDRAWER_PRIVATE_KEY = os.environ["MONITORING_BOT_WITHDRAWER_PRIVATE_KEY"]
+WITHDRAWER_PRIVATE_KEY = app_settings.monitoring_bot_withdrawer_private_key
 
 MONITORING_TOKENS = [
     BotToken(
@@ -42,7 +42,7 @@ MONITORING_TOKENS = [
 
 DELAY = 6 * 60 * 60
 
-TELEGRAM_BASE_URL = "https://api.telegram.org"
-TELEGRAM_BOT_INFO = os.environ["TELEGRAM_BOT_INFO"]
-TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
-TELEGRAM_THREAD_ID = os.environ["TELEGRAM_THREAD_ID"]
+TELEGRAM_BASE_URL = app_settings.telegram.base_url
+TELEGRAM_BOT_INFO = app_settings.telegram.bot_info
+TELEGRAM_CHAT_ID = app_settings.telegram.chat_id
+TELEGRAM_THREAD_ID = app_settings.telegram.thread_id
