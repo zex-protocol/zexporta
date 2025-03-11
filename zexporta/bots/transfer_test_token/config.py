@@ -1,5 +1,3 @@
-import os
-
 from web3 import Web3
 
 from zexporta.bots.custom_types import BotToken

@@ -10,7 +10,7 @@ from .custom_types import (
     EVMConfig,
 )
 
-CHAIN_CONFIG: dict[str, ChainConfig] = {
+CHAINS_CONFIG: dict[str, ChainConfig] = {
     ChainSymbol.HOL.value: EVMConfig(
         private_rpc=app_settings.hol.rpc,
         native_decimal=18,
@@ -43,8 +43,8 @@ CHAIN_CONFIG: dict[str, ChainConfig] = {
         chain_id=ChainId(app_settings.bst.chain_id),
     ),
     ChainSymbol.BTC.value: BTCConfig(
-        private_rpc=app_settings.bitcoin.rpc,
-        private_indexer_rpc=app_settings.bitcoin.indexer_rpc,
+        private_rpc=app_settings.btc.rpc,
+        private_indexer_rpc=app_settings.btc.indexer,
         chain_symbol=ChainSymbol.BTC.value,
         finalize_block_count=1,
         delay=60,

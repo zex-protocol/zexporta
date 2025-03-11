@@ -1,11 +1,9 @@
-import os
-
-from zexporta.chain_config import CHAIN_CONFIG
+from zexporta.chain_config import CHAINS_CONFIG
 from zexporta.custom_types import EnvEnum
 from zexporta.settings import app_settings
 
-CHAINS_CONFIG = CHAIN_CONFIG
-ENVIRONMENT = app_settings.environment
+CHAINS_CONFIG = CHAINS_CONFIG
+ENVIRONMENT = app_settings.env
 SENTRY_DNS = app_settings.sentry.dsn
 ZEX_ENCODE_VERSION = app_settings.zex.encode_version
 
@@ -45,4 +43,4 @@ else:
             "/pyfrost/v1/generate-nonces",
         ],
     }
-PRIVATE_KEY = app_settings.node_private_key
+PRIVATE_KEY = app_settings.node.private_key

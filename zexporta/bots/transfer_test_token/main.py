@@ -18,7 +18,7 @@ from zexporta.bots.transfer_test_token.database import (
 )
 from zexporta.bots.utils.deposit import send_deposit
 from zexporta.chain_config import (
-    CHAIN_CONFIG,
+    CHAINS_CONFIG,
 )
 from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
@@ -26,7 +26,6 @@ from zexporta.utils.zex_api import ZexAPIError, get_async_client, get_last_zex_u
 
 logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/transfer_test_token_bot.log"))
 logger = logging.getLogger(__name__)
-CHAINS_CONFIG = CHAIN_CONFIG
 
 
 async def _get_last_user_id() -> UserId | None:
