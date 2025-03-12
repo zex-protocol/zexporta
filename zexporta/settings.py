@@ -4,115 +4,87 @@ from web3 import Web3
 
 
 class MongoConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     uri: str = Field(..., env="URI")  # type: ignore
-
-    class Config:
-        case_sensitive = True
 
 
 class DKGConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     json_path: str = Field(default="./zexporta/dkgs/dkgs.json", env="JSON_PATH")  # type: ignore
     name: str = Field(default="ethereum", env="NAME")  # type: ignore
 
-    class Config:
-        case_sensitive = True
-
 
 class SentryConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     dsn: str = Field(..., env="DSN")  # type: ignore
-
-    class Config:
-        case_sensitive = True
 
 
 class ZexConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     base_url: str = Field(..., env="BASE_URL")  # type: ignore
     encode_version: int = Field(..., env="ENCODE_VERSION")  # type: ignore
 
-    class Config:
-        case_sensitive = True
-
 
 class UserDepositConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     factory_address: str = Field(..., env="FACTORY_ADDRESS")  # type: ignore
     bytecode_hash: str = Field(..., env="BYTECODE_HASH")  # type: ignore
 
-    class Config:
-        case_sensitive = True
-
 
 class WithdrawerConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     private_key: str = Field(..., env="PRIVATE_KEY")  # type: ignore
-
-    class Config:
-        case_sensitive = True
 
 
 class BitcoinConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     rpc: str = Field(..., env="RPC")  # type: ignore
     indexer: str = Field(..., env="INDEXER")  # type: ignore
     group_pub_key: str = Field(..., env="GROUP_PUB_KEY")  # type: ignore
 
-    class Config:
-        case_sensitive = True
-
 
 class BSTConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     rpc: str = Field(..., env="RPC")  # type: ignore
     chain_id: int = Field(..., env="CHAIN_ID")  # type: ignore
-
-    class Config:
-        case_sensitive = True
 
 
 class SEPConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     rpc: str = Field(..., env="RPC")  # type: ignore
     chain_id: int = Field(..., env="CHAIN_ID")  # type: ignore
-
-    class Config:
-        case_sensitive = True
 
 
 class HOLConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     rpc: str = Field(..., env="RPC")  # type: ignore
     chain_id: int = Field(..., env="CHAIN_ID")  # type: ignore
 
-    class Config:
-        case_sensitive = True
-
 
 class TelegramConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     base_url: str = Field(default="https://api.telegram.org", env="BASE_URL")  # type: ignore
     bot_info: str = Field(..., env="BOT_INFO")  # type: ignore
     chat_id: str = Field(..., env="CHAT_ID")  # type: ignore
     thread_id: str = Field(..., env="THREAD_ID ")  # type: ignore
 
-    class Config:
-        case_sensitive = True
-
 
 class NodeConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     private_key: int = Field(..., env="PRIVATE_KEY")  # type: ignore
-
-    class Config:
-        case_sensitive = True
 
 
 class SaConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     batch_block_number_size: int = Field(default=100, env="BATCH_BLOCK_NUMBER_SIZE")  # type: ignore
     transactions_batch_size: int = Field(default=2, env="TRANSACTIONS_BATCH_SIZE")  # type: ignore
     shield_private_key: str = Field(..., env="SHIELD_PRIVATE_KEY")  # type: ignore
 
-    class Config:
-        case_sensitive = True
-
 
 class MonitoringConfig(BaseSettings):
+    model_config = SettingsConfigDict(case_sensitive=True)
     bot_zex_user_id: int = Field(..., env="BOT_ZEX_USER_ID")  # type: ignore
     bot_withdrawer_private_key: str = Field(..., env="BOT_WITHDRAWER_PRIVATE_KEY")  # type: ignore
-
-    class Config:
-        case_sensitive = True
 
 
 class ApplicationSettings(BaseSettings):
