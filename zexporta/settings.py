@@ -41,24 +41,28 @@ class BitcoinConfig(BaseSettings):
     rpc: str = Field(..., env="RPC")  # type: ignore
     indexer: str = Field(..., env="INDEXER")  # type: ignore
     group_pub_key: str = Field(..., env="GROUP_PUB_KEY")  # type: ignore
+    vault_address: str = Field(..., env="VAULT_ADDRESS")  # type: ignore
 
 
 class BSTConfig(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True)
     rpc: str = Field(..., env="RPC")  # type: ignore
     chain_id: int = Field(..., env="CHAIN_ID")  # type: ignore
+    vault_address: str = Field(..., env="VAULT_ADDRESS")  # type: ignore
 
 
 class SEPConfig(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True)
     rpc: str = Field(..., env="RPC")  # type: ignore
     chain_id: int = Field(..., env="CHAIN_ID")  # type: ignore
+    vault_address: str = Field(..., env="VAULT_ADDRESS")  # type: ignore
 
 
 class HOLConfig(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True)
     rpc: str = Field(..., env="RPC")  # type: ignore
     chain_id: int = Field(..., env="CHAIN_ID")  # type: ignore
+    vault_address: str = Field(..., env="VAULT_ADDRESS")  # type: ignore
 
 
 class TelegramConfig(BaseSettings):
@@ -72,6 +76,7 @@ class TelegramConfig(BaseSettings):
 class NodeConfig(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True)
     private_key: int = Field(..., env="PRIVATE_KEY")  # type: ignore
+    id: str = Field(..., env="ID")  # type: ignore
 
 
 class SaConfig(BaseSettings):

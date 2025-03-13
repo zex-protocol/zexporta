@@ -1,5 +1,4 @@
 import logging
-import os
 
 from bitcoinutils.keys import PublicKey
 from pyfrost.btc_utils import taproot_tweak_pubkey
@@ -7,6 +6,7 @@ from pyfrost.crypto_utils import code_to_pub, pub_compress
 
 from clients.abstract import ChainAsyncClient
 from clients.custom_types import BlockNumber, TxHash
+from zexporta.settings import app_settings
 
 from .custom_types import Address, BTCConfig, BTCTransfer
 from .rpc.ankr import BTCAnkrAsyncClient, Transaction
@@ -94,7 +94,7 @@ def get_btc_async_client(chain: BTCConfig) -> BTCAsyncClient:
 
 
 def compute_btc_address(salt: int) -> Address:
-    btc_group_key_pub = int(os.environ["BTC_GROUP_KEY_PUB"])
+    btc_group_key_pub = int(app_settings.btc.group_pub_key)
     public_key = code_to_pub(btc_group_key_pub)
     public_key = pub_compress(public_key=public_key)
     taproot_public_key, _ = taproot_tweak_pubkey(public_key, salt.to_bytes(8, byteorder="big"))

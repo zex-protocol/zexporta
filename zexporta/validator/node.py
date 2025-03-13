@@ -1,9 +1,8 @@
-import os
-
 import sentry_sdk
 from flask import Flask
 from pyfrost.network.node import Node
 
+from zexporta.settings import app_settings
 from zexporta.utils.node_info import NodesInfo
 
 from .config import PRIVATE_KEY, SENTRY_DNS
@@ -36,4 +35,4 @@ def run_node(node_id: int) -> None:
     app.register_blueprint(node.blueprint, url_prefix="/pyfrost")
 
 
-run_node(int(os.environ["NODE_ID"], 16))
+run_node(int(app_settings.node.id, 16))

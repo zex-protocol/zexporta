@@ -18,7 +18,7 @@ CHAINS_CONFIG: dict[str, ChainConfig] = {
         finalize_block_count=1,
         delay=1,
         batch_block_size=20,
-        vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
+        vault_address=Web3.to_checksum_address(app_settings.hol.vault_address),
         chain_id=ChainId(app_settings.hol.chain_id),
     ),
     ChainSymbol.SEP.value: EVMConfig(
@@ -28,7 +28,7 @@ CHAINS_CONFIG: dict[str, ChainConfig] = {
         finalize_block_count=1,
         delay=1,
         batch_block_size=20,
-        vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
+        vault_address=Web3.to_checksum_address(app_settings.sep.vault_address),
         chain_id=ChainId(app_settings.sep.chain_id),
     ),
     ChainSymbol.BST.value: EVMConfig(
@@ -39,10 +39,11 @@ CHAINS_CONFIG: dict[str, ChainConfig] = {
         poa=True,
         delay=1,
         batch_block_size=30,
-        vault_address=Web3.to_checksum_address("0x72E46E170342E4879b0Ea8126389111D4275173D"),
+        vault_address=Web3.to_checksum_address(app_settings.bst.vault_address),
         chain_id=ChainId(app_settings.bst.chain_id),
     ),
     ChainSymbol.BTC.value: BTCConfig(
+        vault_address=app_settings.btc.vault_address,
         private_rpc=app_settings.btc.rpc,
         private_indexer_rpc=app_settings.btc.indexer,
         chain_symbol=ChainSymbol.BTC.value,

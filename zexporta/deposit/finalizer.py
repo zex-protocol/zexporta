@@ -1,13 +1,13 @@
 import asyncio
-import logging
 import logging.config
 import math
 
 import sentry_sdk
 from clients import filter_blocks, get_async_client
 
-from zexporta.custom_types import ChainConfig
+from zexporta.custom_types import ChainConfig, DepositStatus
 from zexporta.db.deposit import (
+    find_deposit_by_status,
     get_pending_deposits_block_number,
     to_finalized,
     to_reorg_block_number,
@@ -45,7 +45,18 @@ async def update_finalized_deposits(chain: ChainConfig):
                     client.get_block_tx_hash,
                     max_delay_per_block_batch=chain.delay,
                 )
+                deposit_finalizer_middleware = chain.deposit_finalizer_middleware
+                if deposit_finalizer_middleware:
+                    finalized_deposits_list = await find_deposit_by_status(
+                        chain=chain,
+                        status=DepositStatus.PENDING,
+                        to_block=finalized_block_number,
+                        txs_hash=results,
+                    )
+                    for middleware in deposit_finalizer_middleware:
+                        await middleware(finalized_deposits_list)
                 await to_finalized(chain, finalized_block_number, results)
+
                 await to_reorg_block_number(chain, min(blocks_to_check), max(blocks_to_check))
         except Exception as e:
             _logger.exception(f"An error occurred: {e}")

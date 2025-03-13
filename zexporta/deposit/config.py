@@ -13,7 +13,7 @@ MONGO_URI = app_settings.mongo.uri
 SENTRY_DNS = app_settings.sentry.dsn
 USER_DEPOSIT_BYTECODE_HASH = app_settings.user_deposit.bytecode_hash
 USER_DEPOSIT_FACTORY_ADDRESS = app_settings.user_deposit.factory_address
-WITHDRAWER_PRIVATE_KEY = app_settings.withdrawer.private_key
+EVM_WITHDRAWER_PRIVATE_KEY = app_settings.withdrawer.private_key
 ZEX_ENCODE_VERSION = app_settings.zex.encode_version
 
 

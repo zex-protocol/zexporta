@@ -1,7 +1,7 @@
+from decimal import Decimal
 from typing import Any
 
 import httpx
-from pydantic import BaseModel
 
 from clients.btc.exceptions import (
     BTCClientError,
@@ -10,85 +10,8 @@ from clients.btc.exceptions import (
     BTCResponseError,
     BTCTimeoutError,
 )
-from clients.custom_types import URL, BlockNumber, TxHash, Value
-
-
-class AddressDetails(BaseModel):
-    page: int
-    totalPages: int
-    itemsOnPage: int
-    address: str
-    balance: int
-    totalReceived: int
-    totalSent: int
-    unconfirmedBalance: int
-    unconfirmedTxs: int
-    txs: int
-    txids: list[str]
-
-
-# Model for UTXO (Unspent Transaction Outputs)
-class UTXO(BaseModel):
-    txid: str
-    vout: Value
-    value: Value
-    height: int
-    confirmations: int
-    coinbase: bool | None = None
-
-
-# Common Model for all Transaction outputs (vout)
-class Vout(BaseModel):
-    value: Value
-    n: int
-    addresses: list[str] | None = None
-    isAddress: bool
-    hex: str | None = None
-    scriptPubKey: dict | None = None
-
-
-# Common Model for all Transaction inputs (vin)
-class Vin(BaseModel):
-    sequence: int | None = None
-    n: int | None = None
-    isAddress: bool | None = None
-    coinbase: str | None = None
-    txinwitness: list[str] | None = None
-
-
-# Model for Transaction Details
-class Transaction(BaseModel):
-    txid: str
-    vin: list[Vin]
-    vout: list[Vout]
-    blockHash: str
-    blockHeight: int
-    confirmations: int
-    blockTime: int
-    value: Value
-    valueIn: Value
-    fees: Value
-
-
-# Response for getting block by identifier (including multiple pages)
-class Block(BaseModel):
-    page: int
-    totalPages: int
-    itemsOnPage: int
-    hash: str
-    previousBlockHash: str
-    nextBlockHash: str | None = None
-    height: int
-    confirmations: int
-    size: int
-    time: int
-    version: int
-    merkleRoot: str
-    nonce: str
-    difficulty: str
-    bits: str
-    txCount: int
-    txs: list[Transaction] | None = None
+from clients.btc.rpc.data_models import AddressDetails, Block, Transaction, Unspent
+from clients.custom_types import URL, BlockNumber, TxHash
 
 
 class BTCAnkrAsyncClient:
@@ -167,11 +90,11 @@ class BTCAnkrAsyncClient:
         data = await self._request("GET", url, params=params)
         return AddressDetails.model_validate(data)
 
-    async def get_utxo(self, address: str, confirmed: bool = True) -> list[UTXO]:
+    async def get_utxo(self, address: str, confirmed: bool = True) -> list[Unspent]:
         url = f"{self.block_book_base_url}/api/v2/utxo/{address}"
         params = {"confirmed": str(confirmed).lower()}
         data = await self._request("GET", url, params=params)
-        return [UTXO.model_validate(i) for i in data]
+        return [Unspent.model_validate(i) for i in data]
 
     async def get_block_by_identifier(self, identifier: str | int) -> Block:
         page = 1
@@ -209,3 +132,16 @@ class BTCAnkrAsyncClient:
         }
         resp = await self._request("POST", url, headers=headers, json_data=data)
         return resp["result"]["blocks"]  # type: ignore
+
+    async def get_fee_per_byte(self) -> int | Decimal:
+        url = f"{self.base_url}"
+        data = {"id": "test", "method": "estimatesmartfee", "params": [6]}
+        headers = {
+            "Content-Type": "application/json",
+        }
+        resp = await self._request("POST", url, headers=headers, json_data=data)
+        fee_rate = resp and resp["result"] and Decimal(resp["result"]["feerate"]) * (10 ^ 8)
+        if isinstance(fee_rate, Decimal):
+            return fee_rate
+        else:
+            raise BTCResponseError("Cant get fee rate")

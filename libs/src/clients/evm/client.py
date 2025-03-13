@@ -1,5 +1,4 @@
 import logging
-import os
 
 import web3.exceptions
 from eth_account import Account
@@ -15,6 +14,7 @@ from clients.custom_types import (
     BlockNumber,
     TxHash,
 )
+from zexporta.settings import app_settings
 
 from .abi import ERC20_ABI
 from .custom_types import ChecksumAddress, EVMConfig, EVMTransfer
@@ -158,8 +158,8 @@ def get_evm_async_client(chain: EVMConfig) -> EVMAsyncClient:
 
 
 def compute_create2_address(salt: int) -> ChecksumAddress:
-    deployer_address = Web3.to_checksum_address(os.environ["USER_DEPOSIT_FACTORY_ADDRESS"])
-    bytecode_hash = HexStr(os.environ["USER_DEPOSIT_BYTECODE_HASH"])
+    deployer_address = Web3.to_checksum_address(app_settings.user_deposit.factory_address)
+    bytecode_hash = HexStr(app_settings.user_deposit.bytecode_hash)
     contract_address = Web3.keccak(
         b"\xff"
         + Web3.to_bytes(hexstr=deployer_address)

@@ -7,7 +7,7 @@ DKG_JSON_PATH = app_settings.dkg.json_path
 DKG_NAME = app_settings.dkg.name
 SA_SHIELD_PRIVATE_KEY = app_settings.sa.shield_private_key
 SENTRY_DNS = app_settings.sentry.dsn
-WITHDRAWER_PRIVATE_KEY = app_settings.withdrawer.private_key
+EVM_WITHDRAWER_PRIVATE_KEY = app_settings.withdrawer.private_key
 
 LOGGER_PATH = "/var/log/withdraw/"
 WITHDRAW_DELAY_SECOND = 10

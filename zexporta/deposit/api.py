@@ -3,14 +3,24 @@ from typing import Annotated
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
+from health_check import HealthCheck, HealthController
 
 from zexporta.chain_config import CHAINS_CONFIG
 from zexporta.custom_types import ChainSymbol, DepositStatus
 from zexporta.db.deposit import find_deposit_by_status
 
-app = FastAPI(name="ZexDeposit", version="1")
+app = FastAPI(name="Zexporta", version="1")
 
 route = APIRouter(tags=["Deposits"], prefix="/deposits")
+
+# In future we should organize this instance creation
+health_check_router = APIRouter(tags=["HealthCheck"])
+
+health_check_svc = HealthCheck()
+
+health_check_ctrl = HealthController(health_check_svc, health_check_router)
+
+health_check_router = health_check_ctrl.register_handlers()
 
 
 @route.get("/finalized/<chain_symbol:str>")
@@ -25,3 +35,4 @@ async def get_finalized_tx(
 
 
 app.include_router(route)
+app.include_router(health_check_router)
