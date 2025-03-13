@@ -1,6 +1,7 @@
 import asyncio
 from typing import Iterable, overload
 
+from clients import Transfer
 from pymongo import ASCENDING
 
 from zexporta.custom_types import (
@@ -12,7 +13,6 @@ from zexporta.custom_types import (
     DepositStatus,
     EVMConfig,
     EVMTransfer,
-    Transfer,
     TxHash,
 )
 
@@ -62,6 +62,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit[BTCTransfer]]: ...
 
 
@@ -72,6 +73,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit[EVMTransfer]]: ...
 
 
@@ -82,6 +84,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit[Transfer]]: ...
 
 
@@ -91,6 +94,7 @@ async def find_deposit_by_status(
     from_block=None,
     to_block=None,
     limit=None,
+    txs_hash=None,
 ):
     collection = get_collection(chain)
     res = []
@@ -103,6 +107,8 @@ async def find_deposit_by_status(
         "transfer.block_number": block_number_query,
         "transfer.chain_symbol": chain.chain_symbol,
     }
+    if txs_hash:
+        query["transfer.tx_hash"] = {"$in": txs_hash}
 
     async for record in collection.find(query, sort={"transfer.block_number": ASCENDING}):
         transfer = chain.transfer_class(**record["transfer"])
