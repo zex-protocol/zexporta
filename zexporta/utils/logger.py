@@ -7,8 +7,8 @@ def get_logger_config(logger_path: str):
         "formatters": {"standard": {"format": "%(levelname)s | %(asctime)s | %(module)s  | %(message)s"}},
         "handlers": {
             "console": {
+                "level": "WARNING",
                 "class": "logging.StreamHandler",
-                "level": "INFO",
                 "formatter": "standard",
             },
             "file": {

@@ -6,7 +6,6 @@ from zexporta.bots.custom_types import BotToken
 from zexporta.custom_types import ChainSymbol
 
 LOGGER_PATH = "."
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")
 
 HOLDER_PRIVATE_KEY = os.environ["HOLDER_PRIVATE_KEY"]
 
@@ -75,3 +74,6 @@ TEST_TOKENS = [
         decimal=8,
     ),
 ]
+
+MONGO_HOST = os.environ["MONGO_HOST"]
+MONGO_PORT = os.environ["MONGO_PORT"]

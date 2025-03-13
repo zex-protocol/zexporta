@@ -51,7 +51,7 @@ async def _send_deposits(
 
 async def transfer_test_tokens(chain: EVMConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
-    w3 = get_evm_async_client(chain).client
+    w3 = get_evm_async_client(chain, _logger).client
     account = w3.eth.account.from_key(HOLDER_PRIVATE_KEY)
     test_tokens = [token for token in TEST_TOKENS if token.chain_symbol == chain.chain_symbol]
     if len(test_tokens) == 0:

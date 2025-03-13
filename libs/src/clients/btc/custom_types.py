@@ -1,6 +1,6 @@
 # Model for Address Details
 from enum import StrEnum
-from typing import Any, ClassVar
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -9,7 +9,7 @@ from clients.custom_types import URL, ChainConfig, Salt, Transfer, TxHash, Value
 type Address = str
 
 
-class BTCTransfer(Transfer):
+class BTCTransfer(Transfer[Address]):
     to: Address
     index: int
 
@@ -44,10 +44,7 @@ class BTCWithdrawRequest(WithdrawRequest):
     sat_per_byte: int
 
 
-class BTCConfig(ChainConfig):
+class BTCConfig(ChainConfig[BTCTransfer, BTCWithdrawRequest]):
     private_indexer_rpc: URL
-    transfer_class: ClassVar[type[BTCTransfer]] = BTCTransfer
-    withdraw_request_type: ClassVar[type[BTCWithdrawRequest]] = BTCWithdrawRequest
-
-
-__all__ = ["BTCWithdrawRequest", "UTXO", "UTXOStatus", "BTCConfig", "BTCTransfer"]
+    transfer_class: type[BTCTransfer] = BTCTransfer
+    withdraw_request_type: type[BTCWithdrawRequest] = BTCWithdrawRequest

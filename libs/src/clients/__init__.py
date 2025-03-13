@@ -1,10 +1,12 @@
 import asyncio
+import logging
 import time
+from functools import lru_cache
 from typing import Any, Callable, Coroutine, Iterable
 
 from .abstract import ChainAsyncClient
 from .btc import BTCAsyncClient, BTCConfig, compute_btc_address, get_btc_async_client
-from .custom_types import Address, BlockNumber, ChainConfig, Transfer, TxHash
+from .custom_types import Address, BlockNumber, ChainConfig, Transfer, TxHash, WithdrawRequest
 from .evm import (
     EVMAsyncClient,
     EVMConfig,
@@ -23,19 +25,24 @@ __all__ = [
     "compute_btc_address",
     "ChainConfig",
     "ChainAsyncClient",
+    "WithdrawRequest",
 ]
 
 
-def get_async_client(chain: ChainConfig) -> ChainAsyncClient:
+# FIXME: We are using `lru_cache` instead of a self-implemented singleton;
+# perhaps we should consider changing this in the future for better clarity.
+@lru_cache
+def get_async_client(chain: ChainConfig, logger: logging.Logger | logging.LoggerAdapter) -> ChainAsyncClient:
     match chain:
         case EVMConfig():
-            return get_evm_async_client(chain)
+            return get_evm_async_client(chain, logger)
         case BTCConfig():
-            return get_btc_async_client(chain)
+            return get_btc_async_client(chain, logger)
         case _:
             raise NotImplementedError()
 
 
+@lru_cache
 def get_compute_address_function(chain: ChainConfig) -> Callable[[int], Address]:
     match chain:
         case EVMConfig():
