@@ -142,7 +142,7 @@ async def withdraw(chain: EVMConfig):
 
     while True:
         try:
-            w3 = get_evm_async_client(chain).client
+            w3 = get_evm_async_client(chain, _logger).client
             account = w3.eth.account.from_key(EVM_WITHDRAWER_PRIVATE_KEY)
 
             dkg_party = dkg_key["party"]

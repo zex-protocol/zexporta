@@ -1,4 +1,6 @@
 import logging
+from functools import lru_cache
+from typing import override
 
 from bitcoinutils.keys import PublicKey
 from pyfrost.btc_utils import taproot_tweak_pubkey
@@ -12,56 +14,67 @@ from .custom_types import Address, BTCConfig, BTCTransfer
 from .rpc.ankr import BTCAnkrAsyncClient, Transaction
 
 
-class BTCAsyncClient(ChainAsyncClient):
-    def __init__(self, chain: BTCConfig):
-        self.chain = chain
+class BTCAsyncClient(ChainAsyncClient[BTCConfig, BTCAnkrAsyncClient, BTCTransfer, Address]):
+    @override
+    def __init__(self, chain: BTCConfig, logger: logging.Logger | logging.LoggerAdapter):
+        super().__init__(chain, logger)
         self.btc = None
 
     @property
+    @override
     def client(self) -> BTCAnkrAsyncClient:
         if self.btc is not None:
             return self.btc
         self.btc = BTCAnkrAsyncClient(base_url=self.chain.private_rpc, indexer_url=self.chain.private_indexer_rpc)
         return self.btc
 
+    @override
     async def get_transfer_by_tx_hash(self, tx_hash: TxHash) -> list[BTCTransfer]:
         tx = await self.client.get_tx_by_hash(tx_hash)
         return self._parse_transfer(tx)
 
+    @override
     async def get_finalized_block_number(self) -> BlockNumber:
         finalize_block_count = self.chain.finalize_block_count or 0
         finalized_block_number = (await self.get_latest_block_number()) - finalize_block_count
         return finalized_block_number
 
+    @override
     async def get_token_decimals(self, token_address: Address) -> int:
         return 8
 
-    async def is_transaction_successful(self, tx_hash: TxHash, logger: logging.Logger | logging.LoggerAdapter) -> bool:
+    @override
+    async def is_transaction_successful(self, tx_hash: TxHash) -> bool:
         if await self.client.get_tx_by_hash(tx_hash):
             return True
         return False
 
+    @override
     async def get_block_tx_hash(self, block_number: BlockNumber, **kwargs) -> list[TxHash]:
         block = await self.client.get_block_by_identifier(block_number)
         return [tx.txid for tx in block.txs]  # type: ignore
 
+    @override
     async def get_latest_block_number(self) -> BlockNumber:
         return await self.client.get_latest_block_number()
 
+    @override
     async def extract_transfer_from_block(
         self,
         block_number: BlockNumber,
-        logger: logging.Logger | logging.LoggerAdapter,
         **kwargs,
     ) -> list[BTCTransfer]:
-        logger.debug(f"Observing block number {block_number} start")
+        self.logger.debug(f"Observing block number {block_number} start")
         block = await self.client.get_block_by_identifier(block_number)
         result = []
         for tx in block.txs:  # type: ignore
+            # TODO: The time complexity is O(n^2); we should improve it.
+            # Be careful, as this function is CPU-bound.
+            # so if concurrency is the answer, we should use multi-processing.
             transfer = self._parse_transfer(tx)
             if transfer:
                 result.extend(transfer)
-        logger.debug(f"Observing block number {block_number} end")
+        self.logger.debug(f"Observing block number {block_number} end")
         return result
 
     def _parse_transfer(self, tx: Transaction) -> list[BTCTransfer]:
@@ -82,14 +95,9 @@ class BTCAsyncClient(ChainAsyncClient):
         return transfers
 
 
-_async_clients: dict[str, BTCAsyncClient] = {}
-
-
-def get_btc_async_client(chain: BTCConfig) -> BTCAsyncClient:
-    if client := _async_clients.get(chain.chain_symbol):
-        return client
-    client = BTCAsyncClient(chain)
-    _async_clients[chain.chain_symbol] = client
+@lru_cache
+def get_btc_async_client(chain: BTCConfig, logger: logging.Logger | logging.LoggerAdapter) -> BTCAsyncClient:
+    client = BTCAsyncClient(chain, logger)
     return client
 
 

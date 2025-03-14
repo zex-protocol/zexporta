@@ -5,7 +5,7 @@ from zexporta.custom_types import ChainSymbol
 from zexporta.settings import app_settings
 
 LOGGER_PATH = "."
-MONGO_URI = app_settings.mongo.uri
+MONGO_URI = app_settings.mongo.get_uri()
 
 HOLDER_PRIVATE_KEY = app_settings.holder_private_key
 

@@ -3,10 +3,9 @@ import asyncio
 from pymongo import AsyncMongoClient
 
 from zexporta.custom_types import UserId
+from zexporta.settings import app_settings
 
-from .config import MONGO_URI
-
-client = AsyncMongoClient(MONGO_URI)
+client = AsyncMongoClient(app_settings.mongo.get_uri())
 db = client["test_token_transfer_database"]
 
 

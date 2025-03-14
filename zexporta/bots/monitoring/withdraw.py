@@ -40,7 +40,7 @@ def withdraw_msg(tx: bytes, logger: ChainLoggerAdapter) -> bytes:
     msg += f"token chain: {token_chain}\n"
     msg += f"token name: {token_name}\n"
     msg += f"amount: {amount}\n"
-    msg += f'to: {"0x" + destination.hex()}\n'
+    msg += f"to: {'0x' + destination.hex()}\n"
     msg += f"t: {t}\n"
     msg += f"nonce: {nonce}\n"
     msg += f"public: {public.hex()}\n"
@@ -87,7 +87,7 @@ async def monitor_withdraw(async_client: httpx.AsyncClient, chain: EVMConfig, lo
         raise WithdrawError("No token for monitoring found.")
 
     monitoring_token = monitoring_token[0]
-    w3 = get_evm_async_client(chain).client
+    w3 = get_evm_async_client(chain, logger).client
     withdrawer_account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
     destination_address = withdrawer_account.address
     public_key = withdrawer_account._key_obj.public_key.to_compressed_bytes().hex()

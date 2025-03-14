@@ -141,8 +141,8 @@ async def send_result_to_zex(
 async def deposit(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     while True:
+        client = httpx.AsyncClient()
         try:
-            client = httpx.AsyncClient()
             dkg_party = dkg_key["party"]
             deposits = await find_deposit_by_status(
                 chain=chain,

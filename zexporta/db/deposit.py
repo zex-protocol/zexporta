@@ -1,4 +1,5 @@
 import asyncio
+from functools import lru_cache
 from typing import Iterable, overload
 
 from clients import Transfer
@@ -16,28 +17,27 @@ from zexporta.custom_types import (
     TxHash,
 )
 
-from .collections import db
-
-_deposit_collections = {EVMConfig: db["evm_deposit"], BTCConfig: db["btc_deposit"]}
+from .db import get_db_connection
 
 
-async def __create_indexes():
-    await _deposit_collections[EVMConfig].create_index(("transfer.tx_hash", "transfer.chain_symbol"), unique=True)
-    await _deposit_collections[BTCConfig].create_index(
-        ("transfer.tx_hash", "transfer.chain_symbol", "transfer.index"), unique=True
-    )
-
-
-asyncio.run(__create_indexes())
-
-
+@lru_cache()
 def get_collection(chain: ChainConfig):
     match chain:
         case EVMConfig():
-            return _deposit_collections[EVMConfig]
+            collection = get_db_connection()["evm_deposit"]
+            asyncio.run_coroutine_threadsafe(
+                collection.create_index(("transfer.tx_hash", "transfer.chain_symbol"), unique=True),
+                asyncio.get_event_loop(),
+            )
         case BTCConfig():
-            return _deposit_collections[BTCConfig]
-    raise NotImplementedError()
+            collection = get_db_connection()["btc_deposit"]
+            asyncio.run_coroutine_threadsafe(
+                collection.create_index(("transfer.tx_hash", "transfer.chain_symbol", "transfer.index"), unique=True),
+                asyncio.get_event_loop(),
+            )
+        case _:
+            raise NotImplementedError()
+    return collection
 
 
 async def insert_deposit_if_not_exists(chain: ChainConfig, deposit: Deposit):

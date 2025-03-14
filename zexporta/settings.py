@@ -6,6 +6,14 @@ from web3 import Web3
 class MongoConfig(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True)
     uri: str = Field(..., env="URI")  # type: ignore
+    host: str = Field(..., env="HOST")  # type: ignore
+    port: int = Field(..., env="PORT")  # type: ignore
+    db_name: str = Field(default="transaction_database", env="DBNAME")  # type: ignore
+
+    def get_uri(self) -> str:
+        if len(self.uri) > 0:
+            return self.uri
+        return f"mongodb://{self.host}:{self.port}/"
 
 
 class DKGConfig(BaseSettings):

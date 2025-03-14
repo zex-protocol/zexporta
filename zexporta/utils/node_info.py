@@ -11,13 +11,13 @@ ENVIRONMENT = app_settings.env
 if ENVIRONMENT == EnvEnum.PROD:
     from ._dummy_node_info import dummy_node_info
 
-elif ENVIRONMENT == EnvEnum.DEV:
+else:
     from ._dev_node_info import dummy_node_info
 
 
 class NodesInfo(BaseNodeInfo):
     @property
-    def prefix(self):
+    def prefix(self):  # type: ignore
         return "/pyfrost/"
 
     def __init__(self):

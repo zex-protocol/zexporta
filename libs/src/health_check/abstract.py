@@ -7,5 +7,5 @@ class Checkable(ABC):
         """Initialize the Checkable component"""
 
     @abstractmethod
-    async def is_healthy() -> bool:
+    async def is_healthy(self) -> bool:
         """Check the component is healthy or not"""

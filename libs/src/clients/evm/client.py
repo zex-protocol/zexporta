@@ -1,4 +1,6 @@
 import logging
+from functools import lru_cache
+from typing import override
 
 import web3.exceptions
 from eth_account import Account
@@ -26,12 +28,13 @@ from .transfer_decoder import (
 )
 
 
-class EVMAsyncClient(ChainAsyncClient):
-    def __init__(self, chain: EVMConfig):
-        self.chain = chain
+class EVMAsyncClient(ChainAsyncClient[EVMConfig, AsyncWeb3, EVMTransfer, ChecksumAddress]):
+    def __init__(self, chain: EVMConfig, logger: logging.Logger | logging.LoggerAdapter):
+        super().__init__(chain, logger)
         self._w3 = None
 
     @property
+    @override
     def client(self) -> AsyncWeb3:
         if self._w3 is not None:
             return self._w3
@@ -41,6 +44,7 @@ class EVMAsyncClient(ChainAsyncClient):
         self._w3 = w3
         return self._w3
 
+    @override
     async def get_transfer_by_tx_hash(self, tx_hash: TxHash) -> EVMTransfer:
         try:
             tx = await self.client.eth.get_transaction(HexStr(tx_hash))
@@ -48,6 +52,7 @@ class EVMAsyncClient(ChainAsyncClient):
             raise EVMTransferNotFound(f"Transfer with tx_hash: {tx_hash} not found") from e
         return self._parse_transfer(tx)
 
+    @override
     async def get_finalized_block_number(self) -> BlockNumber:
         if self.chain.finalize_block_count is None:
             finalized_block = await self.client.eth.get_block("finalized")
@@ -56,7 +61,8 @@ class EVMAsyncClient(ChainAsyncClient):
         finalized_block_number = (await self.get_latest_block_number()) - self.chain.finalize_block_count
         return finalized_block_number
 
-    async def get_token_decimals(self, token_address: ChecksumAddress) -> int:
+    @override
+    async def get_token_decimals(self, token_address: ChecksumAddress) -> BlockNumber:
         if token_address == "0x0000000000000000000000000000000000000000":
             return self.chain.native_decimal
         min_abi = [
@@ -75,14 +81,16 @@ class EVMAsyncClient(ChainAsyncClient):
         decimals = await contract.functions.decimals().call()
         return decimals
 
-    async def is_transaction_successful(self, tx_hash: TxHash, logger: logging.Logger | logging.LoggerAdapter) -> bool:
+    @override
+    async def is_transaction_successful(self, tx_hash: TxHash) -> bool:
         try:
             receipt = await self.client.eth.get_transaction_receipt(HexStr(tx_hash))
             return receipt["status"] == 1
         except web3.exceptions.TransactionNotFound as e:
-            logger.error(f"TransactionNotFound: {e}")
+            self.logger.error(f"TransactionNotFound: {e}")
         return False
 
+    @override
     async def get_block_tx_hash(self, block_number: BlockNumber, **kwargs) -> list[TxHash]:
         block = await self.client.eth.get_block(block_number)
         return [tx_hash.hex() for tx_hash in block.transactions]  # type: ignore
@@ -90,13 +98,13 @@ class EVMAsyncClient(ChainAsyncClient):
     async def get_latest_block_number(self) -> BlockNumber:
         return await self.client.eth.get_block_number()
 
+    @override
     async def extract_transfer_from_block(
         self,
         block_number: BlockNumber,
-        logger: logging.Logger | logging.LoggerAdapter,
         **kwargs,
     ) -> list[EVMTransfer]:
-        logger.debug(f"Observing block number {block_number} start")
+        self.logger.debug(f"Observing block number {block_number} start")
         try:
             block = await self.client.eth.get_block(block_number, full_transactions=True)
         except web3.exceptions.BlockNotFound as e:
@@ -111,9 +119,13 @@ class EVMAsyncClient(ChainAsyncClient):
             except NotRecognizedSolidityFuncError:
                 ...
             except EVMTransferNotValid as e:
-                logger.exception(f"EVMTransferNotValid, {e}")
-        logger.debug(f"Observing block number {block_number} end")
+                self.logger.exception(f"EVMTransferNotValid, {e}")
+        self.logger.debug(f"Observing block number {block_number} end")
         return result
+
+    @staticmethod
+    def to_checksum_address(address: str):
+        return Web3.to_checksum_address(address)
 
     def _parse_transfer(self, tx: TxData) -> EVMTransfer:
         try:
@@ -141,19 +153,12 @@ class EVMAsyncClient(ChainAsyncClient):
             web3.exceptions.TransactionNotFound,
             ValidationError,
         ) as e:
-            raise EVMTransferNotValid(
-                f"Transfer with tx_hash {tx} is not valid."  # type: error
-            ) from e
+            raise EVMTransferNotValid(f"Transfer with tx_hash {tx} is not valid.") from e
 
 
-_async_clients: dict[str, EVMAsyncClient] = {}
-
-
-def get_evm_async_client(chain: EVMConfig) -> EVMAsyncClient:
-    if client := _async_clients.get(chain.chain_symbol):
-        return client
-    client = EVMAsyncClient(chain)
-    _async_clients[chain.chain_symbol] = client
+@lru_cache
+def get_evm_async_client(chain: EVMConfig, logger: logging.Logger | logging.LoggerAdapter) -> EVMAsyncClient:
+    client = EVMAsyncClient(chain, logger)
     return client
 
 

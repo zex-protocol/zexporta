@@ -98,7 +98,7 @@ async def withdraw(chain: EVMConfig):
             if len(deposits) == 0:
                 _logger.debug("Deposit not found.")
                 continue
-            w3 = get_evm_async_client(chain).client
+            w3 = get_evm_async_client(chain, _logger).client
             account = w3.eth.account.from_key(EVM_WITHDRAWER_PRIVATE_KEY)
 
             for deposit in deposits:
@@ -125,7 +125,7 @@ async def withdraw(chain: EVMConfig):
                 await upsert_deposit(chain=chain, deposit=deposit)
 
         except ValueError as e:
-            _logger.error(f"Can not deploy contract for {deposit.transfer.to}, error: {e}")
+            _logger.error(f"ValueError, error: {e}")
 
         finally:
             await asyncio.sleep(10)

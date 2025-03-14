@@ -1,7 +1,3 @@
-# noqa: F401
-
-import os
-
 from zexporta.chain_config import CHAINS_CONFIG
 from zexporta.settings import app_settings
 
@@ -9,7 +5,7 @@ CHAINS_CONFIG = CHAINS_CONFIG
 DKG_JSON_PATH = app_settings.dkg.json_path
 DKG_NAME = app_settings.dkg.name
 EVM_NATIVE_TOKEN_ADDRESS = app_settings.evm_native_token_address
-MONGO_URI = app_settings.mongo.uri
+MONGO_URI = app_settings.mongo.get_uri()
 SENTRY_DNS = app_settings.sentry.dsn
 USER_DEPOSIT_BYTECODE_HASH = app_settings.user_deposit.bytecode_hash
 USER_DEPOSIT_FACTORY_ADDRESS = app_settings.user_deposit.factory_address
