@@ -5,12 +5,15 @@ from web3 import Web3
 
 from .custom_types import (
     BTCConfig,
+    BTCWithdrawRequest,
     ChainConfig,
     ChainId,
     ChainSymbol,
     EnvEnum,
     EVMConfig,
+    EVMWithdrawRequest,
 )
+from .db.utxo import populate_deposits_utxos
 
 ENVIRONMENT = EnvEnum(os.environ["ENV"])
 
@@ -56,6 +59,8 @@ if ENVIRONMENT == EnvEnum.PROD:
         #     finalize_block_count=6,
         #     delay=10,
         #     batch_block_size=5,
+        #     vault_address = "",
+        #     deposit_finalizer_middleware = [populate_deposits_utxos],
         # ),
     }
     # setup("mainnet")
@@ -63,6 +68,7 @@ if ENVIRONMENT == EnvEnum.PROD:
 
 else:
     ZEX_BASE_URL = "https://api-dev.zex.finance/v1"
+
     CHAINS_CONFIG: dict[str, ChainConfig] = {
         ChainSymbol.HOL.value: EVMConfig(
             private_rpc=os.environ["HOL_RPC"],
@@ -102,6 +108,8 @@ else:
             finalize_block_count=1,
             delay=60,
             batch_block_size=5,
+            vault_address="",
+            deposit_finalizer_middleware=(populate_deposits_utxos,),
         ),
     }
     setup("testnet")
@@ -115,13 +123,16 @@ BTC_GROUP_KEY_PUB = os.getenv("BTC_GROUP_KEY_PUB")
 
 USER_DEPOSIT_FACTORY_ADDRESS = os.environ["USER_DEPOSIT_FACTORY_ADDRESS"]
 USER_DEPOSIT_BYTECODE_HASH = os.environ["USER_DEPOSIT_BYTECODE_HASH"]
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017/")
 
 SA_SHIELD_PRIVATE_KEY = os.environ["SA_SHIELD_PRIVATE_KEY"]
 
 DKG_JSON_PATH = os.getenv("DKG_JSON_PATH", "./zexporta/dkgs/dkgs.json")
 DKG_NAME = os.getenv("DKG_NAME", "ethereum")
 
-WITHDRAWER_PRIVATE_KEY = os.environ["WITHDRAWER_PRIVATE_KEY"]
+EVM_WITHDRAWER_PRIVATE_KEY = os.environ["EVM_WITHDRAWER_PRIVATE_KEY"]
 
 SENTRY_DNS = os.getenv("SENTRY_DNS")
+
+MONGO_HOST = os.environ["MONGO_HOST"]
+MONGO_PORT = os.environ["MONGO_PORT"]
+MONGO_DBNAME = os.environ.get("MONGO_DBNAME", "transaction_database")

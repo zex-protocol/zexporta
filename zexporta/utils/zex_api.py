@@ -3,13 +3,16 @@ from enum import StrEnum
 from json import JSONDecodeError
 
 import httpx
+from clients import BTCConfig
 
 from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
+    ChainConfig,
     EVMConfig,
-    EVMWithdrawRequest,
     UserId,
+    WithdrawRequest,
+    WithdrawStatus,
     ZexUserAsset,
 )
 
@@ -75,7 +78,7 @@ async def get_zex_latest_block(async_client: httpx.AsyncClient, chain: EVMConfig
         raise ZexAPIError(e)  # noqa: B904 FIXME
 
 
-async def get_zex_last_withdraw_nonce(async_client: httpx.AsyncClient, chain: EVMConfig) -> int:
+async def get_zex_last_withdraw_nonce(async_client: httpx.AsyncClient, chain: ChainConfig) -> int:
     try:
         res = await async_client.get(
             url=f"{ZEX_BASE_URL}{ZexPath.LAST_WITHDRAW_NONCE.value}",
@@ -96,10 +99,10 @@ async def get_zex_last_withdraw_nonce(async_client: httpx.AsyncClient, chain: EV
 
 async def get_zex_withdraws(
     async_client: httpx.AsyncClient,
-    chain: EVMConfig,
+    chain: ChainConfig,
     offset: int,
     limit: int | None = None,
-) -> list[EVMWithdrawRequest]:
+) -> list[WithdrawRequest]:
     from web3 import Web3
 
     params = dict()
@@ -115,16 +118,33 @@ async def get_zex_withdraws(
         withdraws = res.json()
         if not len(withdraws):
             raise ZexAPIError("Active withdraw not been found.")
-        return [
-            EVMWithdrawRequest(
-                amount=withdraw.get("amount"),
-                nonce=withdraw.get("nonce"),
-                recipient=Web3.to_checksum_address(withdraw.get("destination")),
-                token_address=Web3.to_checksum_address(withdraw.get("tokenContract")),
-                chain_id=chain.chain_id,
+
+        result = []
+        for withdraw in withdraws:
+            match chain:
+                case BTCConfig():
+                    address_type = str
+                    base_conf = {}
+                case EVMConfig():
+                    address_type = Web3.to_checksum_address
+                    base_conf = {
+                        "chain_id": chain.chain_id,
+                        "token_address": address_type(withdraw.get("tokenContract")),
+                    }
+                case _:
+                    raise NotImplementedError
+
+            result.append(
+                chain.withdraw_request_type(
+                    amount=withdraw.get("amount"),
+                    nonce=withdraw.get("nonce"),
+                    recipient=address_type(withdraw.get("destination")),
+                    chain_symbol=chain.chain_symbol,
+                    status=WithdrawStatus.PENDING,
+                    **base_conf,
+                )
             )
-            for withdraw in withdraws
-        ]
+        return result
     except (httpx.RequestError, httpx.HTTPStatusError, JSONDecodeError) as e:
         raise ZexAPIError(e)  # noqa: B904 FIXME
 

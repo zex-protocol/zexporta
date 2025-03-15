@@ -21,7 +21,7 @@ from zexporta.db.withdraw import find_withdraws_by_status, upsert_withdraw
 from zexporta.utils.abi import VAULT_ABI
 from zexporta.utils.decode_error import decode_custom_error_data
 from zexporta.utils.dkg import parse_dkg_json
-from zexporta.utils.encoder import get_withdraw_hash
+from zexporta.utils.encoder import get_evm_withdraw_hash
 from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from zexporta.utils.node_info import NodesInfo
 from zexporta.utils.zex_api import (
@@ -32,12 +32,12 @@ from .config import (
     CHAINS_CONFIG,
     DKG_JSON_PATH,
     DKG_NAME,
+    EVM_WITHDRAWER_PRIVATE_KEY,
     LOGGER_PATH,
     SA_DELAY_SECOND,
     SA_SHIELD_PRIVATE_KEY,
     SA_TIMEOUT,
     SENTRY_DNS,
-    WITHDRAWER_PRIVATE_KEY,
 )
 
 
@@ -54,14 +54,14 @@ logger = logging.getLogger(__name__)
 
 nodes_info = NodesInfo()
 sa = SA(nodes_info, default_timeout=SA_TIMEOUT)
-dkg_key = dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
+dkg_key = parse_dkg_json(DKG_JSON_PATH, DKG_NAME)
 
 
 async def check_validator_data(
     zex_withdraw: EVMWithdrawRequest,
     validator_hash: str,
 ):
-    withdraw_hash = get_withdraw_hash(zex_withdraw)
+    withdraw_hash = get_evm_withdraw_hash(zex_withdraw)
     if withdraw_hash != validator_hash:
         raise WithdrawDifferentHashError(f"validator_hash: {validator_hash}, withdraw_hash: {withdraw_hash}")
 
@@ -116,9 +116,9 @@ async def send_withdraw(
     signature_nonce: ChecksumAddress,
     logger: logging.Logger | ChainLoggerAdapter = logger,
 ):
-    vault = w3.eth.contract(address=chain.vault_address, abi=VAULT_ABI)
+    vault = w3.eth.contract(address=Web3.to_checksum_address(chain.vault_address), abi=VAULT_ABI)
     nonce = await w3.eth.get_transaction_count(account.address)
-    withdraw_hash = get_withdraw_hash(withdraw_request)
+    withdraw_hash = get_evm_withdraw_hash(withdraw_request)
     signed_data = get_signed_data(SA_SHIELD_PRIVATE_KEY, hexstr=withdraw_hash)
     logger.debug(f"Signed Withdraw data is: {signed_data}")
     tx = await vault.functions.withdraw(
@@ -142,21 +142,21 @@ async def withdraw(chain: EVMConfig):
 
     while True:
         try:
-            w3 = get_evm_async_client(chain).client
-            account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
+            w3 = get_evm_async_client(chain, _logger).client
+            account = w3.eth.account.from_key(EVM_WITHDRAWER_PRIVATE_KEY)
 
             dkg_party = dkg_key["party"]
-            withdraws_request = await find_withdraws_by_status(WithdrawStatus.PENDING, chain.chain_id)
-            if len(withdraws_request) == 0:
+            withdraws_requests = await find_withdraws_by_status(WithdrawStatus.PENDING, chain)
+            if len(withdraws_requests) == 0:
                 _logger.debug(f"No {WithdrawStatus.PENDING.value} has been found to process ...")
                 continue
-            for withdraw_request in withdraws_request:
+            for withdraw_request in withdraws_requests:
                 try:
                     await process_withdraw_sa(
                         w3=w3,
                         account=account,
                         chain=chain,
-                        withdraw_request=withdraw_request,
+                        withdraw_request=EVMWithdrawRequest(**withdraw_request.model_dump(mode="json")),
                         dkg_party=dkg_party,
                         logger=_logger,
                     )

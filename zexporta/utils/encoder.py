@@ -44,7 +44,7 @@ def encode_zex_deposit(
     return header + deposit_data
 
 
-def get_withdraw_hash(withdraw_request: EVMWithdrawRequest):
+def get_evm_withdraw_hash(withdraw_request: EVMWithdrawRequest):
     return (
         Web3.solidity_keccak(
             ["address", "address", "uint256", "uint256", "uint256"],

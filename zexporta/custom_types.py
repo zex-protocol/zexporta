@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Any
 
-from clients.btc.custom_types import BTCConfig, BTCTransfer
+from clients.btc.custom_types import UTXO, BTCConfig, BTCTransfer, BTCWithdrawRequest, UTXOStatus
 from clients.custom_types import (
     Address,
     BlockNumber,
@@ -9,9 +9,11 @@ from clients.custom_types import (
     Transfer,
     TxHash,
     Value,
+    WithdrawRequest,
+    WithdrawStatus,
 )
-from clients.evm.custom_types import ChainId, ChecksumAddress, EVMConfig, EVMTransfer
-from pydantic import BaseModel, Field
+from clients.evm.custom_types import ChainId, ChecksumAddress, EVMConfig, EVMTransfer, EVMWithdrawRequest
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def convert_int_to_str(value: int) -> str:
@@ -47,15 +49,8 @@ class DepositStatus(StrEnum):
     REJECTED = "rejected"
 
 
-class WithdrawStatus(StrEnum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    SUCCESSFUL = "successful"
-    REJECTED = "rejected"
-
-
 class Token(BaseModel):
-    model_config = {"extra": "ignore"}
+    model_config = ConfigDict(extra="ignore")
     token_address: ChecksumAddress
     decimals: int
 
@@ -91,17 +86,6 @@ class UserAddress(BaseModel):
     is_active: bool = Field(default=True)
 
 
-class EVMWithdrawRequest(BaseModel):
-    model_config = {"extra": "ignore"}
-    token_address: ChecksumAddress
-    amount: Value
-    recipient: ChecksumAddress
-    nonce: int
-    chain_id: ChainId
-    tx_hash: TxHash | None = None
-    status: WithdrawStatus = WithdrawStatus.PENDING
-
-
 class ZexUserAsset(BaseModel):
     asset: str
     free: str
@@ -112,7 +96,9 @@ class ZexUserAsset(BaseModel):
 
 __all__ = [
     "ZexUserAsset",
+    "WithdrawRequest",
     "EVMWithdrawRequest",
+    "BTCWithdrawRequest",
     "UserAddress",
     "Deposit",
     "SaDepositSchema",
@@ -134,4 +120,7 @@ __all__ = [
     "EVMTransfer",
     "BTCTransfer",
     "Transfer",
+    "ChainId",
+    "UTXOStatus",
+    "UTXO",
 ]

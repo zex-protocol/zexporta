@@ -21,10 +21,10 @@ from zexporta.utils.logger import ChainLoggerAdapter, get_logger_config
 from .config import (
     CHAINS_CONFIG,
     EVM_NATIVE_TOKEN_ADDRESS,
+    EVM_WITHDRAWER_PRIVATE_KEY,
     LOGGER_PATH,
     SENTRY_DNS,
     USER_DEPOSIT_FACTORY_ADDRESS,
-    WITHDRAWER_PRIVATE_KEY,
 )
 
 logging.config.dictConfig(get_logger_config(f"{LOGGER_PATH}/vault_depositor.log"))
@@ -98,8 +98,8 @@ async def withdraw(chain: EVMConfig):
             if len(deposits) == 0:
                 _logger.debug("Deposit not found.")
                 continue
-            w3 = get_evm_async_client(chain).client
-            account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
+            w3 = get_evm_async_client(chain, _logger).client
+            account = w3.eth.account.from_key(EVM_WITHDRAWER_PRIVATE_KEY)
 
             for deposit in deposits:
                 is_contract = (await w3.eth.get_code(deposit.transfer.to)) != b""  # type: ignore
@@ -125,7 +125,7 @@ async def withdraw(chain: EVMConfig):
                 await upsert_deposit(chain=chain, deposit=deposit)
 
         except ValueError as e:
-            _logger.error(f"Can not deploy contract for {deposit.transfer.to}, error: {e}")
+            _logger.error(f"ValueError, error: {e}")
 
         finally:
             await asyncio.sleep(10)

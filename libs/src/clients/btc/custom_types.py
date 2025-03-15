@@ -1,12 +1,15 @@
 # Model for Address Details
-from typing import Any, ClassVar
+from enum import StrEnum
+from typing import Any
 
-from clients.custom_types import URL, ChainConfig, Transfer
+from pydantic import BaseModel
+
+from clients.custom_types import URL, ChainConfig, Salt, Transfer, TxHash, Value, WithdrawRequest
 
 type Address = str
 
 
-class BTCTransfer(Transfer):
+class BTCTransfer(Transfer[Address]):
     to: Address
     index: int
 
@@ -21,6 +24,27 @@ class BTCTransfer(Transfer):
         return NotImplemented
 
 
-class BTCConfig(ChainConfig):
+class UTXOStatus(StrEnum):
+    UNSPENT = "unspent"
+    SPEND = "spend"
+
+
+class UTXO(BaseModel):
+    status: UTXOStatus = UTXOStatus.UNSPENT
+    tx_hash: TxHash
+    amount: Value
+    index: Value
+    address: Address
+    salt: Salt
+
+
+class BTCWithdrawRequest(WithdrawRequest):
+    utxos: list[UTXO]
+    zellular_index: str
+    sat_per_byte: int
+
+
+class BTCConfig(ChainConfig[BTCTransfer, BTCWithdrawRequest]):
     private_indexer_rpc: URL
-    transfer_class: ClassVar[type[BTCTransfer]] = BTCTransfer
+    transfer_class: type[BTCTransfer] = BTCTransfer
+    withdraw_request_type: type[BTCWithdrawRequest] = BTCWithdrawRequest

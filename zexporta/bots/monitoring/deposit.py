@@ -38,7 +38,7 @@ async def monitor_deposit(async_client: httpx.AsyncClient, chain: EVMConfig, log
         TEST_USER_ID,
     )
 
-    w3 = get_evm_async_client(chain).client
+    w3 = get_evm_async_client(chain, logger).client
     account = w3.eth.account.from_key(WITHDRAWER_PRIVATE_KEY)
     balance_before = await get_user_balance(async_client, TEST_USER_ID, monitoring_token.symbol)
     logger.info(f"Balance before deposit: {balance_before}")

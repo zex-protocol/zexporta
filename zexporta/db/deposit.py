@@ -1,6 +1,8 @@
 import asyncio
+from functools import lru_cache
 from typing import Iterable, overload
 
+from clients import Transfer
 from pymongo import ASCENDING
 
 from zexporta.custom_types import (
@@ -12,32 +14,30 @@ from zexporta.custom_types import (
     DepositStatus,
     EVMConfig,
     EVMTransfer,
-    Transfer,
     TxHash,
 )
 
-from .collections import db
-
-_deposit_collections = {EVMConfig: db["evm_deposit"], BTCConfig: db["btc_deposit"]}
+from .db import get_db_connection
 
 
-async def __create_indexes():
-    await _deposit_collections[EVMConfig].create_index(("transfer.tx_hash", "transfer.chain_symbol"), unique=True)
-    await _deposit_collections[BTCConfig].create_index(
-        ("transfer.tx_hash", "transfer.chain_symbol", "transfer.index"), unique=True
-    )
-
-
-asyncio.run(__create_indexes())
-
-
+@lru_cache()
 def get_collection(chain: ChainConfig):
     match chain:
         case EVMConfig():
-            return _deposit_collections[EVMConfig]
+            collection = get_db_connection()["evm_deposit"]
+            asyncio.run_coroutine_threadsafe(
+                collection.create_index(("transfer.tx_hash", "transfer.chain_symbol"), unique=True),
+                asyncio.get_event_loop(),
+            )
         case BTCConfig():
-            return _deposit_collections[BTCConfig]
-    raise NotImplementedError()
+            collection = get_db_connection()["btc_deposit"]
+            asyncio.run_coroutine_threadsafe(
+                collection.create_index(("transfer.tx_hash", "transfer.chain_symbol", "transfer.index"), unique=True),
+                asyncio.get_event_loop(),
+            )
+        case _:
+            raise NotImplementedError()
+    return collection
 
 
 async def insert_deposit_if_not_exists(chain: ChainConfig, deposit: Deposit):
@@ -62,6 +62,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit[BTCTransfer]]: ...
 
 
@@ -72,6 +73,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit[EVMTransfer]]: ...
 
 
@@ -82,6 +84,7 @@ async def find_deposit_by_status(
     from_block: BlockNumber | None = None,
     to_block: BlockNumber | None = None,
     limit: int | None = None,
+    txs_hash: list[TxHash] | None = None,
 ) -> list[Deposit[Transfer]]: ...
 
 
@@ -91,6 +94,7 @@ async def find_deposit_by_status(
     from_block=None,
     to_block=None,
     limit=None,
+    txs_hash=None,
 ):
     collection = get_collection(chain)
     res = []
@@ -103,6 +107,8 @@ async def find_deposit_by_status(
         "transfer.block_number": block_number_query,
         "transfer.chain_symbol": chain.chain_symbol,
     }
+    if txs_hash:
+        query["transfer.tx_hash"] = {"$in": txs_hash}
 
     async for record in collection.find(query, sort={"transfer.block_number": ASCENDING}):
         transfer = chain.transfer_class(**record["transfer"])

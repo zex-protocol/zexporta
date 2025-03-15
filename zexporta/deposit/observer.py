@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import logging.config
 
 import clients.exceptions as client_exception
@@ -28,7 +27,7 @@ async def observe_deposit(chain: ChainConfig):
     _logger = ChainLoggerAdapter(logger, chain.chain_symbol)
     last_observed_block = await get_last_observed_block(chain.chain_symbol)
     while True:
-        client = get_async_client(chain)
+        client = get_async_client(chain, logger=_logger)
         latest_block = await client.get_latest_block_number()
         if last_observed_block is not None and last_observed_block == latest_block:
             _logger.info(f"Block {last_observed_block} already observed continue")
@@ -43,7 +42,7 @@ async def observe_deposit(chain: ChainConfig):
         accepted_addresses = await get_active_address(chain)
         try:
             accepted_deposits = await explorer(
-                chain,
+                client,
                 last_observed_block + 1,
                 to_block,
                 accepted_addresses,
@@ -54,17 +53,15 @@ async def observe_deposit(chain: ChainConfig):
             )
         except client_exception.BaseClientError as e:
             logger.error(f"Client raise Error, {e}")
-            continue
         except ValueError as e:
             _logger.error(f"ValueError: {e}")
             await asyncio.sleep(10)
-
         except Exception as e:
             _logger.exception(f"Exception: {e}")
             await asyncio.sleep(5)
-
-        if len(accepted_deposits) > 0:
-            await insert_deposits_if_not_exists(chain, accepted_deposits)
+        else:
+            if len(accepted_deposits) > 0:
+                await insert_deposits_if_not_exists(chain, accepted_deposits)
 
         await upsert_chain_last_observed_block(chain.chain_symbol, to_block)
         last_observed_block = to_block

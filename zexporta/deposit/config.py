@@ -2,23 +2,18 @@
 
 import os
 
-from dotenv import load_dotenv
-
 from zexporta.config import (
     CHAINS_CONFIG,
     DKG_JSON_PATH,
     DKG_NAME,
     EVM_NATIVE_TOKEN_ADDRESS,
-    MONGO_URI,
+    EVM_WITHDRAWER_PRIVATE_KEY,
     SA_SHIELD_PRIVATE_KEY,
     SENTRY_DNS,
     USER_DEPOSIT_BYTECODE_HASH,
     USER_DEPOSIT_FACTORY_ADDRESS,
-    WITHDRAWER_PRIVATE_KEY,
     ZEX_ENCODE_VERSION,
 )
-
-load_dotenv()
 
 LOGGER_PATH = "/var/log/deposit/"
 

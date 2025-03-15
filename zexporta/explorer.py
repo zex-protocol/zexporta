@@ -1,11 +1,10 @@
 from typing import Any, Callable, Coroutine
 
-from clients import ChainAsyncClient, filter_blocks, get_async_client
+from clients import ChainAsyncClient, filter_blocks
 
 from zexporta.custom_types import (
     Address,
     BlockNumber,
-    ChainConfig,
     Deposit,
     DepositStatus,
     Timestamp,
@@ -13,7 +12,6 @@ from zexporta.custom_types import (
     UserId,
 )
 from zexporta.db.token import get_decimals, insert_token
-from zexporta.utils.logger import ChainLoggerAdapter
 
 
 def get_block_batches(
@@ -30,7 +28,7 @@ def get_block_batches(
 
 
 async def explorer(
-    chain: ChainConfig,
+    client: ChainAsyncClient,
     from_block: BlockNumber,
     to_block: BlockNumber,
     accepted_addresses: dict[Address, UserId],
@@ -38,33 +36,28 @@ async def explorer(
     *,
     batch_size=5,
     max_delay_per_block_batch: int | float = 10,
-    logger: ChainLoggerAdapter,
     **kwargs,
-) -> list[Deposit]:
+) -> list[Deposit[Transfer]]:
     result = []
-    client = get_async_client(chain)
     block_batches = get_block_batches(from_block, to_block, batch_size=batch_size)
     for blocks_number in block_batches:
-        logger.info(f"batch_blocks: {blocks_number}")
         transfers = await filter_blocks(
             blocks_number,
             extract_block_logic,
             max_delay_per_block_batch=max_delay_per_block_batch,
-            logger=logger,
             **kwargs,
         )
         accepted_deposits = await get_accepted_deposits(
             client,
-            chain,
             transfers,
             accepted_addresses=accepted_addresses,
-            logger=logger,
         )
         result.extend(accepted_deposits)
     return result
 
 
-async def get_token_decimals(client: ChainAsyncClient, chain_symbol: str, token_address: Address) -> int:
+async def get_token_decimals(client: ChainAsyncClient, token_address: Address) -> int:
+    chain_symbol = client.chain.chain_symbol
     decimals = await get_decimals(chain_symbol, token_address)
     if decimals is None:
         decimals = await client.get_token_decimals(token_address)
@@ -74,10 +67,8 @@ async def get_token_decimals(client: ChainAsyncClient, chain_symbol: str, token_
 
 async def get_accepted_deposits(
     client: ChainAsyncClient,
-    chain: ChainConfig,
     transfers: list[Transfer],
     accepted_addresses: dict[Address, UserId],
-    logger: ChainLoggerAdapter,
     *,
     sa_timestamp: Timestamp | None = None,
     deposit_status: DepositStatus = DepositStatus.PENDING,
@@ -85,13 +76,13 @@ async def get_accepted_deposits(
     result = []
     for transfer in transfers:
         if (user_id := accepted_addresses.get(transfer.to)) is not None:
-            decimals = await get_token_decimals(client, chain.chain_symbol, transfer.token)
-            if await client.is_transaction_successful(transfer.tx_hash, logger):
+            decimals = await get_token_decimals(client, transfer.token)
+            if await client.is_transaction_successful(transfer.tx_hash):
                 result.append(
                     Deposit(
                         user_id=user_id,
                         decimals=decimals,
-                        transfer=chain.transfer_class.model_validate(transfer),
+                        transfer=client.chain.transfer_class.model_validate(transfer),
                         status=deposit_status,
                         sa_timestamp=sa_timestamp,
                     )
