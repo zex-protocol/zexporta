@@ -26,6 +26,8 @@ __all__ = [
     "ChainConfig",
     "ChainAsyncClient",
     "WithdrawRequest",
+    "Transfer",
+    "WithdrawRequest",
 ]
 
 

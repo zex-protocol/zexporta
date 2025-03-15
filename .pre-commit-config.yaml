@@ -7,6 +7,7 @@ repos:
       - id: check-yaml
       - id: debug-statements
       - id: name-tests-test
+        exclude: ^tests/mock.py
       - id: no-commit-to-branch
         args: ["--branch", "main", "--branch", "dev"]
 
@@ -20,14 +21,14 @@ repos:
       - id: ruff-format
   - repo: local
     hooks:
-    -   id: type-check
+      - id: type-check
         name: type check
         entry: make type-check
         language: system
         pass_filenames: false
   - repo: local
     hooks:
-    -   id: unit-test
+      - id: unit-test
         name: unit test
         entry: make unit-test
         language: system
