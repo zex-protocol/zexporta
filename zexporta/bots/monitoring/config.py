@@ -10,7 +10,7 @@ from zexporta.config import (
     ChainSymbol,
 )
 
-LOGGER_PATH = "/var/log/monitoring_bot/"
+LOGGER_PATH = "/var/log/bot_monitoring/"
 
 TEST_USER_ID = int(os.environ["MONITORING_BOT_ZEX_USER_ID"])
 
