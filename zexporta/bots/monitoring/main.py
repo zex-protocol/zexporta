@@ -20,7 +20,7 @@ from .config import (
 from .deposit import monitor_deposit
 from .withdraw import monitor_withdraw
 
-logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/monitoring_bot.log"))
+logging.config.dictConfig(get_logger_config(logger_path=f"{LOGGER_PATH}/bot_monitoring.log"))
 logger = logging.getLogger(__name__)
 
 
