@@ -5,7 +5,7 @@ e-venv/
 __pycache__/
 logs/
 temp/
-.env
+.env*
 .vscode/
 .venv/
 .ruff_cache/
