@@ -34,13 +34,13 @@ services:
       context: .
       dockerfile: Dockerfile
     image: zexporta
-    container_name: monitoring-bot
+    container_name: bot-monitoring
     entrypoint: python -m zexporta.bots.monitoring.main
     networks:
       zexporta_custom_network:
         ipv4_address: 172.20.0.13
     volumes:
-      - /var/log/zexporta/monitoring_bot/:/var/log/monitoring_bot/
+      - /var/log/zexporta/bot_monitoring/:/var/log/bot_monitoring/
     env_file:
       - .env.dev
 

@@ -8,7 +8,7 @@ CHAINS_CONFIG = CHAINS_CONFIG
 USER_DEPOSIT_BYTECODE_HASH = app_settings.user_deposit.bytecode_hash
 USER_DEPOSIT_FACTORY_ADDRESS = app_settings.user_deposit.factory_address
 
-LOGGER_PATH = "/var/log/monitoring_bot/"
+LOGGER_PATH = "/var/log/bot_monitoring/"
 
 TEST_USER_ID = app_settings.monitoring.bot_zex_user_id
 
