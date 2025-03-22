@@ -28,7 +28,7 @@ def run_node(node_id: int) -> None:
     node = Node(
         data_manager,
         str(node_id),  # type: ignore
-        PRIVATE_KEY,
+        PRIVATE_KEY,  # type: ignore
         nodes_info,
         NodeValidators.caller_validator,  # type: ignore
         NodeValidators.data_validator,  # type: ignore

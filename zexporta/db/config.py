@@ -1,7 +1,4 @@
-from zexporta.config import (
-    MONGO_DBNAME,
-    MONGO_HOST,
-    MONGO_PORT,
-    USER_DEPOSIT_BYTECODE_HASH,
-    USER_DEPOSIT_FACTORY_ADDRESS,
-)
+from zexporta.settings import app_settings
+
+USER_DEPOSIT_BYTECODE_HASH = app_settings.user_deposit.bytecode_hash
+USER_DEPOSIT_FACTORY_ADDRESS = app_settings.user_deposit.factory_address

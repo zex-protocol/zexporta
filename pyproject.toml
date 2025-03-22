@@ -11,6 +11,7 @@ dependencies = [
     "httpx>=0.28.1,<1.0.0",
     "libs",
     "pydantic~=2.10.6",
+    "pydantic-settings>=2.8.1",
     "pyfrost",
     "pymongo~=4.10.1",
     "python-dotenv~=1.0.1",

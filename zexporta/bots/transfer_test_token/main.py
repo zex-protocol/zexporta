@@ -17,7 +17,7 @@ from zexporta.bots.transfer_test_token.database import (
     upsert_last_transferred_id,
 )
 from zexporta.bots.utils.deposit import send_deposit
-from zexporta.config import (
+from zexporta.chain_config import (
     CHAINS_CONFIG,
 )
 from zexporta.custom_types import ChecksumAddress, EVMConfig, UserId

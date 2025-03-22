@@ -1,12 +1,11 @@
-import os
-
-from zexporta.config import (
-    CHAINS_CONFIG,
-    ENVIRONMENT,
-    SENTRY_DNS,
-    ZEX_ENCODE_VERSION,
-)
+from zexporta.chain_config import CHAINS_CONFIG
 from zexporta.custom_types import EnvEnum
+from zexporta.settings import app_settings
+
+CHAINS_CONFIG = CHAINS_CONFIG
+ENVIRONMENT = app_settings.env
+SENTRY_DNS = app_settings.sentry.dsn
+ZEX_ENCODE_VERSION = app_settings.zex.encode_version
 
 LOGGER_PATH = "/var/log/validator/validator.log"
 
@@ -44,4 +43,4 @@ else:
             "/pyfrost/v1/generate-nonces",
         ],
     }
-PRIVATE_KEY = int(os.environ["NODE_PRIVATE_KEY"])
+PRIVATE_KEY = app_settings.node.private_key

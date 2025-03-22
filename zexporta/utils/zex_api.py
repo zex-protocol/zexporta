@@ -5,7 +5,6 @@ from json import JSONDecodeError
 import httpx
 from clients import BTCConfig
 
-from zexporta.config import ZEX_BASE_URL
 from zexporta.custom_types import (
     BlockNumber,
     ChainConfig,
@@ -15,6 +14,9 @@ from zexporta.custom_types import (
     WithdrawStatus,
     ZexUserAsset,
 )
+from zexporta.settings import app_settings
+
+ZEX_BASE_URL = app_settings.zex.base_url
 
 
 class ZexPath(StrEnum):

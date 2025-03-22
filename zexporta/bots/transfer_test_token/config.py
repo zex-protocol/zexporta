@@ -1,13 +1,14 @@
-import os
-
 from web3 import Web3
 
 from zexporta.bots.custom_types import BotToken
 from zexporta.custom_types import ChainSymbol
+from zexporta.settings import app_settings
 
 LOGGER_PATH = "."
 
-HOLDER_PRIVATE_KEY = os.environ["HOLDER_PRIVATE_KEY"]
+HOLDER_PRIVATE_KEY = app_settings.holder_private_key
+MONGO_HOST = app_settings.mongo.host
+MONGO_PORT = app_settings.mongo.port
 
 TEST_TOKENS = [
     BotToken(
@@ -55,25 +56,22 @@ TEST_TOKENS = [
     BotToken(
         symbol="zWBTC",
         chain_symbol=ChainSymbol.HOL,  # Holesky
-        amount=10000,  # 10000 satoshi
+        amount=10000,  # 10000 Satoshi
         address=Web3.to_checksum_address("0x9d84f6e4D734c33C2B6e7a5211780499A71aEf6A"),
         decimal=8,
     ),
     BotToken(
         symbol="zWBTC",
         chain_symbol=ChainSymbol.BST,  # BSC Testnet
-        amount=10000,  # 10000 satoshi
+        amount=10000,  # 10000 Satoshi
         address=Web3.to_checksum_address("0x9d84f6e4D734c33C2B6e7a5211780499A71aEf6A"),
         decimal=8,
     ),
     BotToken(
         symbol="zWBTC",
         chain_symbol=ChainSymbol.SEP,  # Sepolia
-        amount=10000,  # 10000 satoshi
+        amount=10000,  # 10000 Satoshi
         address=Web3.to_checksum_address("0x9d84f6e4D734c33C2B6e7a5211780499A71aEf6A"),
         decimal=8,
     ),
 ]
-
-MONGO_HOST = os.environ["MONGO_HOST"]
-MONGO_PORT = os.environ["MONGO_PORT"]
