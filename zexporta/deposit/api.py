@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
 from health_check import HealthCheck, HealthController
 
-from zexporta.config import CHAINS_CONFIG
+from zexporta.chain_config import CHAINS_CONFIG
 from zexporta.custom_types import ChainSymbol, DepositStatus
 from zexporta.db.deposit import find_deposit_by_status
 
